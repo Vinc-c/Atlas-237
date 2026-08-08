@@ -24,6 +24,20 @@ The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind s
 - `@font-face` rules live at the top of `src/index.css` and reference `/fonts/*.woff` (absolute, served from Cloudflare origin).
 - `index.html` preloads both woff files. The font is applied globally via `html`/`body`/headings in `index.css` and the `glacial` family in `tailwind.config.js`.
 
+## AuthPage (responsive + real)
+- Split-screen: full brand panel (cloud-blue, logo, tagline, dashboard illustration,
+  social proof) on `lg+`; condensed gradient brand banner on mobile/tablet (`lg:hidden`).
+- Form panel centered with `max-w-md`, paddings scale by breakpoint (`px-5` mobile → `lg:px-16`).
+- Password field has a show/hide toggle (Eye / EyeOff) inside the input.
+- Google SSO uses the real multicolor Google "G" SVG (inline `GoogleIcon`), not a fake badge.
+- All strings go through i18n (`auth.or`, `auth.continueGoogle`, `auth.terms`, `auth.confirmEmail`,
+  `auth.notConfigured`, `auth.brandTagline`, `auth.brandSub`, `auth.socialProof`) — 5 languages.
+- `isSupabaseConfigured` guard shows a clear message if env vars are missing (helps Cloudflare debugging).
+- Signup handles email-confirmation flow: if no session returned, shows "check your inbox" message
+  and switches to login mode instead of blindly navigating to /app.
+- OAuth has its own loading state (`oauthLoading`) with a spinner.
+- Inputs use proper `autoComplete` attributes (email, current-password, new-password, given-name…).
+
 ## AskAtlas AI assistant (functional)
 - `src/lib/askAtlas.ts` is a shared business-question engine that answers in natural language
   by querying live Supabase data (counts/aggregates). Intent keywords cover: contacts, leads

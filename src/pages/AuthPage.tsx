@@ -1,9 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, Globe, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Sparkles, Globe, Loader2, ArrowRight, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
+
+function GoogleIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
+      <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
+      <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
+      <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
+    </svg>
+  );
+}
 
 export function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
@@ -13,9 +24,11 @@ export function AuthPage() {
   const [lastName, setLastName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const { language, setLanguage } = useAuth();
   const navigate = useNavigate();
   const lang = language;
@@ -35,6 +48,10 @@ export function AuthPage() {
     setSubmitting(true);
 
     try {
+      if (!isSupabaseConfigured) {
+        setError(t('auth.notConfigured', lang));
+        return;
+      }
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -45,7 +62,7 @@ export function AuthPage() {
         }
         navigate('/app');
       } else if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -53,7 +70,12 @@ export function AuthPage() {
           },
         });
         if (error) throw error;
-        navigate('/app');
+        if (data.session) {
+          navigate('/app');
+        } else {
+          setMessage(t('auth.confirmEmail', lang));
+          setMode('login');
+        }
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email);
         if (error) throw error;
@@ -70,6 +92,25 @@ export function AuthPage() {
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError('');
+    setOauthLoading(true);
+    try {
+      if (!isSupabaseConfigured) {
+        setError(t('auth.notConfigured', lang));
+        return;
+      }
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/app` },
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OAuth Google indisponible');
+    } finally {
+      setOauthLoading(false);
     }
   }
 
@@ -98,10 +139,10 @@ export function AuthPage() {
 
           <div className="relative">
             <h2 className="max-w-md text-3xl font-bold leading-tight tracking-tight xl:text-4xl">
-              La plateforme CRM agentique n°1
+              {t('auth.brandTagline', lang)}
             </h2>
             <p className="mt-5 max-w-md text-base leading-7 text-primary-100">
-              Ventes, service client et intelligence artificielle réunis sur un seul cloud. Conçu pour Dubai, l’Afrique et le monde.
+              {t('auth.brandSub', lang)}
             </p>
             <ul className="mt-9 space-y-4">
               {highlights.map((h) => (
@@ -142,25 +183,31 @@ export function AuthPage() {
                 <div key={i} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-600 bg-white text-[11px] font-bold text-primary-600">{i}</div>
               ))}
             </div>
-            <p className="text-xs text-primary-100">Rejoint par plus de 150 000 professionnels à travers le monde.</p>
+            <p className="text-xs text-primary-100">{t('auth.socialProof', lang)}</p>
           </div>
         </div>
 
         {/* ───────── Form panel ───────── */}
-        <div className="flex flex-col px-6 py-10 sm:px-10 lg:px-16">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 lg:hidden">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-white">
+        <div className="flex flex-col px-5 py-8 sm:px-10 lg:px-16 lg:py-10">
+          {/* Mobile/tablet brand banner */}
+          <div className="-mx-5 -mt-8 mb-2 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-5 sm:-mx-10 sm:px-10 lg:hidden">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-600">
                 <Sparkles size={18} />
               </div>
-              <span className="text-lg font-bold">Atlas CRM</span>
+              <span className="text-lg font-bold tracking-tight text-white">Atlas CRM</span>
             </Link>
-            <div className="ml-auto flex items-center gap-2 rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-500">
+            <p className="mt-2 text-sm text-primary-100">{t('auth.brandTagline', lang)}</p>
+          </div>
+
+          <div className="flex items-center justify-end">
+            <div className="flex items-center gap-2 rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-500">
               <Globe size={15} />
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as Language)}
                 className="bg-transparent text-ink-700 focus:outline-none"
+                aria-label="Language"
               >
                 <option value="en">EN</option>
                 <option value="fr">FR</option>
@@ -171,9 +218,9 @@ export function AuthPage() {
             </div>
           </div>
 
-          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-6 sm:py-8">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-ink-950">
+              <h1 className="text-2xl font-bold tracking-tight text-ink-950 sm:text-3xl">
                 {mode === 'login' ? t('auth.welcome', lang) : mode === 'signup' ? t('auth.createAccount', lang) : t('auth.resetPassword', lang)}
               </h1>
               <p className="mt-2 text-sm text-ink-500">
@@ -181,33 +228,52 @@ export function AuthPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-7 space-y-4">
               {mode === 'signup' && (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block">
                     <span className="label">{t('auth.firstName', lang)}</span>
-                    <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                    <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" />
                   </label>
                   <label className="block">
                     <span className="label">{t('auth.lastName', lang)}</span>
-                    <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                    <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" />
                   </label>
                 </div>
               )}
               {mode === 'signup' && (
                 <label className="block">
                   <span className="label">{t('auth.companyName', lang)}</span>
-                  <input className="input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
+                  <input className="input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required autoComplete="organization" />
                 </label>
               )}
               <label className="block">
                 <span className="label">{t('auth.email', lang)}</span>
-                <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" />
+                <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" autoComplete="email" />
               </label>
               {mode !== 'forgot' && (
                 <label className="block">
                   <span className="label">{t('auth.password', lang)}</span>
-                  <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      className="input pr-11"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 transition hover:text-ink-600"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </label>
               )}
 
@@ -223,8 +289,18 @@ export function AuthPage() {
                 </div>
               )}
 
-              {error && <div className="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">{error}</div>}
-              {message && <div className="rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">{message}</div>}
+              {error && (
+                <div className="flex items-start gap-2 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+                  <AlertCircle size={16} className="mt-0.5 flex-none" />
+                  <span>{error}</span>
+                </div>
+              )}
+              {message && (
+                <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">
+                  <CheckCircle2 size={16} className="mt-0.5 flex-none" />
+                  <span>{message}</span>
+                </div>
+              )}
 
               <button type="submit" disabled={submitting} className="btn-primary w-full btn-lg">
                 {submitting && <Loader2 size={18} className="animate-spin" />}
@@ -236,7 +312,7 @@ export function AuthPage() {
             {mode !== 'forgot' && (
               <div className="mt-6 flex items-center gap-3">
                 <div className="h-px flex-1 bg-ink-100" />
-                <span className="text-xs font-medium uppercase tracking-wide text-ink-400">ou</span>
+                <span className="text-xs font-medium uppercase tracking-wide text-ink-400">{t('auth.or', lang)}</span>
                 <div className="h-px flex-1 bg-ink-100" />
               </div>
             )}
@@ -244,24 +320,19 @@ export function AuthPage() {
             {mode !== 'forgot' && (
               <button
                 type="button"
-                onClick={async () => {
-                  try {
-                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/app` } });
-                  } catch (err) {
-                    setError(err instanceof Error ? err.message : 'OAuth Google indisponible');
-                  }
-                }}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-ink-200 bg-white px-5 py-3 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+                onClick={handleGoogle}
+                disabled={oauthLoading}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2.5 rounded-lg border border-ink-200 bg-white px-5 py-3 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-60"
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-amber-500 text-[10px] font-bold text-white">G</span>
-                Continuer avec Google
+                {oauthLoading ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
+                {t('auth.continueGoogle', lang)}
               </button>
             )}
 
             {mode === 'signup' && (
               <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-ink-500">
                 <CheckCircle2 size={15} className="mt-0.5 flex-none text-success-500" />
-                En créant un compte, vous acceptez les Conditions d’utilisation et la Politique de confidentialité d’Atlas CRM.
+                {t('auth.terms', lang)}
               </p>
             )}
 
@@ -273,7 +344,7 @@ export function AuthPage() {
               ) : (
                 <span>
                   {mode === 'login' ? t('auth.noAccount', lang) : t('auth.haveAccount', lang)}{' '}
-                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }} className="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
+                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); setPassword(''); setShowPassword(false); }} className="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
                     {mode === 'login' ? t('auth.signup', lang) : t('auth.login', lang)}
                   </button>
                 </span>
