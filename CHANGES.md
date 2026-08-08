@@ -58,7 +58,25 @@ Salesforce is known for (Lead → Convert → Account/Contact/Opportunity,
 stage-based pipeline board), which is standard CRM architecture, in this
 app's own design system.
 
-## Cloudflare Pages — what was missing, and exact setup
+## Deploy failure: package-lock.json out of sync (fixed)
+
+When I added `react-router-dom` and `@supabase/supabase-js` to
+`package.json` earlier, I couldn't regenerate `package-lock.json` in this
+environment (no npm registry access here). Cloudflare Pages sees a
+`package-lock.json` and runs `npm ci`, which **fails on purpose** if the
+lockfile and `package.json` don't match exactly — that was the deploy
+error.
+
+**Fix applied**: removed `package-lock.json`. With no lockfile, Cloudflare
+Pages runs `npm install` instead, which resolves fresh from `package.json`
+and can't be out of sync with itself.
+
+**Recommended follow-up** (optional, for reproducible builds): once you
+have this locally, run `npm install` and commit the `package-lock.json` it
+generates. That pins exact versions for every future deploy. Not required
+for the deploy to work — just good practice going forward.
+
+
 
 I can't run `npm install`/`npm run build` in this environment (no network
 access to the npm registry from here), so I did a careful manual review
