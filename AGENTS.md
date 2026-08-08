@@ -24,6 +24,16 @@ The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind s
 - `@font-face` rules live at the top of `src/index.css` and reference `/fonts/*.woff` (absolute, served from Cloudflare origin).
 - `index.html` preloads both woff files. The font is applied globally via `html`/`body`/headings in `index.css` and the `glacial` family in `tailwind.config.js`.
 
+## AskAtlas AI assistant (functional)
+- `src/lib/askAtlas.ts` is a shared business-question engine that answers in natural language
+  by querying live Supabase data (counts/aggregates). Intent keywords cover: contacts, leads
+  (hot/new), deals (open/at-risk), revenue/payments, invoices (unpaid), tickets, tasks
+  (overdue), meetings, AI tasks, employees, and an overview/summary fallback.
+- It returns `{ text, route? }` so answers can deep-link to the relevant module page.
+- Used in two places: `AskAtlasPage` (full chat UI with clickable suggestions + "View" link)
+  and `DashboardPage` AI command bar (inline reply panel).
+- No external LLM/API key required — it reads the org's own Supabase tables.
+
 ## Data layer
 All CRUD goes through Supabase via `src/components/ListPage.tsx` (generic table editor)
 and individual pages. Tables expected: contacts, companies, leads, deals, pipelines,

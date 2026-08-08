@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
@@ -393,23 +395,36 @@ export function UsagePage() {
 
 export function AskAtlasPage() {
   const { language } = useAuth();
+  const navigate = useNavigate();
   const lang = language;
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; route?: string }[]>([]);
   const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
 
-  function send() {
-    if (!input.trim()) return;
-    const userMsg = { role: 'user' as const, text: input };
-    setMessages([...messages, userMsg]);
+  const suggestions = lang === 'fr'
+    ? ['Combien de deals ouverts ?', 'Quels sont mes leads chauds ?', 'Quel est mon revenu ?', 'Factures impayées ?']
+    : ['How many open deals?', 'Show my hot leads', 'What is my revenue?', 'Unpaid invoices?'];
+
+  async function send(text?: string) {
+    const value = (text ?? input).trim();
+    if (!value || thinking) return;
+    const userMsg = { role: 'user' as const, text: value };
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'ai', text: lang === 'fr' ? "Je suis Atlas, votre assistant IA. Cette fonctionnalité sera bientôt disponible avec une intégration LLM complète." : "I'm Atlas, your AI assistant. This feature will be available soon with full LLM integration." }]);
-    }, 800);
+    setThinking(true);
+    try {
+      const answer = await askAtlas(value, lang);
+      setMessages((prev) => [...prev, { role: 'ai', text: answer.text, route: answer.route }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: 'ai', text: lang === 'fr' ? 'Désolé, je n\'ai pas pu récupérer les données.' : 'Sorry, I couldn\'t fetch the data.' }]);
+    } finally {
+      setThinking(false);
+    }
   }
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.askAtlas', lang)} subtitle="" />
+      <PageHeader title={t('nav.askAtlas', lang)} subtitle={lang === 'fr' ? 'Posez une question sur votre entreprise — les réponses viennent de vos données réelles.' : 'Ask a question about your business — answers come from your real data.'} />
       <div className="card p-0 h-[60vh] flex flex-col">
         <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-4">
           {messages.length === 0 ? (
@@ -419,14 +434,33 @@ export function AskAtlasPage() {
               </div>
               <h3 className="font-bold text-ink-800">{t('dash.askAtlas', lang)}</h3>
               <p className="text-sm text-ink-500 mt-1 max-w-md text-center">{t('dash.askPlaceholder', lang)}</p>
+              <div className="mt-6 flex flex-wrap gap-2 justify-center max-w-lg">
+                {suggestions.map((s) => (
+                  <button key={s} onClick={() => send(s)} className="rounded-full border border-ink-200 bg-white px-4 py-2 text-sm text-ink-700 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700">
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-md px-4 py-2 rounded-xl text-sm ${msg.role === 'user' ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-800'}`}>
                 {msg.text}
+                {msg.route && (
+                  <button onClick={() => navigate(msg.route!)} className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary-600 hover:underline">
+                    {lang === 'fr' ? 'Voir' : 'View'} <ArrowRight size={12} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
+          {thinking && (
+            <div className="flex justify-start">
+              <div className="max-w-md px-4 py-2 rounded-xl text-sm bg-ink-100 text-ink-400 flex items-center gap-2">
+                <Sparkles size={14} className="animate-pulse" /> {lang === 'fr' ? 'Atlas analyse vos données…' : 'Atlas is analysing your data…'}
+              </div>
+            </div>
+          )}
         </div>
         <div className="border-t border-ink-100 p-4 flex gap-2">
           <input
@@ -435,8 +469,9 @@ export function AskAtlasPage() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && send()}
             placeholder={t('dash.askPlaceholder', lang)}
+            disabled={thinking}
           />
-          <button onClick={send} className="btn-primary btn-sm">{lang === 'fr' ? 'Envoyer' : 'Send'}</button>
+          <button onClick={() => send()} disabled={thinking} className="btn-primary btn-sm">{lang === 'fr' ? 'Envoyer' : 'Send'}</button>
         </div>
       </div>
     </div>

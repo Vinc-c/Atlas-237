@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   DollarSign, UserPlus, Flame, Handshake, AlertTriangle,
   Calendar, CheckCircle, Receipt, LifeBuoy, Bot, Clock,
-  TrendingUp, Sparkles, ArrowRight, Zap
+  TrendingUp, Sparkles, Zap, X
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { askAtlas } from '@/lib/askAtlas';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { StatCard, PageHeader } from '@/components/ui';
@@ -28,7 +28,6 @@ interface DashboardStats {
 
 export function DashboardPage() {
   const { language, profile, organization } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([]);
@@ -36,6 +35,8 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [command, setCommand] = useState('');
   const [busyApproval, setBusyApproval] = useState<string | null>(null);
+  const [aiReply, setAiReply] = useState<string | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
 
   useEffect(() => {
     loadDashboard();
@@ -101,9 +102,18 @@ export function DashboardPage() {
     setBusyApproval(null);
   }
 
-  function runCommand() {
+  async function runCommand() {
     if (!command.trim()) return;
-    navigate('/app/ask-atlas');
+    setAiThinking(true);
+    setAiReply(null);
+    try {
+      const answer = await askAtlas(command, lang);
+      setAiReply(answer.text);
+    } catch {
+      setAiReply(lang === 'fr' ? "Désolé, je n'ai pas pu récupérer les données." : "Sorry, I couldn't fetch the data.");
+    } finally {
+      setAiThinking(false);
+    }
   }
 
   if (loading) return <Loading fullPage text={t('common.loading', language)} />;
@@ -142,6 +152,17 @@ export function DashboardPage() {
             {lang === 'fr' ? 'Exécuter' : 'Execute'}
           </button>
         </div>
+        {aiThinking && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-white/80">
+            <Sparkles size={14} className="animate-pulse" /> {lang === 'fr' ? 'Atlas analyse vos données…' : 'Atlas is analysing your data…'}
+          </div>
+        )}
+        {aiReply && !aiThinking && (
+          <div className="mt-3 rounded-lg bg-white/15 border border-white/20 px-4 py-3 text-sm text-white flex items-start justify-between gap-3">
+            <span>{aiReply}</span>
+            <button onClick={() => setAiReply(null)} className="flex-none text-white/60 hover:text-white"><X size={14} /></button>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
