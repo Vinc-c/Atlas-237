@@ -14,6 +14,11 @@ import { AIEmployeesPage, AITasksPage, ApprovalsPage, AIWorkflowsPage, AIMemoryP
 import { ReportsPage, DashboardsPage, AIInsightsPage } from '@/pages/AnalyticsPages';
 import { EmployeesPage, TeamsPage, PermissionsPage } from '@/pages/TeamPages';
 import { MarketplacePage, ConnectedAppsPage, APIWebhooksPage } from '@/pages/IntegrationPages';
+import {
+  SuperAdminLayout, SuperAdminDashboard, SuperAdminUsersPage,
+  SuperAdminSubscriptionsPage, SuperAdminAnalyticsPage, SuperAdminEmployeesPage,
+  SuperAdminSalesCodesPage, SuperAdminPermissionsPage, SuperAdminAuditPage,
+} from '@/pages/SuperAdminPages';
 
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
@@ -96,6 +101,16 @@ export default function App() {
           <Route path="/" element={<LandingRoutes />} />
           <Route path="/auth" element={<AuthRoutes />} />
           <Route path="/app/*" element={<ProtectedRoutes />} />
+          <Route path="/super-admin" element={<SuperAdminRoute />}>
+            <Route index element={<SuperAdminDashboard />} />
+            <Route path="users" element={<SuperAdminUsersPage />} />
+            <Route path="subscriptions" element={<SuperAdminSubscriptionsPage />} />
+            <Route path="analytics" element={<SuperAdminAnalyticsPage />} />
+            <Route path="employees" element={<SuperAdminEmployeesPage />} />
+            <Route path="sales-codes" element={<SuperAdminSalesCodesPage />} />
+            <Route path="permissions" element={<SuperAdminPermissionsPage />} />
+            <Route path="audit" element={<SuperAdminAuditPage />} />
+          </Route>
           <Route path="/legal/:page" element={<LegalRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -110,4 +125,12 @@ function LegalRoute() {
   const { page } = useParams();
   if (!page || !LEGAL_PAGES.includes(page)) return <Navigate to="/" replace />;
   return <LegalPage page={page as any} />;
+}
+
+function SuperAdminRoute() {
+  const { session, loading, isSuperAdmin } = useAuth();
+  if (loading) return <Loading fullPage />;
+  if (!session) return <Navigate to="/auth" replace />;
+  if (!isSuperAdmin) return <Navigate to="/app" replace />;
+  return <SuperAdminLayout />;
 }

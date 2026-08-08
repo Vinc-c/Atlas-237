@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
+import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency, getCountry } from '@/lib/i18n-countries';
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
@@ -24,6 +25,10 @@ export function AuthPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [country, setCountry] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [timezone, setTimezone] = useState('UTC');
+  const [salesCode, setSalesCode] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -67,7 +72,7 @@ export function AuthPage() {
           email,
           password,
           options: {
-            data: { first_name: firstName, last_name: lastName, company_name: companyName },
+            data: { first_name: firstName, last_name: lastName, company_name: companyName, country, currency, timezone, sales_code: salesCode },
           },
         });
         if (error) throw error;
@@ -247,6 +252,41 @@ export function AuthPage() {
                   <span className="label">{t('auth.companyName', lang)}</span>
                   <input className="input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required autoComplete="organization" />
                 </label>
+              )}
+              {mode === 'signup' && (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="label">{lang === 'fr' ? 'Pays' : 'Country'}</span>
+                      <select className="input" value={country} onChange={(e) => { setCountry(e.target.value); setCurrency(suggestCurrency(e.target.value)); const tz = getCountry(e.target.value); if (tz) { /* could map country to TZ, keep UTC default */ } }}>
+                        <option value="">{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={c.code} value={c.code}>{lang === 'fr' ? c.nameFr : c.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="label">{lang === 'fr' ? 'Devise' : 'Currency'}</span>
+                      <select className="input" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                        {CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>{c.code} — {c.symbol} ({c.name})</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="label">{lang === 'fr' ? 'Fuseau horaire' : 'Timezone'}</span>
+                      <select className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+                        {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="label">{lang === 'fr' ? 'Code commercial (optionnel)' : 'Sales code (optional)'}</span>
+                      <input className="input" value={salesCode} onChange={(e) => setSalesCode(e.target.value)} placeholder="ATLAS-XXX" />
+                    </label>
+                  </div>
+                </>
               )}
               <label className="block">
                 <span className="label">{t('auth.email', lang)}</span>

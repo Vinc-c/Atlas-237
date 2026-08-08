@@ -7,11 +7,10 @@ import {
   Brain, BookOpen, CheckSquare, BarChart3, LayoutGrid, Lightbulb,
   UserCog, UsersRound, ShieldCheck, Store, Plug, Webhook, Bell,
   ScrollText, Settings, CreditCard as Billing, Gauge, Sparkles,
-  ChevronDown, ChevronRight, LogOut, Search
+  ChevronDown, ChevronRight, LogOut, Search, Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
-import { Logo } from '@/components/Logo';
 
 interface NavItem {
   to: string;
@@ -103,7 +102,7 @@ const navSections: NavSection[] = [
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile, organization, language, signOut } = useAuth();
+  const { profile, organization, language, signOut, isSuperAdmin, brandingLogoUrl } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState('');
@@ -155,10 +154,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-ink-50">
       {/* Sidebar */}
       <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-ink-900 text-white flex flex-col transition-all duration-200 sidebar-shadow overflow-hidden`}>
-        {/* Logo */}
+        {/* Logo — custom branding for paid plans, neutral placeholder otherwise (NO Atlas logo in dashboards) */}
         <div className="flex items-center gap-2.5 px-4 h-14 flex-shrink-0 border-b border-white/10">
-          <Logo size={32} className="flex-shrink-0" />
-          {!collapsed && <span className="font-bold text-lg">Atlas CRM</span>}
+          {brandingLogoUrl ? (
+            <img src={brandingLogoUrl} alt={organization?.name || 'Logo'} className="h-8 w-auto max-w-[140px] object-contain flex-shrink-0" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 flex-shrink-0">
+              <span className="text-sm font-bold text-white/70">{(organization?.name || 'A').charAt(0).toUpperCase()}</span>
+            </div>
+          )}
+          {!collapsed && <span className="font-bold text-lg truncate">{organization?.name || 'Atlas'}</span>}
         </div>
 
         {/* Nav */}
@@ -184,6 +189,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
           ))}
+
+          {/* Super Admin section (platform-level, only for super admins) */}
+          {isSuperAdmin && (
+            <div className="pt-3 mt-3 border-t border-white/10">
+              {!collapsed && <div className="sidebar-section text-primary-400">Super Admin</div>}
+              <NavLink to="/super-admin" end className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Super Admin' : undefined}>
+                <ShieldCheck size={18} />
+                {!collapsed && <span>Dashboard</span>}
+              </NavLink>
+              <NavLink to="/super-admin/users" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Users' : undefined}>
+                <Users size={18} />
+                {!collapsed && <span>Users & Tenants</span>}
+              </NavLink>
+              <NavLink to="/super-admin/subscriptions" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Subscriptions' : undefined}>
+                <Billing size={18} />
+                {!collapsed && <span>Subscriptions</span>}
+              </NavLink>
+              <NavLink to="/super-admin/analytics" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Analytics' : undefined}>
+                <BarChart3 size={18} />
+                {!collapsed && <span>Analytics</span>}
+              </NavLink>
+              <NavLink to="/super-admin/employees" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Employees' : undefined}>
+                <UserCog size={18} />
+                {!collapsed && <span>Employee KPIs</span>}
+              </NavLink>
+              <NavLink to="/super-admin/sales-codes" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Sales Codes' : undefined}>
+                <Receipt size={18} />
+                {!collapsed && <span>Sales Codes</span>}
+              </NavLink>
+              <NavLink to="/super-admin/permissions" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Permissions' : undefined}>
+                <ShieldCheck size={18} />
+                {!collapsed && <span>Permissions</span>}
+              </NavLink>
+              <NavLink to="/super-admin/audit" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Audit Log' : undefined}>
+                <ScrollText size={18} />
+                {!collapsed && <span>Audit Log</span>}
+              </NavLink>
+            </div>
+          )}
         </nav>
 
         {/* Collapse toggle */}

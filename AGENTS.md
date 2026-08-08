@@ -89,4 +89,48 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
 ## i18n
 - `src/lib/i18n.ts` — `t(key, lang)` with 5 languages (en, fr, es, pt, ar).
 - `AuthContext` provides `language` and `setLanguage`.
+- `src/lib/i18n-countries.ts` — full country list (195, ISO 3166-1), currencies (50+,
+  ISO 4217), timezones, `formatMoney()`, `suggestCurrency()`, `getCountryName()`.
+- AuthPage signup includes country/currency/timezone/sales_code selectors (international onboarding).
+
+## Super Admin (platform-level)
+- Access via `/super-admin/*` routes (separate `SuperAdminLayout`, NOT inside Paywall).
+- `AuthContext.isSuperAdmin` — checked via `is_super_admin()` RPC on login, with email fallback.
+- 3 founder emails seeded: `vincentnogue@yahoo.com`, `vincentnogue2@gmail.com`, `webdxb1@gmail.com`.
+- Min-2 active super admins rule enforced (UI + DB constraint logic).
+- Founders protected: typed "CONFIRM" required for removal.
+- All super admin actions logged to `platform_audit_log` (immutable) via `log_platform_action()`.
+- `super_admins` table + `is_super_admin()`, `count_active_super_admins()`, `link_super_admin()` RPCs.
+- Pages: Dashboard (platform_stats view), Users & Tenants, Subscriptions, Analytics,
+  Employee KPIs, Sales Codes, Permissions (RBAC), Audit Log.
+- Super Admin nav section appears in tenant AppLayout sidebar only when `isSuperAdmin`.
+
+## RBAC (single engine, platform + tenant scope)
+- `src/lib/rbac.ts` — `MODULES`, `ACTIONS`, `fetchRoles()`, `createRole()`, `deleteRole()`,
+  `setRolePermissions()`, `checkPermission()` (backend via `rbac_check()` RPC), `usePermission()` hook.
+- DB tables: `rbac_roles` (org_id NULL = platform), `rbac_permissions`, `rbac_user_roles`.
+- `rbac_check(user_id, module, action, org_id)` SQL function — authoritative backend enforcement.
+- Default roles auto-seeded per new org via trigger: Owner (full), Admin (most), Member (basic).
+- Tenant admins create custom roles in Settings → Roles & Permissions tab.
+- Super Admins manage platform roles in `/super-admin/permissions`.
+
+## Sales Codes (commercial tracking)
+- `sales_codes` table: unique code → salesperson, max_uses, uses_count.
+- `sales_code_conversions` table: tracks signups + plan subscriptions per code.
+- Signup with sales code → `handle_new_user()` increments uses + logs conversion.
+- Super Admin generates codes in `/super-admin/sales-codes`.
+
+## Branding (conditional on plan)
+- Atlas CRM logo ONLY on landing page (marketing site).
+- Dashboards show: custom org logo (if `branding_enabled` + `logo_url`) OR neutral placeholder
+  (first letter of org name) — NEVER the Atlas logo.
+- Custom logo upload available on Growth/Pro/Enterprise plans (Settings → Branding tab).
+- Starter plan: neutral placeholder, upgrade CTA.
+- `Organization.logo_url`, `Organization.branding_enabled` fields (migration 006).
+- Logo upload via Supabase Storage `branding` bucket (data URL fallback if bucket missing).
+
+## Settings page (tabbed)
+- Tabs: Account (org info, country, currency, timezone), Profile, Branding, Roles & Permissions, Security.
+- `refreshOrg()` in AuthContext reloads org after settings save.
+
 

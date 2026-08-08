@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
@@ -9,6 +9,8 @@ import { initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutter
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
+import { COUNTRIES, CURRENCIES, TIMEZONES, getCurrency } from '@/lib/i18n-countries';
+import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import type { Notification, AuditLog, Organization } from '@/types';
 
 export function NotificationsPage() {
@@ -134,114 +136,433 @@ export function AuditLogPage() {
 }
 
 export function SettingsPage() {
-  const { language, organization, profile } = useAuth();
+  const { language, organization, profile, refreshOrg } = useAuth();
+  const [activeTab, setActiveTab] = useState<'account' | 'profile' | 'branding' | 'roles' | 'security'>('account');
+
+  const tabs = [
+    { key: 'account' as const, label: language === 'fr' ? 'Compte' : 'Account', icon: Building2 },
+    { key: 'profile' as const, label: language === 'fr' ? 'Profil' : 'Profile', icon: User },
+    { key: 'branding' as const, label: 'Branding', icon: ImageIcon },
+    { key: 'roles' as const, label: language === 'fr' ? 'Rôles & Permissions' : 'Roles & Permissions', icon: ShieldCheck },
+    { key: 'security' as const, label: language === 'fr' ? 'Sécurité' : 'Security', icon: Lock },
+  ];
+
+  return (
+    <div className="animate-fade-in">
+      <PageHeader title={t('nav.settings', language)} subtitle="" />
+      <div className="max-w-4xl">
+        {/* Tab bar */}
+        <div className="flex flex-wrap gap-1 mb-6 border-b border-ink-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition ${activeTab === tab.key ? 'border-primary-600 text-primary-600' : 'border-transparent text-ink-500 hover:text-ink-700'}`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'account' && <AccountTab language={language} organization={organization} onSave={refreshOrg} />}
+        {activeTab === 'profile' && <ProfileTab language={language} profile={profile} />}
+        {activeTab === 'branding' && <BrandingTab language={language} organization={organization} onSave={refreshOrg} />}
+        {activeTab === 'roles' && <RolesPermissionsTab language={language} organization={organization} />}
+        {activeTab === 'security' && <SecurityTab language={language} />}
+      </div>
+    </div>
+  );
+}
+
+/* ── Account Tab ── */
+function AccountTab({ language, organization, onSave }: { language: any; organization: Organization | null; onSave: () => Promise<void> }) {
   const [org, setOrg] = useState<Organization | null>(organization);
-  const [savingOrg, setSavingOrg] = useState(false);
-  const [orgSaved, setOrgSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => { setOrg(organization); }, [organization]);
+
+  async function save() {
+    setSaving(true); setSaved(false);
+    if (org) {
+      const { error } = await supabase.from('organizations').update({
+        name: org.name, industry: org.industry, website: org.website,
+        country: org.country, address: org.address, currency: org.currency, timezone: org.timezone,
+      }).eq('id', org.id);
+      if (!error) { setSaved(true); await onSave(); }
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="card p-6">
+      <h3 className="font-bold text-ink-800 mb-4">{language === 'fr' ? 'Organisation' : 'Organization'}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="label">{language === 'fr' ? "Nom de l'entreprise" : 'Company Name'}</label>
+          <input className="input" value={org?.name || ''} onChange={e => setOrg({ ...org!, name: e.target.value })} />
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Industrie' : 'Industry'}</label>
+          <input className="input" value={org?.industry || ''} onChange={e => setOrg({ ...org!, industry: e.target.value })} />
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Site web' : 'Website'}</label>
+          <input className="input" value={org?.website || ''} onChange={e => setOrg({ ...org!, website: e.target.value })} />
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Pays' : 'Country'}</label>
+          <select className="input" value={org?.country || ''} onChange={e => setOrg({ ...org!, country: e.target.value })}>
+            <option value="">{language === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+            {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{language === 'fr' ? c.nameFr : c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Devise' : 'Currency'}</label>
+          <select className="input" value={org?.currency || 'USD'} onChange={e => setOrg({ ...org!, currency: e.target.value })}>
+            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code} — {c.symbol} ({c.name})</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Fuseau horaire' : 'Timezone'}</label>
+          <select className="input" value={org?.timezone || 'UTC'} onChange={e => setOrg({ ...org!, timezone: e.target.value })}>
+            {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+          </select>
+        </div>
+        <div className="col-span-2">
+          <label className="label">{language === 'fr' ? 'Adresse' : 'Address'}</label>
+          <input className="input" value={org?.address || ''} onChange={e => setOrg({ ...org!, address: e.target.value })} />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={save} disabled={saving} className="btn-primary btn-sm">{saving ? '...' : t('common.save', language)}</button>
+        {saved && <span className="text-sm text-success-600">✓ {language === 'fr' ? 'Enregistré' : 'Saved'}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Profile Tab ── */
+function ProfileTab({ language, profile }: { language: any; profile: any }) {
   const [firstName, setFirstName] = useState(profile?.first_name || '');
   const [lastName, setLastName] = useState(profile?.last_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  useEffect(() => { setOrg(organization); }, [organization]);
   useEffect(() => {
     setFirstName(profile?.first_name || '');
     setLastName(profile?.last_name || '');
     setPhone(profile?.phone || '');
   }, [profile?.id, profile?.first_name, profile?.last_name, profile?.phone]);
 
-  async function saveOrg() {
-    setSavingOrg(true); setOrgSaved(false);
-    if (org) {
-      const { error } = await supabase.from('organizations').update({
-        name: org.name, industry: org.industry, website: org.website,
-        country: org.country, address: org.address, currency: org.currency,
-      }).eq('id', org.id);
-      if (!error) setOrgSaved(true);
-    }
-    setSavingOrg(false);
-  }
-
-  async function saveProfile() {
+  async function save() {
     if (!profile) return;
-    setSavingProfile(true); setProfileSaved(false);
-    const { error } = await supabase.from('profiles').update({
-      first_name: firstName, last_name: lastName, phone,
-    }).eq('id', profile.id);
-    if (!error) setProfileSaved(true);
-    setSavingProfile(false);
+    setSaving(true); setSaved(false);
+    const { error } = await supabase.from('profiles').update({ first_name: firstName, last_name: lastName, phone }).eq('id', profile.id);
+    if (!error) setSaved(true);
+    setSaving(false);
   }
 
   return (
-    <div className="animate-fade-in">
-      <PageHeader title={t('nav.settings', language)} subtitle="" />
-      <div className="max-w-2xl space-y-6">
-        <div className="card p-6">
-          <h3 className="font-bold text-ink-800 mb-4">Organization</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Company Name</label>
-              <input className="input" value={org?.name || ''} onChange={e => setOrg({ ...org!, name: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">Industry</label>
-              <input className="input" value={org?.industry || ''} onChange={e => setOrg({ ...org!, industry: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">Website</label>
-              <input className="input" value={org?.website || ''} onChange={e => setOrg({ ...org!, website: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">Country</label>
-              <input className="input" value={org?.country || ''} onChange={e => setOrg({ ...org!, country: e.target.value })} />
-            </div>
-            <div>
-              <label className="label">Currency</label>
-              <select className="input" value={org?.currency || 'USD'} onChange={e => setOrg({ ...org!, currency: e.target.value })}>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="CAD">CAD ($)</option>
-                <option value="MAD">MAD</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="label">Address</label>
-              <input className="input" value={org?.address || ''} onChange={e => setOrg({ ...org!, address: e.target.value })} />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={saveOrg} disabled={savingOrg} className="btn-primary btn-sm">{savingOrg ? '...' : t('common.save', language)}</button>
-            {orgSaved && <span className="text-sm text-success-600">✓ Saved</span>}
-          </div>
+    <div className="card p-6">
+      <h3 className="font-bold text-ink-800 mb-4">{language === 'fr' ? 'Profil' : 'Profile'}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="label">{t('auth.firstName', language)}</label>
+          <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} />
         </div>
+        <div>
+          <label className="label">{t('auth.lastName', language)}</label>
+          <input className="input" value={lastName} onChange={e => setLastName(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">{t('common.email', language)}</label>
+          <input className="input" defaultValue={profile?.email || ''} disabled />
+        </div>
+        <div>
+          <label className="label">{t('common.phone', language)}</label>
+          <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-4">
+        <button onClick={save} disabled={saving} className="btn-primary btn-sm">{saving ? '...' : t('common.save', language)}</button>
+        {saved && <span className="text-sm text-success-600">✓ {language === 'fr' ? 'Enregistré' : 'Saved'}</span>}
+      </div>
+    </div>
+  );
+}
 
-        <div className="card p-6">
-          <h3 className="font-bold text-ink-800 mb-4">Profile</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label">{t('auth.firstName', language)}</label>
-              <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} />
-            </div>
-            <div>
-              <label className="label">{t('auth.lastName', language)}</label>
-              <input className="input" value={lastName} onChange={e => setLastName(e.target.value)} />
-            </div>
-            <div>
-              <label className="label">{t('common.email', language)}</label>
-              <input className="input" defaultValue={profile?.email || ''} disabled />
-            </div>
-            <div>
-              <label className="label">{t('common.phone', language)}</label>
-              <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={saveProfile} disabled={savingProfile} className="btn-primary btn-sm">{savingProfile ? '...' : t('common.save', language)}</button>
-            {profileSaved && <span className="text-sm text-success-600">✓ Saved</span>}
+/* ── Branding Tab (conditional on plan) ── */
+function BrandingTab({ language, organization, onSave }: { language: any; organization: Organization | null; onSave: () => Promise<void> }) {
+  const [logoUrl, setLogoUrl] = useState(organization?.logo_url || '');
+  const [brandingEnabled, setBrandingEnabled] = useState(organization?.branding_enabled || false);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const plan = organization?.plan || 'starter';
+  // Branding/logo upload available on paid plans (growth, pro, enterprise)
+  const brandingAllowed = ['growth', 'pro', 'enterprise'].includes(plan);
+
+  useEffect(() => {
+    setLogoUrl(organization?.logo_url || '');
+    setBrandingEnabled(organization?.branding_enabled || false);
+  }, [organization?.logo_url, organization?.branding_enabled]);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !organization) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `logos/${organization.id}/logo.${ext}`;
+    const { error: upErr } = await supabase.storage.from('branding').upload(path, file, { upsert: true });
+    if (upErr) {
+      // If bucket doesn't exist, store as data URL fallback
+      const reader = new FileReader();
+      reader.onload = () => setLogoUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      const { data } = supabase.storage.from('branding').getPublicUrl(path);
+      setLogoUrl(data.publicUrl);
+    }
+    setUploading(false);
+  }
+
+  async function save() {
+    if (!organization) return;
+    setSaving(true); setSaved(false);
+    const { error } = await supabase.from('organizations').update({
+      logo_url: logoUrl, branding_enabled: brandingEnabled,
+    }).eq('id', organization.id);
+    if (!error) { setSaved(true); await onSave(); }
+    setSaving(false);
+  }
+
+  if (!brandingAllowed) {
+    return (
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <ImageIcon className="text-ink-400" size={24} />
+          <h3 className="font-bold text-ink-800">Branding</h3>
+        </div>
+        <div className="rounded-lg bg-ink-50 p-4 text-center">
+          <p className="text-sm text-ink-600 mb-2">
+            {language === 'fr'
+              ? 'La personnalisation du logo est disponible sur les plans Growth, Pro et Enterprise.'
+              : 'Custom logo branding is available on Growth, Pro, and Enterprise plans.'}
+          </p>
+          <button onClick={() => window.location.href = '/app/billing'} className="btn-primary btn-sm mt-2">
+            {language === 'fr' ? 'Améliorer votre plan' : 'Upgrade your plan'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-6">
+      <h3 className="font-bold text-ink-800 mb-4">Branding</h3>
+      <p className="text-sm text-ink-500 mb-4">
+        {language === 'fr'
+          ? "Téléchargez le logo de votre entreprise. Il remplacera le logo par défaut dans votre tableau de bord."
+          : 'Upload your company logo. It will replace the default logo in your dashboard.'}
+      </p>
+      <div className="flex items-start gap-6">
+        <div className="flex-shrink-0">
+          <div className="h-24 w-24 rounded-lg border-2 border-dashed border-ink-200 flex items-center justify-center overflow-hidden bg-ink-50">
+            {logoUrl ? <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" /> : <ImageIcon className="text-ink-300" size={32} />}
           </div>
         </div>
+        <div className="flex-1 space-y-4">
+          <label className="btn-ghost btn-sm cursor-pointer inline-flex items-center gap-2">
+            <Upload size={14} />
+            {uploading ? (language === 'fr' ? 'Téléversement...' : 'Uploading...') : (language === 'fr' ? 'Choisir un fichier' : 'Choose file')}
+            <input type="file" accept="image/*" onChange={handleUpload} disabled={uploading} className="hidden" />
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={brandingEnabled} onChange={e => setBrandingEnabled(e.target.checked)} className="h-4 w-4 rounded text-primary-600" />
+            <span className="text-sm text-ink-700">{language === 'fr' ? 'Activer le branding personnalisé' : 'Enable custom branding'}</span>
+          </label>
+          <div className="flex items-center gap-3">
+            <button onClick={save} disabled={saving} className="btn-primary btn-sm">{saving ? '...' : t('common.save', language)}</button>
+            {saved && <span className="text-sm text-success-600">✓ {language === 'fr' ? 'Enregistré' : 'Saved'}</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Roles & Permissions Tab (tenant scope) ── */
+function RolesPermissionsTab({ language, organization }: { language: any; organization: Organization | null }) {
+  const [roles, setRoles] = useState<RbacRole[]>([]);
+  const [selectedRole, setSelectedRole] = useState<RbacRole | null>(null);
+  const [perms, setPerms] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [showNewRole, setShowNewRole] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRoleDesc, setNewRoleDesc] = useState('');
+
+  useEffect(() => { if (organization) loadRoles(); }, [organization?.id]);
+
+  async function loadRoles() {
+    if (!organization) return;
+    const data = await fetchRoles(organization.id);
+    setRoles(data);
+    setLoading(false);
+  }
+
+  async function selectRole(role: RbacRole) {
+    setSelectedRole(role);
+    const rolePerms = await fetchPermissions([role.id]);
+    const map: Record<string, boolean> = {};
+    rolePerms.forEach((p) => { map[`${p.module}:${p.action}`] = true; });
+    setPerms(map);
+  }
+
+  async function handleCreateRole() {
+    if (!organization || !newRoleName.trim()) return;
+    const role = await createRole(organization.id, newRoleName, newRoleDesc);
+    if (role) {
+      setNewRoleName(''); setNewRoleDesc(''); setShowNewRole(false);
+      await loadRoles();
+    }
+  }
+
+  async function handleDeleteRole(role: RbacRole) {
+    if (role.is_system) { alert(language === 'fr' ? 'Les rôles système ne peuvent pas être supprimés.' : 'System roles cannot be deleted.'); return; }
+    if (!confirm(language === 'fr' ? `Supprimer le rôle ${role.name} ?` : `Delete role ${role.name}?`)) return;
+    await deleteRole(role.id);
+    if (selectedRole?.id === role.id) setSelectedRole(null);
+    await loadRoles();
+  }
+
+  async function savePermissions() {
+    if (!selectedRole) return;
+    const permList = Object.entries(perms).filter(([, v]) => v).map(([k]) => {
+      const [module, action] = k.split(':') as [PermissionModule, PermissionAction];
+      return { module, action };
+    });
+    await setRolePermissions(selectedRole.id, permList);
+    alert(language === 'fr' ? 'Permissions enregistrées' : 'Permissions saved');
+  }
+
+  if (loading) return <Loading />;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Rôles' : 'Roles'}</h3>
+          <button onClick={() => setShowNewRole(!showNewRole)} className="btn-ghost btn-sm">+</button>
+        </div>
+        {showNewRole && (
+          <div className="mb-3 space-y-2 p-3 rounded-lg bg-ink-50">
+            <input className="input" placeholder={language === 'fr' ? 'Nom du rôle' : 'Role name'} value={newRoleName} onChange={e => setNewRoleName(e.target.value)} />
+            <input className="input" placeholder={language === 'fr' ? 'Description' : 'Description'} value={newRoleDesc} onChange={e => setNewRoleDesc(e.target.value)} />
+            <button onClick={handleCreateRole} className="btn-primary btn-sm w-full">{language === 'fr' ? 'Créer' : 'Create'}</button>
+          </div>
+        )}
+        <div className="space-y-1">
+          {roles.map((r) => (
+            <div key={r.id} className="flex items-center group">
+              <button
+                onClick={() => selectRole(r)}
+                className={`flex-1 text-left px-3 py-2 rounded-lg transition ${selectedRole?.id === r.id ? 'bg-primary-50 text-primary-700' : 'hover:bg-ink-50 text-ink-700'}`}
+              >
+                <p className="font-medium text-sm">{r.name}</p>
+                <p className="text-xs text-ink-400">{r.is_system ? (language === 'fr' ? 'Système' : 'System') : (language === 'fr' ? 'Personnalisé' : 'Custom')}</p>
+              </button>
+              {!r.is_system && (
+                <button onClick={() => handleDeleteRole(r)} className="opacity-0 group-hover:opacity-100 p-1.5 text-error-500 hover:bg-error-50 rounded transition">
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {roles.length === 0 && <p className="text-xs text-ink-400 p-3">{language === 'fr' ? 'Aucun rôle. Les rôles par défaut sont créés automatiquement.' : 'No roles. Default roles are auto-created.'}</p>}
+        </div>
+      </div>
+
+      <div className="md:col-span-2 card p-6">
+        {selectedRole ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-ink-800">{selectedRole.name} — {language === 'fr' ? 'Permissions' : 'Permissions'}</h3>
+              <button onClick={savePermissions} className="btn-primary btn-sm">{t('common.save', language)}</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-ink-100">
+                    <th className="text-left py-2 font-semibold text-ink-700">{language === 'fr' ? 'Module' : 'Module'}</th>
+                    {ACTIONS.map((a) => <th key={a.key} className="px-3 py-2 text-center font-semibold text-ink-700">{a.label[language === 'fr' ? 'fr' : 'en']}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MODULES.filter(m => m.key !== 'super_admin').map((m) => (
+                    <tr key={m.key} className="border-b border-ink-50">
+                      <td className="py-2 font-medium text-ink-700">{m.label[language === 'fr' ? 'fr' : 'en']}</td>
+                      {ACTIONS.map((a) => (
+                        <td key={a.key} className="px-3 py-2 text-center">
+                          <input
+                            type="checkbox"
+                            checked={perms[`${m.key}:${a.key}`] || false}
+                            onChange={(e) => setPerms({ ...perms, [`${m.key}:${a.key}`]: e.target.checked })}
+                            className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500"
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-xs text-ink-400">
+              {language === 'fr'
+                ? "Backend: les permissions sont vérifiées via la fonction SQL rbac_check(). L'application frontend est une heuristique rapide."
+                : 'Backend: permissions enforced via rbac_check() SQL function. Frontend is a fast heuristic.'}
+            </p>
+          </>
+        ) : (
+          <EmptyState icon={<ShieldCheck size={28} />} title={language === 'fr' ? 'Sélectionner un rôle' : 'Select a role'} description={language === 'fr' ? 'Choisissez un rôle pour gérer ses permissions.' : 'Choose a role to manage its permissions.'} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Security Tab ── */
+function SecurityTab({ language }: { language: any }) {
+  return (
+    <div className="space-y-6">
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <Lock className="text-ink-600" size={20} />
+          <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Authentification à deux facteurs (2FA)' : 'Two-Factor Authentication (2FA)'}</h3>
+        </div>
+        <p className="text-sm text-ink-500 mb-4">
+          {language === 'fr'
+            ? "Renforcez la sécurité de votre compte avec l'authentification à deux facteurs."
+            : 'Secure your account with two-factor authentication.'}
+        </p>
+        <button className="btn-ghost btn-sm" disabled>
+          {language === 'fr' ? 'Activer 2FA' : 'Enable 2FA'} (coming soon)
+        </button>
+      </div>
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <ShieldCheck className="text-ink-600" size={20} />
+          <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Sessions actives' : 'Active Sessions'}</h3>
+        </div>
+        <p className="text-sm text-ink-500 mb-4">
+          {language === 'fr' ? 'Gérez vos sessions connectées sur différents appareils.' : 'Manage your active sessions across devices.'}
+        </p>
+        <button className="btn-ghost btn-sm" disabled>
+          {language === 'fr' ? 'Voir les sessions' : 'View sessions'} (coming soon)
+        </button>
       </div>
     </div>
   );

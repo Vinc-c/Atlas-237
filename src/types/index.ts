@@ -15,6 +15,9 @@ export interface Organization {
   timezone: string;
   plan: Plan;
   trial_ends_at: string | null;
+  logo_url: string | null;
+  branding_enabled: boolean;
+  signup_sales_code: string | null;
   created_at: string;
   updated_at: string;
 }
