@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
 import { Users, Building2, UserPlus, Handshake, KanbanSquare, Activity, Calendar } from 'lucide-react';
 import { ListPage, type FormField } from '@/components/ListPage';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
-import { Badge } from '@/components/ui';
+import { Badge, PageHeader } from '@/components/ui';
+import { EmptyState } from '@/components/EmptyState';
+import { Loading } from '@/components/Loading';
 import type { Contact, Company, Lead, Deal } from '@/types';
 
 export function ContactsPage() {
@@ -221,15 +225,74 @@ export function ActivitiesPage() {
 
 export function CalendarPage() {
   const { language } = useAuth();
+  const lang = language;
+  const [activities, setActivities] = useState<{ id: string; title: string; type: string; status: string; scheduled_at: string | null }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from('activities').select('id,title,type,status,scheduled_at').order('scheduled_at', { ascending: true, nullsFirst: false })
+      .then(({ data }) => { setActivities((data || []) as typeof activities); setLoading(false); });
+  }, []);
+
+  const now = new Date();
+  const upcoming = activities.filter(a => a.scheduled_at && new Date(a.scheduled_at) >= now);
+  const past = activities.filter(a => a.scheduled_at && new Date(a.scheduled_at) < now);
+
   return (
     <div className="animate-fade-in">
-      <div className="card">
-        <div className="flex flex-col items-center justify-center py-20">
-          <Calendar size={48} className="text-ink-300 mb-4" />
-          <h3 className="text-lg font-bold text-ink-800">{t('nav.calendar', language)}</h3>
-          <p className="text-sm text-ink-500 mt-1">Your scheduled activities and meetings appear here.</p>
+      <PageHeader title={t('nav.calendar', lang)} subtitle="" />
+      {loading ? (
+        <Loading text={t('common.loading', lang)} />
+      ) : activities.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={<Calendar size={28} />} title={lang === 'fr' ? 'Aucun événement' : 'No events'} description={lang === 'fr' ? 'Vos activités planifiées apparaîtront ici.' : 'Your scheduled activities and meetings appear here.'} />
         </div>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card p-5">
+            <h3 className="font-bold text-ink-900 mb-4">{lang === 'fr' ? 'À venir' : 'Upcoming'}</h3>
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-ink-400 py-4 text-center">{t('common.noData', lang)}</p>
+            ) : (
+              <div className="space-y-3">
+                {upcoming.map(a => (
+                  <div key={a.id} className="flex items-start gap-3 py-2 border-b border-ink-50 last:border-0">
+                    <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-primary-50 text-primary-600 flex-shrink-0">
+                      <Calendar size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-ink-800">{a.title}</p>
+                      <p className="text-xs text-ink-500">{a.scheduled_at ? new Date(a.scheduled_at).toLocaleString(lang) : '—'} · {a.type}</p>
+                    </div>
+                    <Badge variant={a.status === 'completed' ? 'success' : 'warning'}>{a.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="card p-5">
+            <h3 className="font-bold text-ink-900 mb-4">{lang === 'fr' ? 'Passés' : 'Past'}</h3>
+            {past.length === 0 ? (
+              <p className="text-sm text-ink-400 py-4 text-center">{t('common.noData', lang)}</p>
+            ) : (
+              <div className="space-y-3">
+                {past.map(a => (
+                  <div key={a.id} className="flex items-start gap-3 py-2 border-b border-ink-50 last:border-0 opacity-70">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink-100 text-ink-500 flex-shrink-0">
+                      <Calendar size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-ink-800">{a.title}</p>
+                      <p className="text-xs text-ink-500">{a.scheduled_at ? new Date(a.scheduled_at).toLocaleString(lang) : '—'} · {a.type}</p>
+                    </div>
+                    <Badge variant={a.status === 'completed' ? 'success' : 'warning'}>{a.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

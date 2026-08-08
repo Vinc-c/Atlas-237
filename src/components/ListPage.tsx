@@ -162,14 +162,14 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
               </thead>
               <tbody>
                 {filtered.map(row => (
-                  <tr key={row.id} className="border-b border-ink-50 last:border-0 table-row-hover">
+                  <tr key={row.id} className="group border-b border-ink-50 last:border-0 table-row-hover">
                     {columns.map(col => (
                       <td key={col.key} className={`px-4 py-3 text-sm text-ink-700 ${col.className || ''}`}>
                         {col.render ? col.render(row) : String(row[col.key] ?? '—')}
                       </td>
                     ))}
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(row)} className="p-1.5 rounded text-ink-400 hover:bg-ink-100 hover:text-ink-700 transition-colors">
                           <Edit2 size={14} />
                         </button>

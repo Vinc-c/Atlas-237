@@ -1,4 +1,4 @@
-import { Store, Plug, Webhook, Plus, Check } from 'lucide-react';
+import { Store, Plug, Webhook, Plus, Check, Trash2, Ban } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -25,26 +25,60 @@ const AVAILABLE_APPS = [
 export function MarketplacePage() {
   const { language } = useAuth();
   const lang = language;
+  const [connected, setConnected] = useState<string[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.from('integrations').select('provider,status')
+      .then(({ data }) => {
+        setConnected((data || []).filter((i: Integration) => i.status === 'connected').map((i: Integration) => i.provider));
+      });
+  }, []);
+
+  async function toggleConnect(provider: string, name: string, category: string) {
+    setBusy(provider);
+    if (connected.includes(provider)) {
+      await supabase.from('integrations').delete().eq('provider', provider);
+      setConnected(prev => prev.filter(p => p !== provider));
+    } else {
+      const { error } = await supabase.from('integrations').insert({
+        provider,
+        category,
+        status: 'connected',
+        connected_at: new Date().toISOString(),
+      });
+      if (!error) setConnected(prev => [...prev, provider]);
+    }
+    setBusy(null);
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader title={t('nav.appMarketplace', lang)} subtitle="" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {AVAILABLE_APPS.map(app => (
-          <div key={app.provider} className="card-hover p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${app.color}`}>
-                <Store size={22} />
+        {AVAILABLE_APPS.map(app => {
+          const isConnected = connected.includes(app.provider);
+          return (
+            <div key={app.provider} className="card-hover p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${app.color}`}>
+                  <Store size={22} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-ink-800">{app.name}</h3>
+                  <p className="text-xs text-ink-500">{app.category}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-ink-800">{app.name}</h3>
-                <p className="text-xs text-ink-500">{app.category}</p>
-              </div>
+              <button
+                onClick={() => toggleConnect(app.provider, app.name, app.category)}
+                disabled={busy === app.provider}
+                className={`btn-sm w-full ${isConnected ? 'bg-success-600 text-white hover:bg-success-700' : 'btn-secondary'}`}
+              >
+                {isConnected ? <><Check size={14} /> {lang === 'fr' ? 'Connecté' : 'Connected'}</> : <><Plus size={14} /> {lang === 'fr' ? 'Connecter' : 'Connect'}</>}
+              </button>
             </div>
-            <button className="btn-secondary btn-sm w-full">
-              <Plus size={14} /> {lang === 'fr' ? 'Connecter' : 'Connect'}
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -54,11 +88,24 @@ export function ConnectedAppsPage() {
   const { language } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from('integrations').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setIntegrations((data || []) as Integration[]); setLoading(false); });
+    load();
   }, []);
+
+  async function load() {
+    const { data } = await supabase.from('integrations').select('*').order('created_at', { ascending: false });
+    setIntegrations((data || []) as Integration[]);
+    setLoading(false);
+  }
+
+  async function disconnect(id: string) {
+    setBusy(id);
+    await supabase.from('integrations').delete().eq('id', id);
+    setBusy(null);
+    load();
+  }
 
   if (loading) return <Loading text={t('common.loading', language)} />;
 
@@ -77,12 +124,19 @@ export function ConnectedAppsPage() {
                     <Plug size={18} />
                   </div>
                   <div>
-                    <p className="font-bold text-ink-800">{intg.provider}</p>
+                    <p className="font-bold text-ink-800 capitalize">{intg.provider}</p>
                     <p className="text-xs text-ink-500">{intg.category}</p>
                   </div>
                 </div>
                 <Badge variant={intg.status === 'connected' ? 'success' : 'neutral'}>{intg.status}</Badge>
               </div>
+              <button
+                onClick={() => disconnect(intg.id)}
+                disabled={busy === intg.id}
+                className="btn-secondary btn-sm w-full mt-4"
+              >
+                {busy === intg.id ? '...' : (language === 'fr' ? 'Déconnecter' : 'Disconnect')}
+              </button>
             </div>
           ))}
         </div>
@@ -122,11 +176,27 @@ export function APIWebhooksPage() {
     setApiKeys((data || []) as ApiKey[]);
   }
 
+  async function revokeKey(id: string) {
+    await supabase.from('api_keys').update({ active: false }).eq('id', id);
+    setApiKeys(prev => prev.map(k => k.id === id ? { ...k, active: false } : k));
+  }
+
   async function createWebhook() {
     await supabase.from('webhooks').insert({ url: whUrl, events: whEvents.split(',').map(e => e.trim()) });
     setModalOpen(false); setWhUrl(''); setWhEvents('');
     const { data } = await supabase.from('webhooks').select('*').order('created_at', { ascending: false });
     setWebhooks((data || []) as WebhookType[]);
+  }
+
+  async function toggleWebhook(wh: WebhookType) {
+    const next = !wh.active;
+    await supabase.from('webhooks').update({ active: next }).eq('id', wh.id);
+    setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: next } : w));
+  }
+
+  async function deleteWebhook(id: string) {
+    await supabase.from('webhooks').delete().eq('id', id);
+    setWebhooks(prev => prev.filter(w => w.id !== id));
   }
 
   if (loading) return <Loading text={t('common.loading', lang)} />;
@@ -156,6 +226,7 @@ export function APIWebhooksPage() {
                 <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Name</th>
                 <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Key</th>
                 <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Status</th>
+                <th className="w-20 px-4 py-3" />
               </tr></thead>
               <tbody>
                 {apiKeys.map(k => (
@@ -163,6 +234,13 @@ export function APIWebhooksPage() {
                     <td className="px-4 py-3 text-sm font-medium text-ink-800">{k.name}</td>
                     <td className="px-4 py-3 text-sm text-ink-500 font-mono">{k.key_prefix}••••</td>
                     <td className="px-4 py-3"><Badge variant={k.active ? 'success' : 'neutral'}>{k.active ? 'Active' : 'Revoked'}</Badge></td>
+                    <td className="px-4 py-3">
+                      {k.active && (
+                        <button onClick={() => revokeKey(k.id)} title="Revoke" className="p-1.5 rounded text-ink-400 hover:bg-error-50 hover:text-error-600 transition-colors">
+                          <Ban size={14} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -180,7 +258,15 @@ export function APIWebhooksPage() {
                   <p className="font-medium text-ink-800 font-mono text-sm">{wh.url}</p>
                   <p className="text-xs text-ink-500 mt-0.5">{wh.events.join(', ')}</p>
                 </div>
-                <Badge variant={wh.active ? 'success' : 'neutral'}>{wh.active ? 'Active' : 'Disabled'}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={wh.active ? 'success' : 'neutral'}>{wh.active ? 'Active' : 'Disabled'}</Badge>
+                  <button onClick={() => toggleWebhook(wh)} title={wh.active ? 'Disable' : 'Enable'} className="p-1.5 rounded text-ink-400 hover:bg-ink-100 hover:text-ink-700 transition-colors">
+                    <Plug size={14} />
+                  </button>
+                  <button onClick={() => deleteWebhook(wh.id)} title="Delete" className="p-1.5 rounded text-ink-400 hover:bg-error-50 hover:text-error-600 transition-colors">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -105,6 +105,50 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, organization, language, signOut } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const searchRoutes: Record<string, string> = {
+    contact: '/app/contacts', contacts: '/app/contacts', client: '/app/contacts', clients: '/app/contacts',
+    company: '/app/companies', companies: '/app/companies',
+    lead: '/app/leads', leads: '/app/leads', prospect: '/app/leads',
+    deal: '/app/deals', deals: '/app/deals', opportunity: '/app/deals',
+    pipeline: '/app/pipelines', pipelines: '/app/pipelines',
+    activity: '/app/activities', activities: '/app/activities', task: '/app/activities', tasks: '/app/activities',
+    calendar: '/app/calendar',
+    product: '/app/products', products: '/app/products', catalog: '/app/products',
+    quote: '/app/quotes', quotes: '/app/quotes', devis: '/app/quotes',
+    order: '/app/orders', orders: '/app/orders', commande: '/app/orders',
+    invoice: '/app/invoices', invoices: '/app/invoices', facture: '/app/invoices',
+    payment: '/app/payments', payments: '/app/payments', paiement: '/app/payments',
+    marketing: '/app/marketing', campaign: '/app/marketing', campagne: '/app/marketing',
+    support: '/app/support', ticket: '/app/support', tickets: '/app/support',
+    ai: '/app/ai-employees', agent: '/app/ai-employees', agents: '/app/ai-employees', 'ai employee': '/app/ai-employees',
+    'ai task': '/app/ai-tasks', 'ai tasks': '/app/ai-tasks',
+    workflow: '/app/ai-workflows', workflows: '/app/ai-workflows',
+    memory: '/app/ai-memory', knowledge: '/app/knowledge-base', 'knowledge base': '/app/knowledge-base',
+    report: '/app/reports', reports: '/app/reports', rapport: '/app/reports',
+    dashboard: '/app/dashboards', dashboards: '/app/dashboards',
+    insight: '/app/ai-insights', insights: '/app/ai-insights',
+    employee: '/app/employees', employees: '/app/employees', employé: '/app/employees', team: '/app/teams', teams: '/app/teams',
+    permission: '/app/permissions', permissions: '/app/permissions', role: '/app/permissions', roles: '/app/permissions',
+    marketplace: '/app/marketplace', integration: '/app/connected-apps', integrations: '/app/connected-apps', 'connected app': '/app/connected-apps',
+    webhook: '/app/api-webhooks', api: '/app/api-webhooks', 'api key': '/app/api-webhooks',
+    notification: '/app/notifications', notifications: '/app/notifications',
+    audit: '/app/audit-log', 'audit log': '/app/audit-log',
+    setting: '/app/settings', settings: '/app/settings', paramètre: '/app/settings',
+    billing: '/app/billing', plan: '/app/billing',
+    usage: '/app/usage', utilisation: '/app/usage',
+    approval: '/app/approvals', approvals: '/app/approvals', approbation: '/app/approvals',
+    atlas: '/app/ask-atlas', 'ask atlas': '/app/ask-atlas',
+  };
+
+  function runSearch(e: React.KeyboardEvent) {
+    if (e.key !== 'Enter') return;
+    const q = search.trim().toLowerCase();
+    if (!q) return;
+    const match = searchRoutes[q] || Object.entries(searchRoutes).find(([k]) => k.includes(q))?.[1];
+    if (match) { navigate(match); setSearch(''); }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-ink-50">
@@ -162,12 +206,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <input
                 className="w-full pl-9 pr-3 py-1.5 text-sm bg-ink-50 border border-ink-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                 placeholder={t('common.search', language)}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={runSearch}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg text-ink-500 hover:bg-ink-100 transition-colors">
+            <button onClick={() => navigate('/app/notifications')} className="relative p-2 rounded-lg text-ink-500 hover:bg-ink-100 transition-colors">
               <Bell size={18} />
               <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-error-500 rounded-full" />
             </button>

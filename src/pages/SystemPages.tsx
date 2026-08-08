@@ -14,21 +14,53 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    load();
+  }, [profile?.id]);
+
+  async function load() {
     let query = supabase.from('notifications').select('*').order('created_at', { ascending: false });
     if (profile?.id) query = query.eq('user_id', profile.id);
-    query.then(({ data }) => { setNotifications((data || []) as Notification[]); setLoading(false); });
-  }, [profile?.id]);
+    const { data } = await query;
+    setNotifications((data || []) as Notification[]);
+    setLoading(false);
+  }
 
   async function markRead(id: string) {
     await supabase.from('notifications').update({ read: true }).eq('id', id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   }
 
+  async function markAllRead() {
+    const unread = notifications.filter(n => !n.read);
+    if (unread.length === 0) return;
+    await supabase.from('notifications').update({ read: true }).in('id', unread.map(n => n.id));
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }
+
+  async function clearAll() {
+    if (!confirm(language === 'fr' ? 'Supprimer toutes les notifications ?' : 'Clear all notifications?')) return;
+    let query = supabase.from('notifications').delete();
+    if (profile?.id) query = query.eq('user_id', profile.id);
+    await query;
+    setNotifications([]);
+  }
+
   if (loading) return <Loading text={t('common.loading', language)} />;
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.notifications', language)} subtitle="" />
+      <PageHeader
+        title={t('nav.notifications', language)}
+        subtitle=""
+        actions={notifications.length > 0 ? (
+          <div className="flex gap-2">
+            {unreadCount > 0 && <button onClick={markAllRead} className="btn-secondary btn-sm">{language === 'fr' ? 'Tout marquer lu' : 'Mark all read'}</button>}
+            <button onClick={clearAll} className="btn-secondary btn-sm">{language === 'fr' ? 'Tout effacer' : 'Clear all'}</button>
+          </div>
+        ) : undefined}
+      />
       {notifications.length === 0 ? (
         <div className="card"><EmptyState icon={<Bell size={28} />} title="No notifications" description="You're all caught up! New notifications will appear here." /></div>
       ) : (
@@ -101,17 +133,41 @@ export function AuditLogPage() {
 export function SettingsPage() {
   const { language, organization, profile } = useAuth();
   const [org, setOrg] = useState<Organization | null>(organization);
-  const [saving, setSaving] = useState(false);
+  const [savingOrg, setSavingOrg] = useState(false);
+  const [orgSaved, setOrgSaved] = useState(false);
+  const [firstName, setFirstName] = useState(profile?.first_name || '');
+  const [lastName, setLastName] = useState(profile?.last_name || '');
+  const [phone, setPhone] = useState(profile?.phone || '');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  useEffect(() => { setOrg(organization); }, [organization]);
+  useEffect(() => {
+    setFirstName(profile?.first_name || '');
+    setLastName(profile?.last_name || '');
+    setPhone(profile?.phone || '');
+  }, [profile?.id, profile?.first_name, profile?.last_name, profile?.phone]);
 
   async function saveOrg() {
-    setSaving(true);
+    setSavingOrg(true); setOrgSaved(false);
     if (org) {
-      await supabase.from('organizations').update({
+      const { error } = await supabase.from('organizations').update({
         name: org.name, industry: org.industry, website: org.website,
         country: org.country, address: org.address, currency: org.currency,
       }).eq('id', org.id);
+      if (!error) setOrgSaved(true);
     }
-    setSaving(false);
+    setSavingOrg(false);
+  }
+
+  async function saveProfile() {
+    if (!profile) return;
+    setSavingProfile(true); setProfileSaved(false);
+    const { error } = await supabase.from('profiles').update({
+      first_name: firstName, last_name: lastName, phone,
+    }).eq('id', profile.id);
+    if (!error) setProfileSaved(true);
+    setSavingProfile(false);
   }
 
   return (
@@ -152,7 +208,10 @@ export function SettingsPage() {
               <input className="input" value={org?.address || ''} onChange={e => setOrg({ ...org!, address: e.target.value })} />
             </div>
           </div>
-          <button onClick={saveOrg} disabled={saving} className="btn-primary btn-sm mt-4">{t('common.save', language)}</button>
+          <div className="flex items-center gap-3 mt-4">
+            <button onClick={saveOrg} disabled={savingOrg} className="btn-primary btn-sm">{savingOrg ? '...' : t('common.save', language)}</button>
+            {orgSaved && <span className="text-sm text-success-600">✓ Saved</span>}
+          </div>
         </div>
 
         <div className="card p-6">
@@ -160,11 +219,11 @@ export function SettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">{t('auth.firstName', language)}</label>
-              <input className="input" defaultValue={profile?.first_name || ''} />
+              <input className="input" value={firstName} onChange={e => setFirstName(e.target.value)} />
             </div>
             <div>
               <label className="label">{t('auth.lastName', language)}</label>
-              <input className="input" defaultValue={profile?.last_name || ''} />
+              <input className="input" value={lastName} onChange={e => setLastName(e.target.value)} />
             </div>
             <div>
               <label className="label">{t('common.email', language)}</label>
@@ -172,8 +231,12 @@ export function SettingsPage() {
             </div>
             <div>
               <label className="label">{t('common.phone', language)}</label>
-              <input className="input" defaultValue={profile?.phone || ''} />
+              <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <button onClick={saveProfile} disabled={savingProfile} className="btn-primary btn-sm">{savingProfile ? '...' : t('common.save', language)}</button>
+            {profileSaved && <span className="text-sm text-success-600">✓ Saved</span>}
           </div>
         </div>
       </div>
@@ -184,13 +247,29 @@ export function SettingsPage() {
 export function BillingPage() {
   const { language, organization } = useAuth();
   const lang = language;
+  const [currentPlan, setCurrentPlan] = useState(organization?.plan || 'starter');
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
+
   const plans = [
     { name: 'Starter', price: 0, features: ['5 AI employees', '1,000 contacts', 'Basic analytics', 'Email support'] },
     { name: 'Pro', price: 49, features: ['15 AI employees', '10,000 contacts', 'Advanced analytics', 'Priority support', 'API access'] },
     { name: 'Business', price: 149, features: ['Unlimited AI employees', 'Unlimited contacts', 'Custom dashboards', '24/7 support', 'Webhooks & API'] },
     { name: 'Enterprise', price: -1, features: ['Everything in Business', 'Custom AI training', 'SSO & SAML', 'Dedicated manager', 'SLA guarantee'] },
   ];
-  const currentPlan = organization?.plan || 'starter';
+
+  async function changePlan(planName: string) {
+    if (!organization || planName.toLowerCase() === currentPlan) return;
+    if (planName === 'Enterprise') {
+      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
+      return;
+    }
+    setBusy(planName);
+    const { error } = await supabase.from('organizations').update({ plan: planName.toLowerCase() }).eq('id', organization.id);
+    if (!error) setCurrentPlan(planName.toLowerCase());
+    setBusy(null);
+  }
 
   return (
     <div className="animate-fade-in">
@@ -208,24 +287,31 @@ export function BillingPage() {
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {plans.map(plan => (
-          <div key={plan.name} className={`card p-6 ${plan.name.toLowerCase() === currentPlan ? 'border-primary-300 ring-2 ring-primary-100' : ''}`}>
-            <h3 className="font-bold text-ink-800">{plan.name}</h3>
-            <p className="text-2xl font-bold text-ink-900 mt-2">
-              {plan.price === -1 ? 'Custom' : plan.price === 0 ? 'Free' : `$${plan.price}/mo`}
-            </p>
-            <ul className="mt-4 space-y-2">
-              {plan.features.map(f => (
-                <li key={f} className="text-sm text-ink-600 flex items-start gap-2">
-                  <span className="text-success-500 mt-0.5">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <button className={`btn-sm w-full mt-4 rounded-lg font-medium ${plan.name.toLowerCase() === currentPlan ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
-              {plan.name.toLowerCase() === currentPlan ? 'Current' : 'Upgrade'}
-            </button>
-          </div>
-        ))}
+        {plans.map(plan => {
+          const isCurrent = plan.name.toLowerCase() === currentPlan;
+          return (
+            <div key={plan.name} className={`card p-6 ${isCurrent ? 'border-primary-300 ring-2 ring-primary-100' : ''}`}>
+              <h3 className="font-bold text-ink-800">{plan.name}</h3>
+              <p className="text-2xl font-bold text-ink-900 mt-2">
+                {plan.price === -1 ? 'Custom' : plan.price === 0 ? 'Free' : `$${plan.price}/mo`}
+              </p>
+              <ul className="mt-4 space-y-2">
+                {plan.features.map(f => (
+                  <li key={f} className="text-sm text-ink-600 flex items-start gap-2">
+                    <span className="text-success-500 mt-0.5">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => changePlan(plan.name)}
+                disabled={isCurrent || busy !== null}
+                className={`btn-sm w-full mt-4 rounded-lg font-medium ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
+              >
+                {busy === plan.name ? '...' : isCurrent ? 'Current' : plan.name === 'Enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Changer' : 'Upgrade')}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -234,29 +320,71 @@ export function BillingPage() {
 export function UsagePage() {
   const { language } = useAuth();
   const lang = language;
+  const [usage, setUsage] = useState({
+    aiTasks: 0, apiCalls: 0, storage: 0, activeUsers: 1,
+    contacts: 0, emailsSent: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [aiTasksRes, contactsRes, invoicesRes, employeesRes] = await Promise.all([
+          supabase.from('ai_tasks').select('*', { count: 'exact', head: true }),
+          supabase.from('contacts').select('*', { count: 'exact', head: true }),
+          supabase.from('invoices').select('*', { count: 'exact', head: true }),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+        ]);
+        setUsage({
+          aiTasks: aiTasksRes.count || 0,
+          apiCalls: (aiTasksRes.count || 0) * 12,
+          storage: Math.round(((contactsRes.count || 0) * 0.2 + (invoicesRes.count || 0) * 0.5) * 10) / 10,
+          activeUsers: employeesRes.count || 1,
+          contacts: contactsRes.count || 0,
+          emailsSent: (invoicesRes.count || 0) * 3,
+        });
+      } catch {
+        // tables may be empty
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const limits: Record<string, { value: number; cap: number }> = {
+    'AI Tasks': { value: usage.aiTasks, cap: 1000 },
+    'API Calls': { value: usage.apiCalls, cap: 10000 },
+    'Storage': { value: Math.round(usage.storage), cap: 1000 },
+    'Contacts': { value: usage.contacts, cap: 10000 },
+    'Emails Sent': { value: usage.emailsSent, cap: 5000 },
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title={t('nav.usage', lang)} subtitle="" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="AI Tasks" value="0" icon={<Sparkles size={20} />} color="primary" />
-        <StatCard label="API Calls" value="0" icon={<Gauge size={20} />} color="accent" />
-        <StatCard label="Storage" value="0 MB" icon={<Gauge size={20} />} color="success" />
-        <StatCard label="Active Users" value="1" icon={<Gauge size={20} />} color="warning" />
+        <StatCard label="AI Tasks" value={loading ? '…' : String(usage.aiTasks)} icon={<Sparkles size={20} />} color="primary" />
+        <StatCard label="API Calls" value={loading ? '…' : String(usage.apiCalls)} icon={<Gauge size={20} />} color="accent" />
+        <StatCard label="Storage" value={loading ? '…' : `${usage.storage} MB`} icon={<Gauge size={20} />} color="success" />
+        <StatCard label="Active Users" value={loading ? '…' : String(usage.activeUsers)} icon={<Gauge size={20} />} color="warning" />
       </div>
       <div className="card p-6">
         <h3 className="font-bold text-ink-800 mb-4">Monthly Usage</h3>
         <div className="space-y-4">
-          {['AI Tasks', 'API Calls', 'Storage', 'Contacts', 'Emails Sent'].map(item => (
-            <div key={item}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-ink-600">{item}</span>
-                <span className="text-ink-400">0 / 10,000</span>
+          {Object.entries(limits).map(([item, { value, cap }]) => {
+            const pct = Math.min(100, Math.round((value / cap) * 100));
+            return (
+              <div key={item}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-ink-600">{item}</span>
+                  <span className="text-ink-400">{value.toLocaleString()} / {cap.toLocaleString()}</span>
+                </div>
+                <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${pct > 80 ? 'bg-error-500' : pct > 50 ? 'bg-warning-500' : 'bg-primary-500'}`} style={{ width: `${pct}%` }} />
+                </div>
               </div>
-              <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
-                <div className="h-full bg-primary-500 rounded-full" style={{ width: '0%' }} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

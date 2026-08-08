@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DollarSign, UserPlus, Flame, Handshake, AlertTriangle,
   Calendar, CheckCircle, Receipt, LifeBuoy, Bot, Clock,
@@ -27,11 +28,14 @@ interface DashboardStats {
 
 export function DashboardPage() {
   const { language, profile, organization } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([]);
   const [aiTasks, setAiTasks] = useState<AITask[]>([]);
   const [loading, setLoading] = useState(true);
+  const [command, setCommand] = useState('');
+  const [busyApproval, setBusyApproval] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboard();
@@ -86,6 +90,22 @@ export function DashboardPage() {
     }
   }
 
+  async function decideApproval(id: string, decision: 'approved' | 'rejected') {
+    setBusyApproval(id);
+    await supabase.from('approvals').update({
+      status: decision,
+      decided_at: new Date().toISOString(),
+      decided_by: profile?.id || null,
+    }).eq('id', id);
+    setPendingApprovals(prev => prev.filter(a => a.id !== id));
+    setBusyApproval(null);
+  }
+
+  function runCommand() {
+    if (!command.trim()) return;
+    navigate('/app/ask-atlas');
+  }
+
   if (loading) return <Loading fullPage text={t('common.loading', language)} />;
 
   const lang = language;
@@ -112,9 +132,12 @@ export function DashboardPage() {
             <input
               className="w-full mt-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
               placeholder={t('dash.askPlaceholder', lang)}
+              value={command}
+              onChange={e => setCommand(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && runCommand()}
             />
           </div>
-          <button className="btn bg-white text-primary-700 hover:bg-white/90 font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-1.5">
+          <button onClick={runCommand} className="btn bg-white text-primary-700 hover:bg-white/90 font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-1.5">
             <Zap size={16} />
             {lang === 'fr' ? 'Exécuter' : 'Execute'}
           </button>
@@ -182,10 +205,18 @@ export function DashboardPage() {
                     <p className="text-xs text-ink-500">{ap.agent_name} · {ap.action_type}</p>
                   </div>
                   <div className="flex gap-1 flex-shrink-0">
-                    <button className="btn-sm btn-success bg-success-600 text-white hover:bg-success-700 px-2 py-1 rounded text-xs">
+                    <button
+                      onClick={() => decideApproval(ap.id, 'approved')}
+                      disabled={busyApproval === ap.id}
+                      className="btn-sm bg-success-600 text-white hover:bg-success-700 px-2 py-1 rounded text-xs disabled:opacity-50"
+                    >
                       {t('common.approve', lang)}
                     </button>
-                    <button className="btn-sm btn-danger bg-error-500 text-white hover:bg-error-600 px-2 py-1 rounded text-xs">
+                    <button
+                      onClick={() => decideApproval(ap.id, 'rejected')}
+                      disabled={busyApproval === ap.id}
+                      className="btn-sm bg-error-500 text-white hover:bg-error-600 px-2 py-1 rounded text-xs disabled:opacity-50"
+                    >
                       {t('common.reject', lang)}
                     </button>
                   </div>
