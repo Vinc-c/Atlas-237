@@ -277,6 +277,43 @@ ALTER TABLE public.employee_kpis ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "super admins manage kpis" ON public.employee_kpis FOR ALL USING (public.is_super_admin(auth.uid()));
 
 -- ============================================================
+-- 7b. TEAMS (tenant-level team management)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.teams (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  lead_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (org_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS public.team_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text DEFAULT 'member',
+  created_at timestamptz DEFAULT now(),
+  UNIQUE (team_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_teams_org_id ON public.teams(org_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON public.team_members(team_id);
+
+ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "org members read teams" ON public.teams FOR SELECT
+  USING (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid()));
+CREATE POLICY "org admins manage teams" ON public.teams FOR ALL
+  USING (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid() AND role IN ('owner','admin')));
+CREATE POLICY "org members read team_members" ON public.team_members FOR SELECT
+  USING (team_id IN (SELECT id FROM public.teams WHERE org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid())));
+CREATE POLICY "org admins manage team_members" ON public.team_members FOR ALL
+  USING (team_id IN (SELECT id FROM public.teams WHERE org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid() AND role IN ('owner','admin'))));
+
+-- ============================================================
 -- 8. DEFAULT RBAC roles per new org (trigger on organization insert)
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.seed_default_rbac_roles()
@@ -290,44 +327,28 @@ DECLARE
   admin_role_id uuid;
   member_role_id uuid;
 BEGIN
-  -- Owner role (full access)
+  -- Owner role (full access to all modules)
   INSERT INTO public.rbac_roles (org_id, name, description, scope, is_system)
   VALUES (NEW.id, 'Owner', 'Full access', 'tenant', true)
   RETURNING id INTO owner_role_id;
 
-  INSERT INTO public.rbac_permissions (role_id, module, action)
-  SELECT owner_role_id, m.module, a.action
-  FROM (VALUES
-    ('contacts','read'),('contacts','write'),('contacts','delete'),('contacts','export'),
-    ('companies','read'),('companies','write'),('companies','delete'),('companies','export'),
-    ('leads','read'),('leads','write'),('leads','delete'),('leads','export'),
-    ('deals','read'),('deals','write'),('deals','delete'),('deals','export'),
-    ('invoices','read'),('invoices','write'),('invoices','delete'),('invoices','export'),
-    ('reports','read'),('reports','write'),('reports','export'),
-    ('team','read'),('team','write'),
-    ('settings','read'),('settings','write'),
-    ('billing','read'),('billing','write')
-  ) AS m(module)
-  CROSS JOIN (VALUES ('read'),('write'),('delete'),('export')) AS a(action)
-  WHERE (m.module, a.action) IN (
-    ('contacts','read'),('contacts','write'),('contacts','delete'),('contacts','export'),
-    ('companies','read'),('companies','write'),('companies','delete'),('companies','export'),
-    ('leads','read'),('leads','write'),('leads','delete'),('leads','export'),
-    ('deals','read'),('deals','write'),('deals','delete'),('deals','export'),
-    ('invoices','read'),('invoices','write'),('invoices','delete'),('invoices','export'),
-    ('reports','read'),('reports','write'),('reports','export'),
-    ('team','read'),('team','write'),
-    ('settings','read'),('settings','write'),
-    ('billing','read'),('billing','write')
-  );
+  INSERT INTO public.rbac_permissions (role_id, module, action) VALUES
+    (owner_role_id, 'contacts', 'read'), (owner_role_id, 'contacts', 'write'), (owner_role_id, 'contacts', 'delete'), (owner_role_id, 'contacts', 'export'),
+    (owner_role_id, 'companies', 'read'), (owner_role_id, 'companies', 'write'), (owner_role_id, 'companies', 'delete'), (owner_role_id, 'companies', 'export'),
+    (owner_role_id, 'leads', 'read'), (owner_role_id, 'leads', 'write'), (owner_role_id, 'leads', 'delete'), (owner_role_id, 'leads', 'export'),
+    (owner_role_id, 'deals', 'read'), (owner_role_id, 'deals', 'write'), (owner_role_id, 'deals', 'delete'), (owner_role_id, 'deals', 'export'),
+    (owner_role_id, 'invoices', 'read'), (owner_role_id, 'invoices', 'write'), (owner_role_id, 'invoices', 'delete'), (owner_role_id, 'invoices', 'export'),
+    (owner_role_id, 'reports', 'read'), (owner_role_id, 'reports', 'write'), (owner_role_id, 'reports', 'export'),
+    (owner_role_id, 'team', 'read'), (owner_role_id, 'team', 'write'),
+    (owner_role_id, 'settings', 'read'), (owner_role_id, 'settings', 'write'),
+    (owner_role_id, 'billing', 'read'), (owner_role_id, 'billing', 'write');
 
   -- Admin role (most access, no billing delete)
   INSERT INTO public.rbac_roles (org_id, name, description, scope, is_system)
   VALUES (NEW.id, 'Admin', 'Administrative access', 'tenant', true)
   RETURNING id INTO admin_role_id;
 
-  INSERT INTO public.rbac_permissions (role_id, module, action)
-  VALUES
+  INSERT INTO public.rbac_permissions (role_id, module, action) VALUES
     (admin_role_id, 'contacts', 'read'), (admin_role_id, 'contacts', 'write'), (admin_role_id, 'contacts', 'delete'), (admin_role_id, 'contacts', 'export'),
     (admin_role_id, 'companies', 'read'), (admin_role_id, 'companies', 'write'), (admin_role_id, 'companies', 'delete'), (admin_role_id, 'companies', 'export'),
     (admin_role_id, 'leads', 'read'), (admin_role_id, 'leads', 'write'), (admin_role_id, 'leads', 'delete'), (admin_role_id, 'leads', 'export'),
@@ -335,15 +356,15 @@ BEGIN
     (admin_role_id, 'invoices', 'read'), (admin_role_id, 'invoices', 'write'),
     (admin_role_id, 'reports', 'read'), (admin_role_id, 'reports', 'export'),
     (admin_role_id, 'team', 'read'), (admin_role_id, 'team', 'write'),
-    (admin_role_id, 'settings', 'read'), (admin_role_id, 'settings', 'write');
+    (admin_role_id, 'settings', 'read'), (admin_role_id, 'settings', 'write'),
+    (admin_role_id, 'billing', 'read');
 
-  -- Member role (read-only + basic write)
+  -- Member role (read-only + basic CRM write)
   INSERT INTO public.rbac_roles (org_id, name, description, scope, is_system)
   VALUES (NEW.id, 'Member', 'Basic access', 'tenant', true)
   RETURNING id INTO member_role_id;
 
-  INSERT INTO public.rbac_permissions (role_id, module, action)
-  VALUES
+  INSERT INTO public.rbac_permissions (role_id, module, action) VALUES
     (member_role_id, 'contacts', 'read'), (member_role_id, 'contacts', 'write'),
     (member_role_id, 'companies', 'read'),
     (member_role_id, 'leads', 'read'), (member_role_id, 'leads', 'write'),
@@ -360,11 +381,14 @@ CREATE TRIGGER on_organization_created_seed_rbac
   FOR EACH ROW EXECUTE FUNCTION public.seed_default_rbac_roles();
 
 -- ============================================================
--- 9. PLATFORM-LEVEL RBAC roles (Super Admin scope)
+-- 9. PLATFORM-LEVEL RBAC role (Super Admin scope)
+-- Use WHERE NOT EXISTS to avoid duplicate (NULL org_id breaks ON CONFLICT)
 -- ============================================================
 INSERT INTO public.rbac_roles (org_id, name, description, scope, is_system)
-VALUES (NULL, 'Super Admin', 'Full platform access', 'platform', true)
-ON CONFLICT DO NOTHING;
+SELECT NULL, 'Super Admin', 'Full platform access', 'platform', true
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.rbac_roles WHERE org_id IS NULL AND name = 'Super Admin'
+);
 
 -- ============================================================
 -- 10. RLS for super_admins table (only super admins can read/manage)
@@ -381,6 +405,10 @@ CREATE POLICY "super admins read platform audit" ON public.platform_audit_log FO
 -- 12. UPDATE handle_new_user to capture international onboarding fields
 -- (country, currency, timezone, sales_code) from signup metadata
 -- ============================================================
+
+-- Add status column to organizations (for super admin suspend/reactivate)
+ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS status text DEFAULT 'active';
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql

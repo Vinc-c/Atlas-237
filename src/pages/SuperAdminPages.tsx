@@ -290,10 +290,10 @@ export function SuperAdminUsersPage() {
   async function toggleSuspend(orgId: string, currentStatus: string) {
     if (!user) return;
     const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
-    await supabase.from('organizations').update({ /* no status column — use a flag */ }).eq('id', orgId);
-    // Log impersonation/suspend action
+    const { error } = await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId);
+    if (error) { alert(error.message); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: newStatus === 'suspended' ? 'user.suspend' : 'user.reactivate', p_target_type: 'organization', p_target_id: orgId });
-    alert(`Tenant ${newStatus === 'suspended' ? 'suspended' : 'reactivated'} (demo — requires backend policy).`);
+    await load();
   }
 
   if (loading) return <Loading />;

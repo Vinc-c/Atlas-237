@@ -18,6 +18,7 @@ export interface Organization {
   logo_url: string | null;
   branding_enabled: boolean;
   signup_sales_code: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }

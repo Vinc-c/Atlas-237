@@ -11,7 +11,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { COUNTRIES, CURRENCIES, TIMEZONES, getCurrency } from '@/lib/i18n-countries';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
-import type { Notification, AuditLog, Organization } from '@/types';
+import { getPlanFeatures, hasFeature } from '@/lib/plans';
+import type { Notification, AuditLog, Organization, Plan } from '@/types';
 
 export function NotificationsPage() {
   const { language, profile } = useAuth();
@@ -303,8 +304,7 @@ function BrandingTab({ language, organization, onSave }: { language: any; organi
   const [saved, setSaved] = useState(false);
 
   const plan = organization?.plan || 'starter';
-  // Branding/logo upload available on paid plans (growth, pro, enterprise)
-  const brandingAllowed = ['growth', 'pro', 'enterprise'].includes(plan);
+  const brandingAllowed = hasFeature(plan as Plan, 'customBranding');
 
   useEffect(() => {
     setLogoUrl(organization?.logo_url || '');
@@ -577,10 +577,10 @@ export function BillingPage() {
   useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
 
   const plans = [
-    { name: 'Starter', key: 'starter', price: 19, features: [lang === 'fr' ? '5 employés IA' : '5 AI employees', lang === 'fr' ? '1 000 contacts' : '1,000 contacts', lang === 'fr' ? 'Analytique de base' : 'Basic analytics', lang === 'fr' ? 'Support e-mail' : 'Email support'] },
-    { name: 'Growth', key: 'growth', price: 49, features: [lang === 'fr' ? '15 employés IA' : '15 AI employees', lang === 'fr' ? '10 000 contacts' : '10,000 contacts', lang === 'fr' ? 'Analytique avancée' : 'Advanced analytics', lang === 'fr' ? 'Support prioritaire' : 'Priority support', lang === 'fr' ? 'Accès API' : 'API access'] },
-    { name: 'Pro', key: 'pro', price: 119, features: [lang === 'fr' ? 'Employés IA illimités' : 'Unlimited AI employees', lang === 'fr' ? 'Contacts illimités' : 'Unlimited contacts', lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards', lang === 'fr' ? 'Support 24/7' : '24/7 support', lang === 'fr' ? 'Webhooks & API' : 'Webhooks & API'] },
-    { name: 'Enterprise', key: 'enterprise', price: -1, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', 'SSO & SAML', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
+    { name: 'Starter', key: 'starter', price: 19, features: [lang === 'fr' ? '5 employés IA' : '5 AI employees', lang === 'fr' ? '3 utilisateurs' : '3 users', lang === 'fr' ? 'Contacts illimités' : 'Unlimited contacts', lang === 'fr' ? 'Pipelines de ventes' : 'Sales pipelines', lang === 'fr' ? 'Support e-mail' : 'Email support'] },
+    { name: 'Growth', key: 'growth', price: 49, features: [lang === 'fr' ? '15 employés IA' : '15 AI employees', lang === 'fr' ? '10 utilisateurs' : '10 users', lang === 'fr' ? 'Analytique avancée' : 'Advanced analytics', lang === 'fr' ? 'Support prioritaire' : 'Priority support', lang === 'fr' ? 'Accès API & Webhooks' : 'API access & Webhooks'] },
+    { name: 'Pro', key: 'pro', price: 119, features: [lang === 'fr' ? 'Employés IA illimités' : 'Unlimited AI employees', lang === 'fr' ? '25 utilisateurs' : '25 users', lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards', lang === 'fr' ? 'SSO & SAML' : 'SSO & SAML', lang === 'fr' ? 'Support 24/7 + SLA' : '24/7 support + SLA'] },
+    { name: 'Enterprise', key: 'enterprise', price: -1, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
   ];
 
   async function changePlan(plan: typeof plans[number]) {
@@ -663,8 +663,10 @@ export function BillingPage() {
 }
 
 export function UsagePage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
   const lang = language;
+  const plan = organization?.plan || 'starter';
+  const features = getPlanFeatures(plan);
   const [usage, setUsage] = useState({
     aiTasks: 0, apiCalls: 0, storage: 0, activeUsers: 1,
     contacts: 0, emailsSent: 0,
@@ -696,36 +698,43 @@ export function UsagePage() {
     })();
   }, []);
 
-  const limits: Record<string, { value: number; cap: number }> = {
-    'AI Tasks': { value: usage.aiTasks, cap: 1000 },
-    'API Calls': { value: usage.apiCalls, cap: 10000 },
-    'Storage': { value: Math.round(usage.storage), cap: 1000 },
-    'Contacts': { value: usage.contacts, cap: 10000 },
-    'Emails Sent': { value: usage.emailsSent, cap: 5000 },
+  const contactCap = features.maxContacts === 'unlimited' ? null : features.maxContacts;
+  const aiCap = features.maxAIEmployees === 'unlimited' ? null : features.maxAIEmployees;
+  const userCap = features.maxUsers === 'unlimited' ? null : features.maxUsers;
+
+  const limits: Record<string, { value: number; cap: number | null }> = {
+    [lang === 'fr' ? 'Tâches IA' : 'AI Tasks']: { value: usage.aiTasks, cap: aiCap ? aiCap * 100 : null },
+    [lang === 'fr' ? 'Appels API' : 'API Calls']: { value: usage.apiCalls, cap: features.apiAccess ? null : 0 },
+    [lang === 'fr' ? 'Stockage' : 'Storage']: { value: Math.round(usage.storage), cap: null },
+    [lang === 'fr' ? 'Contacts' : 'Contacts']: { value: usage.contacts, cap: contactCap },
+    [lang === 'fr' ? 'Utilisateurs' : 'Users']: { value: usage.activeUsers, cap: userCap },
+    [lang === 'fr' ? 'E-mails envoyés' : 'Emails Sent']: { value: usage.emailsSent, cap: null },
   };
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.usage', lang)} subtitle="" />
+      <PageHeader title={t('nav.usage', lang)} subtitle={`${lang === 'fr' ? 'Plan actuel' : 'Current plan'}: ${plan}`} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="AI Tasks" value={loading ? '…' : String(usage.aiTasks)} icon={<Sparkles size={20} />} color="primary" />
-        <StatCard label="API Calls" value={loading ? '…' : String(usage.apiCalls)} icon={<Gauge size={20} />} color="accent" />
-        <StatCard label="Storage" value={loading ? '…' : `${usage.storage} MB`} icon={<Gauge size={20} />} color="success" />
-        <StatCard label="Active Users" value={loading ? '…' : String(usage.activeUsers)} icon={<Gauge size={20} />} color="warning" />
+        <StatCard label={lang === 'fr' ? 'Tâches IA' : 'AI Tasks'} value={loading ? '…' : String(usage.aiTasks)} icon={<Sparkles size={20} />} color="primary" />
+        <StatCard label={lang === 'fr' ? 'Appels API' : 'API Calls'} value={loading ? '…' : String(usage.apiCalls)} icon={<Gauge size={20} />} color="accent" />
+        <StatCard label={lang === 'fr' ? 'Stockage' : 'Storage'} value={loading ? '…' : `${usage.storage} MB`} icon={<Gauge size={20} />} color="success" />
+        <StatCard label={lang === 'fr' ? 'Utilisateurs actifs' : 'Active Users'} value={loading ? '…' : String(usage.activeUsers)} icon={<Gauge size={20} />} color="warning" />
       </div>
       <div className="card p-6">
-        <h3 className="font-bold text-ink-800 mb-4">Monthly Usage</h3>
+        <h3 className="font-bold text-ink-800 mb-1">{lang === 'fr' ? 'Utilisation mensuelle' : 'Monthly Usage'}</h3>
+        <p className="text-xs text-ink-400 mb-4">{lang === 'fr' ? `Limites selon votre plan ${plan}.` : `Limits based on your ${plan} plan.`}</p>
         <div className="space-y-4">
           {Object.entries(limits).map(([item, { value, cap }]) => {
-            const pct = Math.min(100, Math.round((value / cap) * 100));
+            const pct = cap ? Math.min(100, Math.round((value / cap) * 100)) : 0;
+            const capLabel = cap === null ? (lang === 'fr' ? 'Illimité' : 'Unlimited') : (cap === 0 ? (lang === 'fr' ? 'Non disponible' : 'Not available') : cap.toLocaleString());
             return (
               <div key={item}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-ink-600">{item}</span>
-                  <span className="text-ink-400">{value.toLocaleString()} / {cap.toLocaleString()}</span>
+                  <span className="text-ink-400">{value.toLocaleString()} / {capLabel}</span>
                 </div>
                 <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${pct > 80 ? 'bg-error-500' : pct > 50 ? 'bg-warning-500' : 'bg-primary-500'}`} style={{ width: `${pct}%` }} />
+                  <div className={`h-full rounded-full ${cap === 0 ? 'bg-ink-200' : pct > 80 ? 'bg-error-500' : pct > 50 ? 'bg-warning-500' : 'bg-primary-500'}`} style={{ width: `${cap === null || cap === 0 ? 0 : pct}%` }} />
                 </div>
               </div>
             );
