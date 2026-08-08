@@ -9,7 +9,7 @@
 - `npm run build` -> static SPA in `dist/`
 - Cloudflare Pages: build command `npm run build`, output dir `dist`.
 - `public/_redirects` (SPA fallback `/* /index.html 200`) and `public/_headers` are copied into `dist/` by Vite automatically.
-- Env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` must be set at build time; `src/lib/supabase.ts` throws if missing (runtime check).
+- Env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` should be set in Cloudflare for live auth/data. `src/lib/supabase.ts` now uses safe placeholder fallbacks (no longer throws), so the landing/auth pages render even without env vars. Use the exported `isSupabaseConfigured` flag to gate real backend calls.
 
 ## Tailwind config gotcha (important)
 `tailwind.config.js` must define the full color palettes used across the app:
@@ -18,6 +18,11 @@ plus `boxShadow.card / card-hover / sidebar`, `keyframes`/`animation` for
 `fade-in` and `slide-up`. `src/index.css` uses `@apply shadow-card`,
 `@apply animate-fade-in` etc., which FAIL the build if those tokens are missing.
 The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind shadow token).
+
+## Fonts
+- Glacial Indifference is self-hosted in `public/fonts/` (Regular + Bold `.woff`).
+- `@font-face` rules live at the top of `src/index.css` and reference `/fonts/*.woff` (absolute, served from Cloudflare origin).
+- `index.html` preloads both woff files. The font is applied globally via `html`/`body`/headings in `index.css` and the `glacial` family in `tailwind.config.js`.
 
 ## Data layer
 All CRUD goes through Supabase via `src/components/ListPage.tsx` (generic table editor)

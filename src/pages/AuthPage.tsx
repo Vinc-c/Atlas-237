@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, Globe, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, Globe, Loader2, ShieldCheck, TrendingUp, Headphones, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
@@ -73,32 +73,69 @@ export function AuthPage() {
     }
   }
 
+  const highlights = [
+    { icon: TrendingUp, t: 'Pipelines & automatisation des ventes' },
+    { icon: Headphones, t: 'Service client unifié en temps réel' },
+    { icon: ShieldCheck, t: 'Sécurité RGPD & conformité multi-régions' },
+  ];
+
   return (
-    <div className="min-h-screen bg-ink-50 text-ink-900">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-6 py-10 sm:px-8 lg:px-10">
-        <div className="mb-10 flex flex-col gap-4 text-center sm:text-left">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-sm sm:mx-0">
-            <Sparkles size={22} />
+    <div className="min-h-screen bg-white text-ink-900">
+      <div className="grid min-h-screen lg:grid-cols-2">
+        {/* ───────── Brand / marketing panel ───────── */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-ink-950 p-10 text-white lg:flex xl:p-14">
+          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-600/30 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-accent-600/20 blur-3xl" />
+
+          <div className="relative">
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
+                <Sparkles size={20} />
+              </div>
+              <span className="text-xl font-bold tracking-tight">Atlas CRM</span>
+            </Link>
           </div>
-          <div>
-            <p className="text-base font-semibold uppercase tracking-[0.24em] text-primary-600">Atlas CRM</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-ink-950 sm:text-5xl">
-              Connexion et inscription sécurisées pour vos équipes.
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-ink-600">
-              Accédez à votre CRM avec une authentification simple, responsive et prête pour les équipes de Dubai et d’Afrique.
+
+          <div className="relative">
+            <h2 className="max-w-md text-3xl font-bold leading-tight tracking-tight xl:text-4xl">
+              La plateforme CRM propulsée par l’IA, pour les équipes ambitieuses.
+            </h2>
+            <p className="mt-5 max-w-md text-base leading-7 text-ink-300">
+              Ventes, service client et intelligence artificielle réunis sur un seul cloud. Conçu pour Dubai, l’Afrique et le monde.
             </p>
+            <ul className="mt-9 space-y-4">
+              {highlights.map((h) => (
+                <li key={h.t} className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-white/10 text-primary-300">
+                    <h.icon size={18} />
+                  </div>
+                  <span className="text-sm text-ink-200">{h.t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="relative flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+            <div className="flex -space-x-2">
+              {['AM', 'KO', 'RD'].map((i) => (
+                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink-950 bg-primary-500 text-[11px] font-bold text-white">{i}</div>
+              ))}
+            </div>
+            <p className="text-xs text-ink-300">Rejoint par plus de 150 000 professionnels à travers le monde.</p>
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-ink-200 bg-white p-8 shadow-card sm:p-10">
-          <div className="flex items-center justify-between gap-4 pb-6 sm:pb-8">
-            <div>
-              <p className="text-sm uppercase tracking-[0.32em] text-ink-500">{mode === 'login' ? 'Connexion' : mode === 'signup' ? 'Inscription' : 'Réinitialisation'}</p>
-              <h2 className="mt-3 text-2xl font-semibold text-ink-950">{mode === 'login' ? 'Bienvenue de retour' : mode === 'signup' ? 'Créer un compte Atlas' : 'Mot de passe oublié'}</h2>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl bg-ink-50 px-4 py-2 text-sm text-ink-500">
-              <Globe size={16} />
+        {/* ───────── Form panel ───────── */}
+        <div className="flex flex-col px-6 py-10 sm:px-10 lg:px-16">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2 lg:hidden">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-white">
+                <Sparkles size={18} />
+              </div>
+              <span className="text-lg font-bold">Atlas CRM</span>
+            </Link>
+            <div className="ml-auto flex items-center gap-2 rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-500">
+              <Globe size={15} />
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as Language)}
@@ -113,68 +150,114 @@ export function AuthPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === 'signup' && (
-              <div className="grid gap-4 sm:grid-cols-2">
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-ink-950">
+                {mode === 'login' ? t('auth.welcome', lang) : mode === 'signup' ? t('auth.createAccount', lang) : t('auth.resetPassword', lang)}
+              </h1>
+              <p className="mt-2 text-sm text-ink-500">
+                {mode === 'forgot' ? t('auth.forgotInstruction', lang) : t('auth.trialNote', lang)}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+              {mode === 'signup' && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="label">{t('auth.firstName', lang)}</span>
+                    <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  </label>
+                  <label className="block">
+                    <span className="label">{t('auth.lastName', lang)}</span>
+                    <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                  </label>
+                </div>
+              )}
+              {mode === 'signup' && (
                 <label className="block">
-                  <span className="label">{t('auth.firstName', lang)}</span>
-                  <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  <span className="label">{t('auth.companyName', lang)}</span>
+                  <input className="input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
                 </label>
-                <label className="block">
-                  <span className="label">{t('auth.lastName', lang)}</span>
-                  <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
-                </label>
-              </div>
-            )}
-            {mode === 'signup' && (
+              )}
               <label className="block">
-                <span className="label">{t('auth.companyName', lang)}</span>
-                <input className="input" value={companyName} onChange={(e) => setCompanyName(e.target.value)} required />
+                <span className="label">{t('auth.email', lang)}</span>
+                <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" />
               </label>
-            )}
-            <label className="block">
-              <span className="label">{t('auth.email', lang)}</span>
-              <input type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@company.com" />
-            </label>
+              {mode !== 'forgot' && (
+                <label className="block">
+                  <span className="label">{t('auth.password', lang)}</span>
+                  <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                </label>
+              )}
+
+              {mode === 'login' && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="flex items-center gap-2 text-sm text-ink-600">
+                    <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-primary-600 focus:ring-primary-500" />
+                    {t('auth.rememberMe', lang)}
+                  </label>
+                  <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                    {t('auth.forgotPassword', lang)}
+                  </button>
+                </div>
+              )}
+
+              {error && <div className="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">{error}</div>}
+              {message && <div className="rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">{message}</div>}
+
+              <button type="submit" disabled={submitting} className="btn-primary w-full btn-lg">
+                {submitting && <Loader2 size={18} className="animate-spin" />}
+                {mode === 'login' ? t('auth.login', lang) : mode === 'signup' ? t('auth.signup', lang) : t('auth.resetPassword', lang)}
+                {!submitting && <ArrowRight size={18} />}
+              </button>
+            </form>
+
             {mode !== 'forgot' && (
-              <label className="block">
-                <span className="label">{t('auth.password', lang)}</span>
-                <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-              </label>
-            )}
-
-            {mode === 'login' && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <label className="flex items-center gap-2 text-sm text-ink-600">
-                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-primary-600 focus:ring-primary-500" />
-                  {t('auth.rememberMe', lang)}
-                </label>
-                <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-                  {t('auth.forgotPassword', lang)}
-                </button>
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-px flex-1 bg-ink-100" />
+                <span className="text-xs font-medium uppercase tracking-wide text-ink-400">ou</span>
+                <div className="h-px flex-1 bg-ink-100" />
               </div>
             )}
 
-            {error && <div className="rounded-2xl border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">{error}</div>}
-            {message && <div className="rounded-2xl border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">{message}</div>}
+            {mode !== 'forgot' && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/app` } });
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : 'OAuth Google indisponible');
+                  }
+                }}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-ink-200 bg-white px-5 py-3 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-amber-500 text-[10px] font-bold text-white">G</span>
+                Continuer avec Google
+              </button>
+            )}
 
-            <button type="submit" disabled={submitting} className="btn-primary w-full btn-lg">
-              {submitting && <Loader2 size={18} className="animate-spin" />}
-              {mode === 'login' ? t('auth.login', lang) : mode === 'signup' ? t('auth.signup', lang) : t('auth.resetPassword', lang)}
-            </button>
-          </form>
+            {mode === 'signup' && (
+              <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-ink-500">
+                <CheckCircle2 size={15} className="mt-0.5 flex-none text-success-500" />
+                En créant un compte, vous acceptez les Conditions d’utilisation et la Politique de confidentialité d’Atlas CRM.
+              </p>
+            )}
 
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-ink-200 pt-6 text-sm text-ink-600 sm:flex-row">
-            <span>
-              {mode === 'forgot'
-                ? t('auth.forgotInstruction', lang)
-                : mode === 'login'
-                ? t('auth.noAccount', lang)
-                : t('auth.haveAccount', lang)}
-            </span>
-            <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
-              {mode === 'login' ? t('auth.signup', lang) : t('auth.login', lang)}
-            </button>
+            <div className="mt-8 border-t border-ink-100 pt-6 text-center text-sm text-ink-600">
+              {mode === 'forgot' ? (
+                <button onClick={() => { setMode('login'); setError(''); setMessage(''); }} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                  {t('auth.backToLogin', lang)}
+                </button>
+              ) : (
+                <span>
+                  {mode === 'login' ? t('auth.noAccount', lang) : t('auth.haveAccount', lang)}{' '}
+                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                    {mode === 'login' ? t('auth.signup', lang) : t('auth.login', lang)}
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
