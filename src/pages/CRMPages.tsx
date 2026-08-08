@@ -46,6 +46,7 @@ export function ContactsPage() {
       emptyTitle="No contacts yet"
       emptyDescription="Add your first contact to start building your CRM."
       orderBy="created_at"
+      importable
     />
   );
 }
@@ -127,6 +128,7 @@ export function LeadsPage() {
       emptyTitle="No leads yet"
       emptyDescription="Capture your first lead to start your sales pipeline."
       orderBy="created_at"
+      importable
     />
   );
 }

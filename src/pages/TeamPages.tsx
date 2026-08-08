@@ -1,4 +1,4 @@
-import { UserCog, UsersRound, ShieldCheck, Plus, Trash2, Loader2 } from 'lucide-react';
+import { UserCog, UsersRound, ShieldCheck, Plus, Trash2, Loader2, Search, UserPlus, Mail, Phone, Crown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -6,50 +6,196 @@ import { t } from '@/lib/i18n';
 import { PageHeader, Badge } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
+import { Modal } from '@/components/Modal';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
-import type { Profile } from '@/types';
+import type { Profile, Role } from '@/types';
+
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: 'owner', label: 'Owner' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'sales', label: 'Sales' },
+  { value: 'marketing', label: 'Marketing' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'support', label: 'Support' },
+  { value: 'member', label: 'Member' },
+];
 
 export function EmployeesPage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
+  const lang = language;
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [editEmp, setEditEmp] = useState<Profile | null>(null);
+  const [editRole, setEditRole] = useState<Role>('member');
+  const [saving, setSaving] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<Role>('member');
 
   useEffect(() => {
-    supabase.from('profiles').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setEmployees((data || []) as Profile[]); setLoading(false); });
-  }, []);
+    if (organization) load();
+  }, [organization?.id]);
+
+  async function load() {
+    const { data } = await supabase.from('profiles').select('*').eq('org_id', organization?.id).order('created_at', { ascending: false });
+    setEmployees((data || []) as Profile[]);
+    setLoading(false);
+  }
+
+  function openEdit(emp: Profile) {
+    setEditEmp(emp);
+    setEditRole(emp.role);
+  }
+
+  async function saveRole() {
+    if (!editEmp) return;
+    setSaving(true);
+    await supabase.from('profiles').update({ role: editRole }).eq('id', editEmp.id);
+    setEmployees(prev => prev.map(e => e.id === editEmp.id ? { ...e, role: editRole } : e));
+    setSaving(false);
+    setEditEmp(null);
+  }
+
+  async function toggleActive(emp: Profile) {
+    const next = !emp.active;
+    await supabase.from('profiles').update({ active: next }).eq('id', emp.id);
+    setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, active: next } : e));
+  }
+
+  async function sendInvite() {
+    if (!inviteEmail.trim() || !organization) return;
+    setSaving(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email: inviteEmail.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth?invite=${organization.id}` },
+    });
+    if (!error) {
+      setInviteEmail('');
+      setInviteRole('member');
+      setInviteOpen(false);
+      alert(lang === 'fr' ? 'Invitation envoyée !' : 'Invitation sent!');
+    } else {
+      alert(error.message);
+    }
+    setSaving(false);
+  }
 
   if (loading) return <Loading text={t('common.loading', language)} />;
 
+  const filtered = search
+    ? employees.filter(e => `${e.first_name} ${e.last_name} ${e.email}`.toLowerCase().includes(search.toLowerCase()))
+    : employees;
+
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.employees', language)} subtitle="" />
-      {employees.length === 0 ? (
-        <div className="card"><EmptyState icon={<UserCog size={28} />} title="No employees" description="Team members will appear here." /></div>
+      <PageHeader
+        title={t('nav.employees', language)}
+        subtitle=""
+        actions={
+          <button onClick={() => setInviteOpen(true)} className="btn-primary btn-sm">
+            <UserPlus size={16} /> {lang === 'fr' ? 'Inviter' : 'Invite'}
+          </button>
+        }
+      />
+      <div className="mb-4 relative max-w-sm">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+        <input className="input pl-9" placeholder={t('common.search', language)} value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
+      {filtered.length === 0 ? (
+        <div className="card"><EmptyState icon={<UserCog size={28} />} title={lang === 'fr' ? 'Aucun employé' : 'No employees'} description={lang === 'fr' ? 'Invitez des membres à rejoindre votre organisation.' : 'Invite team members to join your organization.'} /></div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {employees.map(emp => (
-            <div key={emp.id} className="card p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white text-lg font-bold">
+          {filtered.map(emp => (
+            <div key={emp.id} className="card p-5 group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-full text-white text-lg font-bold flex-shrink-0 ${emp.role === 'owner' ? 'bg-warning-500' : 'bg-primary-600'}`}>
                   {(emp.first_name?.[0] || emp.email[0]).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-ink-800 truncate">{emp.first_name} {emp.last_name}</p>
-                  <p className="text-sm text-ink-500 truncate">{emp.email}</p>
-                  <Badge variant={emp.role === 'owner' ? 'primary' : 'neutral'}>{emp.role}</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-ink-800 truncate">{emp.first_name} {emp.last_name}</p>
+                    {emp.role === 'owner' && <Crown size={14} className="text-warning-500 flex-shrink-0" />}
+                  </div>
+                  <p className="text-sm text-ink-500 truncate flex items-center gap-1"><Mail size={12} className="flex-shrink-0" /> {emp.email}</p>
+                  {emp.phone && <p className="text-xs text-ink-400 truncate flex items-center gap-1"><Phone size={10} className="flex-shrink-0" /> {emp.phone}</p>}
                 </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Badge variant={emp.role === 'owner' ? 'primary' : emp.role === 'admin' ? 'success' : 'neutral'}>{emp.role}</Badge>
+                <Badge variant={emp.active ? 'success' : 'neutral'}>{emp.active ? (lang === 'fr' ? 'Actif' : 'Active') : (lang === 'fr' ? 'Inactif' : 'Inactive')}</Badge>
+              </div>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-ink-50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                {emp.role !== 'owner' && (
+                  <>
+                    <button onClick={() => openEdit(emp)} className="btn-ghost btn-sm flex-1">
+                      <UserCog size={14} /> {lang === 'fr' ? 'Rôle' : 'Role'}
+                    </button>
+                    <button onClick={() => toggleActive(emp)} className="btn-secondary btn-sm flex-1">
+                      {emp.active ? (lang === 'fr' ? 'Désactiver' : 'Disable') : (lang === 'fr' ? 'Activer' : 'Enable')}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <Modal open={!!editEmp} onClose={() => setEditEmp(null)} title={lang === 'fr' ? 'Modifier le rôle' : 'Edit Role'} size="sm">
+        {editEmp && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-white font-bold">
+                {(editEmp.first_name?.[0] || editEmp.email[0]).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-medium text-ink-800">{editEmp.first_name} {editEmp.last_name}</p>
+                <p className="text-sm text-ink-500">{editEmp.email}</p>
+              </div>
+            </div>
+            <div>
+              <label className="label">{lang === 'fr' ? 'Rôle' : 'Role'}</label>
+              <select className="input" value={editRole} onChange={e => setEditRole(e.target.value as Role)}>
+                {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditEmp(null)} className="btn-secondary btn-sm">{t('common.cancel', lang)}</button>
+              <button onClick={saveRole} disabled={saving} className="btn-primary btn-sm">{t('common.save', lang)}</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title={lang === 'fr' ? 'Inviter un membre' : 'Invite Member'} size="sm">
+        <div className="space-y-4">
+          <div>
+            <label className="label">{lang === 'fr' ? 'Email' : 'Email'}</label>
+            <input className="input" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com" autoFocus />
+          </div>
+          <div>
+            <label className="label">{lang === 'fr' ? 'Rôle' : 'Role'}</label>
+            <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value as Role)}>
+              {ROLE_OPTIONS.filter(r => r.value !== 'owner').map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setInviteOpen(false)} className="btn-secondary btn-sm">{t('common.cancel', lang)}</button>
+            <button onClick={sendInvite} disabled={saving || !inviteEmail.trim()} className="btn-primary btn-sm">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />} {lang === 'fr' ? 'Envoyer' : 'Send'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
 
 export function TeamsPage() {
   const { language, organization } = useAuth();
+  const lang = language;
   const [teams, setTeams] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +204,11 @@ export function TeamsPage() {
   const [description, setDescription] = useState('');
   const [leadId, setLeadId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [manageTeam, setManageTeam] = useState<any | null>(null);
+  const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
+  const [addMemberId, setAddMemberId] = useState('');
 
-  useEffect(() => {
-    if (organization) load();
-  }, [organization?.id]);
+  useEffect(() => { if (organization) load(); }, [organization?.id]);
 
   async function load() {
     if (!organization) return;
@@ -78,10 +225,7 @@ export function TeamsPage() {
     if (!organization || !name.trim()) return;
     setSaving(true);
     const { error } = await supabase.from('teams').insert({
-      org_id: organization.id,
-      name,
-      description,
-      lead_id: leadId || null,
+      org_id: organization.id, name, description, lead_id: leadId || null,
     });
     if (!error) {
       setName(''); setDescription(''); setLeadId(''); setShowForm(false);
@@ -91,39 +235,60 @@ export function TeamsPage() {
   }
 
   async function deleteTeam(id: string) {
-    if (!confirm(language === 'fr' ? 'Supprimer cette équipe ?' : 'Delete this team?')) return;
+    if (!confirm(lang === 'fr' ? 'Supprimer cette équipe ?' : 'Delete this team?')) return;
     await supabase.from('teams').delete().eq('id', id);
     await load();
   }
 
+  async function openManage(team: any) {
+    setManageTeam(team);
+    const { data } = await supabase.from('team_members').select('profile_id').eq('team_id', team.id);
+    const memberIds = (data || []).map((m: any) => m.profile_id);
+    setTeamMembers(employees.filter(e => memberIds.includes(e.id)));
+  }
+
+  async function addMember() {
+    if (!manageTeam || !addMemberId) return;
+    await supabase.from('team_members').insert({ team_id: manageTeam.id, profile_id: addMemberId });
+    setTeamMembers(prev => [...prev, employees.find(e => e.id === addMemberId)!].filter(Boolean));
+    setAddMemberId('');
+  }
+
+  async function removeMember(profileId: string) {
+    if (!manageTeam) return;
+    await supabase.from('team_members').delete().eq('team_id', manageTeam.id).eq('profile_id', profileId);
+    setTeamMembers(prev => prev.filter(m => m.id !== profileId));
+  }
+
   if (loading) return <Loading text={t('common.loading', language)} />;
+
+  const availableToAdd = employees.filter(e => !teamMembers.find(m => m.id === e.id));
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.teams', language)} subtitle="" />
-      <div className="flex justify-end mb-4">
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm flex items-center gap-2">
-          <Plus size={14} /> {language === 'fr' ? 'Nouvelle équipe' : 'New Team'}
-        </button>
-      </div>
+      <PageHeader
+        title={t('nav.teams', language)}
+        subtitle=""
+        actions={<button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm flex items-center gap-2"><Plus size={14} /> {lang === 'fr' ? 'Nouvelle équipe' : 'New Team'}</button>}
+      />
 
       {showForm && (
         <div className="card p-6 mb-6 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">{language === 'fr' ? "Nom de l'équipe" : 'Team Name'}</label>
+              <label className="label">{lang === 'fr' ? "Nom de l'équipe" : 'Team Name'}</label>
               <input className="input" value={name} onChange={e => setName(e.target.value)} />
             </div>
             <div>
-              <label className="label">{language === 'fr' ? 'Responsable' : 'Team Lead'}</label>
+              <label className="label">{lang === 'fr' ? 'Responsable' : 'Team Lead'}</label>
               <select className="input" value={leadId} onChange={e => setLeadId(e.target.value)}>
-                <option value="">{language === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+                <option value="">{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
                 {employees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="label">{language === 'fr' ? 'Description' : 'Description'}</label>
+            <label className="label">{lang === 'fr' ? 'Description' : 'Description'}</label>
             <input className="input" value={description} onChange={e => setDescription(e.target.value)} />
           </div>
           <button onClick={createTeam} disabled={saving || !name.trim()} className="btn-primary btn-sm">
@@ -134,39 +299,87 @@ export function TeamsPage() {
 
       {teams.length === 0 ? (
         <div className="card">
-          <EmptyState icon={<UsersRound size={28} />} title={language === 'fr' ? 'Aucune équipe' : 'No teams yet'}
-            description={language === 'fr' ? 'Organisez vos employés en équipes pour une meilleure collaboration.' : 'Organize your employees into teams for better collaboration.'} />
+          <EmptyState icon={<UsersRound size={28} />} title={lang === 'fr' ? 'Aucune équipe' : 'No teams yet'}
+            description={lang === 'fr' ? 'Organisez vos employés en équipes pour une meilleure collaboration.' : 'Organize your employees into teams for better collaboration.'} />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {teams.map(team => (
-            <div key={team.id} className="card p-5 group">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
-                    <UsersRound size={24} />
+          {teams.map(team => {
+            const lead = employees.find(e => e.id === team.lead_id);
+            return (
+              <div key={team.id} className="card p-5 group">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600 flex-shrink-0">
+                      <UsersRound size={24} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-ink-800 truncate">{team.name}</p>
+                      <p className="text-sm text-ink-500 truncate">{team.description || '—'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-ink-800">{team.name}</p>
-                    <p className="text-sm text-ink-500">{team.description || '—'}</p>
-                  </div>
+                  <button onClick={() => deleteTeam(team.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-error-500 hover:bg-error-50 rounded transition flex-shrink-0">
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-                <button onClick={() => deleteTeam(team.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-error-500 hover:bg-error-50 rounded transition">
-                  <Trash2 size={14} />
+                {lead && (
+                  <div className="mt-3 pt-3 border-t border-ink-50">
+                    <p className="text-xs text-ink-400">{lang === 'fr' ? 'Responsable' : 'Lead'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-600 text-white text-xs font-bold">
+                        {(lead.first_name?.[0] || lead.email[0]).toUpperCase()}
+                      </div>
+                      <p className="text-sm font-medium text-ink-700">{lead.first_name} {lead.last_name}</p>
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => openManage(team)} className="btn-secondary btn-sm w-full mt-3">
+                  <UserPlus size={14} /> {lang === 'fr' ? 'Gérer les membres' : 'Manage members'}
                 </button>
               </div>
-              {team.lead_id && (
-                <div className="mt-3 pt-3 border-t border-ink-50">
-                  <p className="text-xs text-ink-400">{language === 'fr' ? 'Responsable' : 'Lead'}</p>
-                  <p className="text-sm font-medium text-ink-700">
-                    {employees.find(e => e.id === team.lead_id)?.first_name} {employees.find(e => e.id === team.lead_id)?.last_name}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
+      <Modal open={!!manageTeam} onClose={() => setManageTeam(null)} title={manageTeam?.name || ''} size="md">
+        {manageTeam && (
+          <div className="space-y-4">
+            <div>
+              <label className="label">{lang === 'fr' ? 'Ajouter un membre' : 'Add member'}</label>
+              <div className="flex gap-2">
+                <select className="input" value={addMemberId} onChange={e => setAddMemberId(e.target.value)}>
+                  <option value="">{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
+                  {availableToAdd.map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
+                </select>
+                <button onClick={addMember} disabled={!addMemberId} className="btn-primary btn-sm flex-shrink-0"><Plus size={14} /></button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-ink-600">{lang === 'fr' ? 'Membres' : 'Members'} ({teamMembers.length})</p>
+              {teamMembers.length === 0 ? (
+                <p className="text-sm text-ink-400 py-4 text-center">{lang === 'fr' ? 'Aucun membre. Ajoutez-en ci-dessus.' : 'No members yet. Add some above.'}</p>
+              ) : (
+                teamMembers.map(m => (
+                  <div key={m.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-ink-50 group">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-white text-xs font-bold">
+                      {(m.first_name?.[0] || m.email[0]).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink-800 truncate">{m.first_name} {m.last_name}</p>
+                      <p className="text-xs text-ink-400 truncate">{m.email}</p>
+                    </div>
+                    <Badge variant="neutral">{m.role}</Badge>
+                    <button onClick={() => removeMember(m.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-error-500 hover:bg-error-50 rounded transition">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

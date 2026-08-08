@@ -36,6 +36,7 @@ export function ProductsPage() {
       emptyTitle="No products yet"
       emptyDescription="Add products to your catalog to start selling."
       orderBy="created_at"
+      importable
     />
   );
 }
