@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight } from 'lucide-react';
+import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
+import { initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutterwaveConfigured } from '@/lib/flutterwave';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
@@ -247,7 +248,7 @@ export function SettingsPage() {
 }
 
 export function BillingPage() {
-  const { language, organization } = useAuth();
+  const { language, organization, session } = useAuth();
   const lang = language;
   const [currentPlan, setCurrentPlan] = useState(organization?.plan || 'starter');
   const [busy, setBusy] = useState<string | null>(null);
@@ -255,22 +256,35 @@ export function BillingPage() {
   useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
 
   const plans = [
-    { name: 'Starter', price: 0, features: ['5 AI employees', '1,000 contacts', 'Basic analytics', 'Email support'] },
-    { name: 'Pro', price: 49, features: ['15 AI employees', '10,000 contacts', 'Advanced analytics', 'Priority support', 'API access'] },
-    { name: 'Business', price: 149, features: ['Unlimited AI employees', 'Unlimited contacts', 'Custom dashboards', '24/7 support', 'Webhooks & API'] },
-    { name: 'Enterprise', price: -1, features: ['Everything in Business', 'Custom AI training', 'SSO & SAML', 'Dedicated manager', 'SLA guarantee'] },
+    { name: 'Starter', key: 'starter', price: 19, features: [lang === 'fr' ? '5 employés IA' : '5 AI employees', lang === 'fr' ? '1 000 contacts' : '1,000 contacts', lang === 'fr' ? 'Analytique de base' : 'Basic analytics', lang === 'fr' ? 'Support e-mail' : 'Email support'] },
+    { name: 'Growth', key: 'growth', price: 49, features: [lang === 'fr' ? '15 employés IA' : '15 AI employees', lang === 'fr' ? '10 000 contacts' : '10,000 contacts', lang === 'fr' ? 'Analytique avancée' : 'Advanced analytics', lang === 'fr' ? 'Support prioritaire' : 'Priority support', lang === 'fr' ? 'Accès API' : 'API access'] },
+    { name: 'Pro', key: 'pro', price: 119, features: [lang === 'fr' ? 'Employés IA illimités' : 'Unlimited AI employees', lang === 'fr' ? 'Contacts illimités' : 'Unlimited contacts', lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards', lang === 'fr' ? 'Support 24/7' : '24/7 support', lang === 'fr' ? 'Webhooks & API' : 'Webhooks & API'] },
+    { name: 'Enterprise', key: 'enterprise', price: -1, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', 'SSO & SAML', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
   ];
 
-  async function changePlan(planName: string) {
-    if (!organization || planName.toLowerCase() === currentPlan) return;
-    if (planName === 'Enterprise') {
-      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
+  async function changePlan(plan: typeof plans[number]) {
+    if (!organization || plan.key === currentPlan) return;
+    if (plan.key === 'enterprise') {
+      window.location.href = 'mailto:sales@atlascrm.com?subject=Atlas%20CRM%20Enterprise%20Plan';
       return;
     }
-    setBusy(planName);
-    const { error } = await supabase.from('organizations').update({ plan: planName.toLowerCase() }).eq('id', organization.id);
-    if (!error) setCurrentPlan(planName.toLowerCase());
-    setBusy(null);
+    setBusy(plan.key);
+    initiateFlutterwaveCheckout({
+      plan: plan.key,
+      email: session?.user?.email || '',
+      orgId: organization.id,
+      onSuccess: async (txRef, paymentId) => {
+        const res = await recordSubscription({ orgId: organization.id, plan: plan.key, txRef, paymentId });
+        if (res.success) {
+          setCurrentPlan(plan.key);
+          setBusy(null);
+        } else {
+          alert(res.error || 'Payment failed');
+          setBusy(null);
+        }
+      },
+      onClose: () => setBusy(null),
+    });
   }
 
   return (
@@ -279,37 +293,45 @@ export function BillingPage() {
       <div className="card p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-ink-500">Current Plan</p>
+            <p className="text-sm text-ink-500">{lang === 'fr' ? 'Plan actuel' : 'Current Plan'}</p>
             <p className="text-2xl font-bold text-ink-900 capitalize">{currentPlan}</p>
             {organization?.trial_ends_at && (
-              <p className="text-sm text-warning-600 mt-1">Trial ends {new Date(organization.trial_ends_at).toLocaleDateString(lang)}</p>
+              <p className="text-sm text-warning-600 mt-1">
+                {lang === 'fr' ? 'Essai jusqu\'au' : 'Trial ends'} {new Date(organization.trial_ends_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')}
+              </p>
             )}
           </div>
           <CreditCard size={32} className="text-ink-300" />
         </div>
+        {!isFlutterwaveConfigured() && (
+          <p className="mt-3 rounded-lg bg-warning-50 p-2 text-xs text-warning-700">
+            {lang === 'fr' ? 'Paiement Flutterwave non configuré. Ajoutez VITE_FLW_PUBLIC_KEY dans les variables d\'environnement.' : 'Flutterwave payment not configured. Add VITE_FLW_PUBLIC_KEY to environment variables.'}
+          </p>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {plans.map(plan => {
-          const isCurrent = plan.name.toLowerCase() === currentPlan;
+          const isCurrent = plan.key === currentPlan;
           return (
             <div key={plan.name} className={`card p-6 ${isCurrent ? 'border-primary-300 ring-2 ring-primary-100' : ''}`}>
               <h3 className="font-bold text-ink-800">{plan.name}</h3>
               <p className="text-2xl font-bold text-ink-900 mt-2">
-                {plan.price === -1 ? 'Custom' : plan.price === 0 ? 'Free' : `$${plan.price}/mo`}
+                {plan.price === -1 ? (lang === 'fr' ? 'Sur devis' : 'Custom') : `$${plan.price}/${lang === 'fr' ? 'mois' : 'mo'}`}
               </p>
               <ul className="mt-4 space-y-2">
                 {plan.features.map(f => (
                   <li key={f} className="text-sm text-ink-600 flex items-start gap-2">
-                    <span className="text-success-500 mt-0.5">✓</span> {f}
+                    <CheckCircle2 size={14} className="text-success-500 mt-0.5 flex-shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
               <button
-                onClick={() => changePlan(plan.name)}
+                onClick={() => changePlan(plan)}
                 disabled={isCurrent || busy !== null}
-                className={`btn-sm w-full mt-4 rounded-lg font-medium ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
+                className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
               >
-                {busy === plan.name ? '...' : isCurrent ? 'Current' : plan.name === 'Enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Changer' : 'Upgrade')}
+                {busy === plan.key ? <Loader2 size={14} className="animate-spin" /> : null}
+                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : plan.key === 'enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Payer' : 'Pay')}
               </button>
             </div>
           );

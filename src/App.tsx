@@ -1,8 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthPage } from '@/pages/AuthPage';
 import { LandingPage } from '@/pages/LandingPage';
+import { LegalPage } from '@/pages/LegalPage';
 import { AppLayout } from '@/components/AppLayout';
+import { Paywall } from '@/components/Paywall';
 import { Loading } from '@/components/Loading';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AskAtlasPage, NotificationsPage, AuditLogPage, SettingsPage, BillingPage, UsagePage } from '@/pages/SystemPages';
@@ -20,9 +22,10 @@ function ProtectedRoutes() {
   if (!session) return <Navigate to="/auth" replace />;
 
   return (
-    <AppLayout>
-      <Routes>
-        <Route index element={<DashboardPage />} />
+    <Paywall>
+      <AppLayout>
+        <Routes>
+          <Route index element={<DashboardPage />} />
         <Route path="ask-atlas" element={<AskAtlasPage />} />
         <Route path="approvals" element={<ApprovalsPage />} />
         {/* CRM */}
@@ -66,7 +69,8 @@ function ProtectedRoutes() {
         <Route path="billing" element={<BillingPage />} />
         <Route path="usage" element={<UsagePage />} />
       </Routes>
-    </AppLayout>
+      </AppLayout>
+    </Paywall>
   );
 }
 
@@ -92,8 +96,18 @@ export default function App() {
           <Route path="/" element={<LandingRoutes />} />
           <Route path="/auth" element={<AuthRoutes />} />
           <Route path="/app/*" element={<ProtectedRoutes />} />
+          <Route path="/legal/:page" element={<LegalRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
+}
+
+const LEGAL_PAGES = ['privacy','terms','cookies','about','security','contact','careers','pricing','docs','status','community','blog','gdpr','pledge','sales-cloud','service-cloud','agentforce','data-360','tableau'];
+
+function LegalRoute() {
+  const { page } = useParams();
+  if (!page || !LEGAL_PAGES.includes(page)) return <Navigate to="/" replace />;
+  return <LegalPage page={page as any} />;
 }

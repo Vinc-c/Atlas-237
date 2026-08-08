@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
+import { Logo } from '@/components/Logo';
 
 interface NavItem {
   to: string;
@@ -156,9 +157,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-ink-900 text-white flex flex-col transition-all duration-200 sidebar-shadow overflow-hidden`}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-4 h-14 flex-shrink-0 border-b border-white/10">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 flex-shrink-0">
-            <Sparkles size={18} />
-          </div>
+          <Logo size={32} className="flex-shrink-0" />
           {!collapsed && <span className="font-bold text-lg">Atlas CRM</span>}
         </div>
 

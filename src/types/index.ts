@@ -1,6 +1,6 @@
 export type Role = 'owner' | 'admin' | 'manager' | 'sales' | 'marketing' | 'finance' | 'support' | 'member';
 
-export type Plan = 'starter' | 'pro' | 'business' | 'enterprise';
+export type Plan = 'starter' | 'growth' | 'pro' | 'enterprise';
 
 export interface Organization {
   id: string;
@@ -471,6 +471,24 @@ export interface Webhook {
   secret: string | null;
   last_triggered_at: string | null;
   last_response_code: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  org_id: string;
+  plan: Plan;
+  status: 'trialing' | 'active' | 'expired' | 'cancelled';
+  price_cents: number;
+  currency: string;
+  billing_cycle: 'monthly' | 'annual';
+  flutterwave_tx_ref: string | null;
+  flutterwave_payment_id: string | null;
+  flutterwave_plan_id: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
 }

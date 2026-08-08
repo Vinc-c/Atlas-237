@@ -7,7 +7,8 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/GlacialIndifference-Regular.woff') format('woff');
+  src: url('/fonts/GlacialIndifference-Regular.woff2') format('woff2'),
+       url('/fonts/GlacialIndifference-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -15,7 +16,8 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/GlacialIndifference-Bold.woff') format('woff');
+  src: url('/fonts/GlacialIndifference-Bold.woff2') format('woff2'),
+       url('/fonts/GlacialIndifference-Bold.woff') format('woff');
 }
 
 @layer base {
@@ -44,6 +46,21 @@
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .animate-fade-in-up, .animate-float, .animate-pulse-slow { animation: none !important; }
   }
   .btn-primary {
     @apply btn bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900 shadow-sm;

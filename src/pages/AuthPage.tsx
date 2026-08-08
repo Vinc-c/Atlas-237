@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, Globe, Loader2, ArrowRight, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Globe, Loader2, ArrowRight, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
+import { Logo } from '@/components/Logo';
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
@@ -87,6 +88,10 @@ export function AuthPage() {
         setError(t('auth.emailExists', lang));
       } else if (msg.includes('Invalid credentials') || msg.includes('invalid')) {
         setError(t('auth.invalidCredentials', lang));
+      } else if (msg.includes('Database error saving new user')) {
+        setError(lang === 'fr'
+          ? 'Erreur lors de la création du compte. Notre équipe a été notifiée. Réessayez — si le problème persiste, connectez-vous avec cet e-mail après confirmation.'
+          : 'Error creating account. Our team has been notified. Please retry — if the issue persists, try signing in with this email after confirmation.');
       } else {
         setError(msg);
       }
@@ -130,9 +135,7 @@ export function AuthPage() {
 
           <div className="relative">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary-600">
-                <Sparkles size={20} />
-              </div>
+              <Logo size={40} />
               <span className="text-xl font-bold tracking-tight">Atlas CRM</span>
             </Link>
           </div>
@@ -192,9 +195,7 @@ export function AuthPage() {
           {/* Mobile/tablet brand banner */}
           <div className="-mx-5 -mt-8 mb-2 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-5 sm:-mx-10 sm:px-10 lg:hidden">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary-600">
-                <Sparkles size={18} />
-              </div>
+              <Logo size={36} />
               <span className="text-lg font-bold tracking-tight text-white">Atlas CRM</span>
             </Link>
             <p className="mt-2 text-sm text-primary-100">{t('auth.brandTagline', lang)}</p>

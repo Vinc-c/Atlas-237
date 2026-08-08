@@ -1,0 +1,214 @@
+import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { ShieldCheck, FileText, Cookie, Mail, Users, Lock, BookOpen, Activity, Database, Heart } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Logo } from '@/components/Logo';
+import { useScrollReveal } from '@/lib/useScrollReveal';
+
+type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
+
+const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: string; fr: string }; updated: string }> = {
+  privacy: { icon: ShieldCheck, title: { en: 'Privacy Policy', fr: 'Politique de Confidentialité' }, updated: '2026-08-08' },
+  terms: { icon: FileText, title: { en: 'Terms of Service', fr: "Conditions d'Utilisation" }, updated: '2026-08-08' },
+  cookies: { icon: Cookie, title: { en: 'Cookie Policy', fr: 'Politique des Cookies' }, updated: '2026-08-08' },
+  about: { icon: Users, title: { en: 'About Atlas CRM', fr: 'À propos d\'Atlas CRM' }, updated: '2026-08-08' },
+  security: { icon: Lock, title: { en: 'Security', fr: 'Sécurité' }, updated: '2026-08-08' },
+  contact: { icon: Mail, title: { en: 'Contact Us', fr: 'Contactez-nous' }, updated: '2026-08-08' },
+  careers: { icon: Users, title: { en: 'Careers', fr: 'Carrières' }, updated: '2026-08-08' },
+  pricing: { icon: FileText, title: { en: 'Pricing', fr: 'Tarifs' }, updated: '2026-08-08' },
+  docs: { icon: BookOpen, title: { en: 'Documentation', fr: 'Documentation' }, updated: '2026-08-08' },
+  status: { icon: Activity, title: { en: 'System Status', fr: 'Statut du Système' }, updated: '2026-08-08' },
+  community: { icon: Users, title: { en: 'Community', fr: 'Communauté' }, updated: '2026-08-08' },
+  blog: { icon: BookOpen, title: { en: 'Blog', fr: 'Blog' }, updated: '2026-08-08' },
+  gdpr: { icon: Database, title: { en: 'GDPR / RGPD Compliance', fr: 'Conformité RGPD' }, updated: '2026-08-08' },
+  pledge: { icon: Heart, title: { en: 'Pledge 1%', fr: 'Pledge 1%' }, updated: '2026-08-08' },
+  'sales-cloud': { icon: Activity, title: { en: 'Sales Cloud', fr: 'Sales Cloud' }, updated: '2026-08-08' },
+  'service-cloud': { icon: Activity, title: { en: 'Service Cloud', fr: 'Service Cloud' }, updated: '2026-08-08' },
+  agentforce: { icon: Activity, title: { en: 'Agentforce', fr: 'Agentforce' }, updated: '2026-08-08' },
+  'data-360': { icon: Database, title: { en: 'Data 360', fr: 'Data 360' }, updated: '2026-08-08' },
+  tableau: { icon: BookOpen, title: { en: 'Tableau Analytics', fr: 'Tableau Analytics' }, updated: '2026-08-08' },
+};
+
+function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | 'pt' | 'ar' }) {
+  const fr = lang === 'fr';
+  const en = !fr;
+  const h2 = (fr: string, en: string) => <h2 className="mt-8 text-xl font-bold text-ink-900">{fr ? fr : en}</h2>;
+
+  switch (page) {
+    case 'privacy':
+      return (
+        <>
+          {h2(fr ? 'Introduction' : 'Introduction', '')}
+          <p>{fr ? 'Atlas CRM (« nous », « notre ») respecte votre vie privée. Cette politique explique comment nous collectons, utilisons et protégeons vos données personnelles conformément au RGPD et aux normes internationales.' : 'Atlas CRM ("we", "our") respects your privacy. This policy explains how we collect, use, and protect your personal data in compliance with GDPR and international standards.'}</p>
+          {h2(fr ? 'Données collectées' : 'Data We Collect', '')}
+          <ul><li>{fr ? 'Informations de compte (nom, e-mail, entreprise)' : 'Account information (name, email, company)'}</li><li>{fr ? 'Données d\'utilisation et journaux techniques' : 'Usage data and technical logs'}</li><li>{fr ? 'Cookies (voir Politique des Cookies)' : 'Cookies (see Cookie Policy)'}</li></ul>
+          {h2(fr ? 'Vos droits (RGPD)' : 'Your Rights (GDPR)', '')}
+          <ul><li>{fr ? 'Accès, rectification, effacement de vos données' : 'Access, rectification, erasure of your data'}</li><li>{fr ? 'Portabilité des données' : 'Data portability'}</li><li>{fr ? 'Opposition au traitement' : 'Right to object to processing'}</li><li>{fr ? 'Réclamation auprès de l\'autorité de protection' : 'Lodge a complaint with a supervisory authority'}</li></ul>
+          <p>{fr ? 'Pour exercer vos droits : privacy@atlascrm.com' : 'To exercise your rights: privacy@atlascrm.com'}</p>
+        </>
+      );
+    case 'terms':
+      return (
+        <>
+          {h2(fr ? 'Acceptation des conditions' : 'Acceptance of Terms', '')}
+          <p>{fr ? 'En utilisant Atlas CRM, vous acceptez les présentes conditions. Si vous n\'acceptez pas, n\'utilisez pas le service.' : 'By using Atlas CRM, you agree to these terms. If you do not agree, do not use the service.'}</p>
+          {h2(fr ? 'Essai et abonnement' : 'Trial and Subscription', '')}
+          <p>{fr ? 'Un essai gratuit de 14 jours est offert. Après l\'essai, un abonnement payant est requis (19 $, 49 $, 119 $ ou sur devis). L\'accès est suspendu si le paiement n\'est pas effectué.' : 'A 14-day free trial is offered. After the trial, a paid subscription is required ($19, $49, $119, or custom). Access is suspended if payment is not made.'}</p>
+          {h2(fr ? 'Utilisation acceptable' : 'Acceptable Use', '')}
+          <p>{fr ? 'Vous vous engagez à ne pas utiliser la plateforme à des fins illégales ou abusives.' : 'You agree not to use the platform for illegal or abusive purposes.'}</p>
+          {h2(fr ? 'Limitation de responsabilité' : 'Limitation of Liability', '')}
+          <p>{fr ? 'Atlas CRM n\'est pas responsable des dommages indirects résultant de l\'utilisation du service.' : 'Atlas CRM is not liable for indirect damages resulting from the use of the service.'}</p>
+        </>
+      );
+    case 'cookies':
+      return (
+        <>
+          {h2(fr ? 'Utilisation des cookies' : 'Cookie Usage', '')}
+          <p>{fr ? 'Nous utilisons des cookies essentiels (authentification, sécurité) et analytiques (amélioration du service). Vous pouvez gérer vos préférences à tout moment.' : 'We use essential cookies (authentication, security) and analytics cookies (service improvement). You can manage your preferences at any time.'}</p>
+          {h2(fr ? 'Gestion' : 'Management', '')}
+          <p>{fr ? 'Vous pouvez désactiver les cookies dans votre navigateur, mais cela peut affecter les fonctionnalités.' : 'You can disable cookies in your browser, but this may affect functionality.'}</p>
+        </>
+      );
+    case 'about':
+      return (
+        <>
+          {h2(fr ? 'Notre mission' : 'Our Mission', '')}
+          <p>{fr ? 'Atlas CRM est la plateforme CRM agentique n°1, conçue pour Dubai, l\'Afrique et le monde. Notre mission : unifier les ventes, le service client et l\'IA sur un seul cloud de confiance.' : 'Atlas CRM is the #1 agentic CRM platform, built for Dubai, Africa, and the world. Our mission: unify sales, customer service, and AI on a single trusted cloud.'}</p>
+          {h2(fr ? 'Nos valeurs' : 'Our Values', '')}
+          <ul><li>{fr ? 'Confiance et sécurité' : 'Trust and security'}</li><li>{fr ? 'Réussite client' : 'Customer success'}</li><li>{fr ? 'Innovation par l\'IA' : 'Innovation through AI'}</li><li>{fr ? 'Durabilité (Pledge 1%)' : 'Sustainability (Pledge 1%)'}</li></ul>
+        </>
+      );
+    case 'security':
+      return (
+        <>
+          {h2(fr ? 'Sécurité de la plateforme' : 'Platform Security', '')}
+          <ul><li>{fr ? 'Chiffrement TLS 1.3 en transit, AES-256 au repos' : 'TLS 1.3 encryption in transit, AES-256 at rest'}</li><li>{fr ? 'Authentification SSO/SAML et OAuth2' : 'SSO/SAML and OAuth2 authentication'}</li><li>{fr ? 'Row-Level Security (RLS) sur toutes les données' : 'Row-Level Security (RLS) on all data'}</li><li>{fr ? 'Audit logs complets et traçabilité' : 'Comprehensive audit logs and traceability'}</li><li>{fr ? 'Conformité RGPD/GDPR, SOC 2 Type II' : 'GDPR compliance, SOC 2 Type II'}</li></ul>
+          {h2(fr ? 'Signaler une vulnérabilité' : 'Report a Vulnerability', '')}
+          <p>{fr ? 'Contactez security@atlascrm.com pour signaler une faille de sécurité.' : 'Contact security@atlascrm.com to report a security vulnerability.'}</p>
+        </>
+      );
+    case 'contact':
+      return (
+        <>
+          {h2(fr ? 'Nous contacter' : 'Contact Us', '')}
+          <ul><li>Email: hello@atlascrm.com</li><li>{fr ? 'Ventes : sales@atlascrm.com' : 'Sales: sales@atlascrm.com'}</li><li>{fr ? 'Support : support@atlascrm.com' : 'Support: support@atlascrm.com'}</li><li>{fr ? 'Sécurité : security@atlascrm.com' : 'Security: security@atlascrm.com'}</li></ul>
+          <p>{fr ? 'Dubai · Afrique · Monde' : 'Dubai · Africa · Worldwide'}</p>
+        </>
+      );
+    case 'careers':
+      return (
+        <>
+          {h2(fr ? 'Rejoignez l\'équipe' : 'Join the Team', '')}
+          <p>{fr ? 'Nous recrutons des talents passionnés par l\'IA, le CRM et l\'expérience client. Postes ouverts : Ingénieur Full-Stack, Designer UX/UI, Data Scientist, Customer Success Manager.' : 'We hire passionate talent in AI, CRM, and customer experience. Open roles: Full-Stack Engineer, UX/UI Designer, Data Scientist, Customer Success Manager.'}</p>
+          <p>{fr ? 'Candidatures : careers@atlascrm.com' : 'Applications: careers@atlascrm.com'}</p>
+        </>
+      );
+    case 'pricing':
+      return (
+        <>
+          {h2(fr ? 'Nos tarifs' : 'Our Pricing', '')}
+          <ul><li>Starter — $19/{fr ? 'mois' : 'mo'}</li><li>Growth — $49/{fr ? 'mois' : 'mo'}</li><li>Pro — $119/{fr ? 'mois' : 'mo'}</li><li>Enterprise — {fr ? 'Sur devis' : 'Custom'}</li></ul>
+          <p>{fr ? 'Essai gratuit de 14 jours. Sans carte bancaire. Paiement via Flutterwave.' : '14-day free trial. No credit card. Payment via Flutterwave.'}</p>
+          <Link to="/auth" className="btn-primary btn-sm mt-4 inline-flex">{fr ? 'Commencer' : 'Get started'}</Link>
+        </>
+      );
+    case 'docs':
+      return (
+        <>
+          {h2(fr ? 'Documentation API' : 'API Documentation', '')}
+          <p>{fr ? 'Atlas CRM fournit une API REST complète avec webhooks en temps réel. Authentification par clé API (Bearer token).' : 'Atlas CRM provides a complete REST API with real-time webhooks. Authentication via API key (Bearer token).'}</p>
+          <ul><li>Base URL: https://api.atlascrm.com/v1</li><li>{fr ? 'Endpoints : Contacts, Deals, Pipelines, Invoices, Webhooks' : 'Endpoints: Contacts, Deals, Pipelines, Invoices, Webhooks'}</li><li>{fr ? 'Rate limit : 1000 req/min' : 'Rate limit: 1000 req/min'}</li></ul>
+        </>
+      );
+    case 'status':
+      return (
+        <>
+          {h2(fr ? 'Statut du système' : 'System Status', '')}
+          <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-success-500" /><span className="font-semibold text-success-700">{fr ? 'Tous les systèmes opérationnels' : 'All systems operational'}</span></div>
+          <ul><li>API — {fr ? 'Opérationnel' : 'Operational'}</li><li>Dashboard — {fr ? 'Opérationnel' : 'Operational'}</li><li>Webhooks — {fr ? 'Opérationnel' : 'Operational'}</li><li>Auth — {fr ? 'Opérationnel' : 'Operational'}</li></ul>
+        </>
+      );
+    case 'community':
+      return (
+        <>
+          {h2(fr ? 'Communauté Atlas' : 'Atlas Community', '')}
+          <p>{fr ? 'Rejoignez 150 000+ professionnels. Partagez vos best practices, posez vos questions et collaboriez.' : 'Join 150,000+ professionals. Share best practices, ask questions, and collaborate.'}</p>
+        </>
+      );
+    case 'blog':
+      return (
+        <>
+          {h2(fr ? 'Blog Atlas CRM' : 'Atlas CRM Blog', '')}
+          <p>{fr ? 'Actualités, tutoriels et insights sur le CRM agentique, l\'IA et la croissance commerciale.' : 'News, tutorials, and insights on agentic CRM, AI, and business growth.'}</p>
+        </>
+      );
+    case 'gdpr':
+      return (
+        <>
+          {h2(fr ? 'Conformité RGPD' : 'GDPR Compliance', '')}
+          <p>{fr ? 'Atlas CRM est pleinement conforme au Règlement Général sur la Protection des Données (RGPD/GDPR).' : 'Atlas CRM is fully compliant with the General Data Protection Regulation (GDPR).'}</p>
+          <ul><li>{fr ? 'Base légale du traitement' : 'Legal basis for processing'}</li><li>{fr ? 'Droits des personnes concernées' : 'Rights of data subjects'}</li><li>{fr ? 'Notification de violation (72h)' : 'Breach notification (72h)'}</li><li>{fr ? 'Transferts internationaux de données' : 'International data transfers'}</li><li>{fr ? 'DPO : dpo@atlascrm.com' : 'DPO: dpo@atlascrm.com'}</li></ul>
+        </>
+      );
+    case 'pledge':
+      return (
+        <>
+          {h2(fr ? 'Pledge 1%' : 'Pledge 1%', '')}
+          <p>{fr ? 'Nous investissons 1% de notre équité, technologie et temps pour créer un changement durable dans nos communautés.' : 'We invest 1% of our equity, technology, and time to create lasting change in our communities.'}</p>
+        </>
+      );
+    default:
+      return (
+        <>
+          {h2(fr ? 'Présentation du produit' : 'Product Overview', '')}
+          <p>{fr ? 'Découvrez comment ce module d\'Atlas CRM peut transformer votre entreprise avec l\'IA agentique.' : 'Discover how this Atlas CRM module can transform your business with agentic AI.'}</p>
+          <Link to="/auth" className="btn-primary btn-sm mt-4 inline-flex">{fr ? 'Essayer gratuitement' : 'Try for free'}</Link>
+        </>
+      );
+  }
+}
+
+export function LegalPage({ page }: { page: LegalPage }) {
+  const { language } = useAuth();
+  const lang = language === 'fr' ? 'fr' : 'en';
+  useScrollReveal();
+  useEffect(() => { window.scrollTo(0, 0); }, [page]);
+
+  const meta = PAGE_META[page];
+  const Icon = meta.icon;
+
+  return (
+    <div className="min-h-screen bg-white text-ink-900">
+      <header className="sticky top-0 z-50 border-b border-ink-100 bg-white/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <Logo size={32} />
+            <span className="text-lg font-bold tracking-tight">Atlas CRM</span>
+          </Link>
+          <Link to="/" className="text-sm font-semibold text-ink-600 hover:text-primary-700">{lang === 'fr' ? '← Retour' : '← Back'}</Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-3xl px-6 py-16 md:px-10">
+        <div className="reveal flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600"><Icon size={24} /></div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink-950">{meta.title[lang]}</h1>
+        </div>
+        <p className="reveal mt-2 text-sm text-ink-400">{lang === 'fr' ? 'Dernière mise à jour' : 'Last updated'}: {meta.updated}</p>
+
+        <div className="reveal mt-8 space-y-3 text-base leading-7 text-ink-700">
+          <Content page={page} lang={language} />
+        </div>
+
+        <div className="reveal mt-12 rounded-2xl bg-primary-50 p-6 text-center">
+          <p className="font-semibold text-ink-800">{lang === 'fr' ? 'Prêt à commencer ?' : 'Ready to get started?'}</p>
+          <Link to="/auth" className="btn-primary mt-4 inline-flex">{lang === 'fr' ? 'Essai gratuit de 14 jours' : '14-day free trial'}</Link>
+        </div>
+      </div>
+
+      <footer className="border-t border-ink-100 bg-ink-950 py-8 text-center text-xs text-ink-500">
+        © {new Date().getFullYear()} Atlas CRM · LiAfrik Dubai & {lang === 'fr' ? 'Afrique' : 'Africa'}
+      </footer>
+    </div>
+  );
+}

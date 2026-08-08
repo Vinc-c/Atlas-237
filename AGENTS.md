@@ -53,4 +53,40 @@ All CRUD goes through Supabase via `src/components/ListPage.tsx` (generic table 
 and individual pages. Tables expected: contacts, companies, leads, deals, pipelines,
 activities, products, quotes, orders, invoices, payments, campaigns, tickets, ai_agents,
 ai_tasks, approvals, workflows, ai_memory, knowledge_documents, integrations, api_keys,
-webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are at repo root.
+webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are at
+`supabase/migrations/` (latest: `20260808180000_005_fix_signup_and_subscriptions.sql`).
+
+## Billing / Flutterwave / Trial enforcement
+- Plans: Starter $19, Growth $49, Pro $119, Enterprise custom (per user/month).
+- `src/lib/flutterwave.ts` — inline Flutterwave Checkout, `checkSubscriptionAccess(orgId)`
+  via Supabase RPC `org_subscription_status`, `recordSubscription()` to upsert
+  `subscriptions` table + update `organizations.plan`.
+- `src/components/Paywall.tsx` wraps all protected routes; blocks access when trial
+  expired and no active subscription. The user CANNOT bypass — the Paywall renders
+  before any app content.
+- `BillingPage` (in SystemPages.tsx) uses Flutterwave checkout to upgrade plans.
+- Env vars: `VITE_FLW_PUBLIC_KEY` and `VITE_FLW_SECRET_KEY` (see `.env.example`).
+- DB: `subscriptions` table + `org_subscription_status(check_org_id)` RPC function
+  added by migration `005`. RLS enabled.
+
+## Logo
+- `src/components/Logo.tsx` — simple CRM logo (stacked card + "A" mark), replaces
+  the old Sparkles icon everywhere (AppLayout sidebar, AuthPage, LandingPage header/footer).
+
+## Legal pages
+- `src/pages/LegalPage.tsx` serves `/legal/:page` for 19 real pages (privacy, terms,
+  cookies, about, security, contact, careers, pricing, docs, status, community, blog,
+  gdpr, pledge, sales-cloud, service-cloud, agentforce, data-360, tableau).
+- Bilingual EN/FR, scroll-reveal animations.
+
+## Landing page (bilingual + animations)
+- `src/pages/LandingPage.tsx` is fully bilingual EN/FR via `useAuth().language`.
+- Language toggle (Globe icon) in the header switches FR↔EN.
+- Scroll-reveal animations via `src/lib/useScrollReveal.ts` (IntersectionObserver).
+- Tailwind keyframes: `fade-in-up`, `pulse-slow`, `float`, `shimmer` (see tailwind.config.js).
+- CSS: `.reveal` / `.reveal.is-visible` classes in `src/index.css`.
+
+## i18n
+- `src/lib/i18n.ts` — `t(key, lang)` with 5 languages (en, fr, es, pt, ar).
+- `AuthContext` provides `language` and `setLanguage`.
+
