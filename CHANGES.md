@@ -58,6 +58,79 @@ Salesforce is known for (Lead → Convert → Account/Contact/Opportunity,
 stage-based pipeline board), which is standard CRM architecture, in this
 app's own design system.
 
+## Cloudflare Pages — what was missing, and exact setup
+
+I can't run `npm install`/`npm run build` in this environment (no network
+access to the npm registry from here), so I did a careful manual review
+instead of a live build — see "Honest status" below.
+
+**Was missing, now added:**
+- `public/_redirects` containing `/*  /index.html  200`. Without this,
+  Cloudflare Pages serves your `dist/` as static files with no server-side
+  routing — refreshing on `/app/deals`, or sharing a direct link, returns a
+  404 because there's no physical `deals` folder. This file tells Cloudflare
+  to always serve `index.html` and let React Router handle the route
+  client-side. This is the #1 thing that breaks React Router apps on static
+  hosts if forgotten.
+
+**Cloudflare Pages project settings (set these in the dashboard, not in code):**
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Root directory | `/` (repo root) |
+| Environment variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+
+The Supabase variables **must** be set as Cloudflare Pages environment
+variables (Settings → Environment variables, for both Production and
+Preview) because Vite bakes `VITE_*` vars into the JS bundle at build time —
+they are not read at runtime. If they're missing, the build itself will
+fail at `src/lib/supabase.ts`'s `throw new Error('Missing Supabase
+environment variables')`.
+
+Also add your Cloudflare Pages domain (and `http://localhost:3000` for
+local dev) to Supabase → Authentication → URL Configuration → Redirect
+URLs, or the login/signup/reset-password redirects will fail.
+
+**Also fixed while checking this:** the signup flow used to always redirect
+to `/app` after `signUp()`. If your Supabase project has "Confirm email"
+enabled (the default for new projects), `signUp()` returns no session until
+the user clicks the confirmation link — the old code would silently bounce
+the user back to `/auth` with no explanation. It now checks for a session
+and shows a "check your inbox" message when confirmation is pending. Also
+added explicit `redirectTo` on signup/password-reset so those email links
+point at your actual deployed domain instead of Supabase's default.
+
+## Honest status — what I verified vs. what I couldn't
+
+- **Verified by reading the code line by line**: all imports resolve to
+  real files/packages, the Supabase queries match the actual table/column
+  names in the migrations, RLS policies allow the inserts the new Convert
+  Lead / Kanban flows perform, and TypeScript types line up.
+- **Not verified**: I could not run `npm install` or `npm run build` here —
+  this sandbox has no network access to the npm registry. So this hasn't
+  been compiled or run in a browser by me. Before you rely on it, run
+  locally:
+  ```
+  npm install
+  cp .env.example .env   # fill in your Supabase project's URL + anon key
+  npm run dev
+  ```
+  and click through signup → dashboard → leads → convert → deals kanban
+  once. If `npm run build` or `tsc` surfaces an error, paste it here and
+  I'll fix it directly — that's a five-minute fix, not a rewrite.
+
+## Landing page & Auth page — current state
+
+Both are real, custom-built pages (not placeholders): gradient hero,
+pricing table with a feature-comparison grid, and a proper
+login/signup/forgot-password form wired to real Supabase Auth (not mocked).
+They're in French by default and reasonably polished, but I did not do a
+dedicated visual/UX pass on them — if "pro" means matching a specific
+reference design or brand, tell me which one and I'll rework them
+specifically, since "professional" is a judgment call I don't want to
+silently make for you.
+
 ## Still worth doing next (not done here)
 
 - Record detail pages with related lists (click a Contact → see its Deals,

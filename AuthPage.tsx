@@ -45,17 +45,25 @@ export function AuthPage() {
         }
         navigate('/app');
       } else if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { first_name: firstName, last_name: lastName, company_name: companyName },
+            emailRedirectTo: `${window.location.origin}/auth`,
           },
         });
         if (error) throw error;
-        navigate('/app');
+        if (data.session) {
+          navigate('/app');
+        } else {
+          setMessage(t('auth.confirmEmailSent', lang));
+          setMode('login');
+        }
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
         if (error) throw error;
         setMessage(t('auth.resetSent', lang));
       }
