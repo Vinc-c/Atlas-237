@@ -1,0 +1,243 @@
+import { useEffect, useState } from 'react';
+import { Bot, ListTodo, Workflow, Brain, BookOpen, CheckSquare, Plus, Zap, Check, X } from 'lucide-react';
+import { ListPage, type FormField } from '@/components/ListPage';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { t } from '@/lib/i18n';
+import { PageHeader, Badge } from '@/components/ui';
+import { EmptyState } from '@/components/EmptyState';
+import { Loading } from '@/components/Loading';
+import type { AIAgent, AITask, Approval, AIMemory, KnowledgeDocument, Workflow as WorkflowType } from '@/types';
+
+export function AIEmployeesPage() {
+  const { language } = useAuth();
+  const fields: FormField[] = [
+    { key: 'name', label: t('common.name', language), type: 'text', required: true },
+    { key: 'role', label: 'Role', type: 'text', required: true },
+    { key: 'description', label: 'Description', type: 'textarea' },
+    { key: 'risk_level', label: 'Risk Level', type: 'select', options: [
+      { value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' },
+    ], defaultValue: 'low' },
+    { key: 'enabled', label: 'Enabled', type: 'select', options: [
+      { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' },
+    ], defaultValue: 'true' },
+  ];
+
+  return (
+    <ListPage<AIAgent>
+      table="ai_agents"
+      title={t('nav.aiEmployees', language)}
+      columns={[
+        { key: 'name', label: t('common.name', language), render: (r) => (
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${r.enabled ? 'bg-success-500 animate-pulse' : 'bg-ink-300'}`} />
+            <span className="font-medium text-ink-800">{r.name}</span>
+          </div>
+        )},
+        { key: 'role', label: 'Role', render: (r) => r.role },
+        { key: 'risk_level', label: 'Risk', render: (r) => <Badge variant={r.risk_level === 'high' ? 'error' : r.risk_level === 'medium' ? 'warning' : 'success'}>{r.risk_level}</Badge> },
+        { key: 'usage_count', label: 'Tasks Done', render: (r) => r.usage_count },
+      ]}
+      formFields={fields}
+      emptyIcon={<Bot size={28} />}
+      emptyTitle="No AI employees yet"
+      emptyDescription="Hire your first AI employee to automate your business."
+      orderBy="created_at"
+    />
+  );
+}
+
+export function AITasksPage() {
+  const { language } = useAuth();
+  const fields: FormField[] = [
+    { key: 'title', label: 'Title', type: 'text', required: true },
+    { key: 'instruction', label: 'Instruction', type: 'textarea' },
+    { key: 'status', label: t('common.status', language), type: 'select', options: [
+      { value: 'pending', label: 'Pending' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' }, { value: 'failed', label: 'Failed' },
+    ], defaultValue: 'pending' },
+    { key: 'priority', label: 'Priority', type: 'select', options: [
+      { value: 'low', label: 'Low' }, { value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' },
+    ], defaultValue: 'medium' },
+  ];
+
+  return (
+    <ListPage<AITask>
+      table="ai_tasks"
+      title={t('nav.aiTasks', language)}
+      columns={[
+        { key: 'title', label: 'Title', render: (r) => <span className="font-medium text-ink-800">{r.title}</span> },
+        { key: 'status', label: t('common.status', language), render: (r) => <Badge variant={r.status === 'completed' ? 'success' : r.status === 'failed' ? 'error' : r.status === 'in_progress' ? 'primary' : 'warning'}>{r.status}</Badge> },
+        { key: 'priority', label: 'Priority', render: (r) => <Badge variant={r.priority === 'high' ? 'error' : 'neutral'}>{r.priority}</Badge> },
+        { key: 'progress', label: 'Progress', render: (r) => (
+          <div className="w-24 h-1.5 bg-ink-100 rounded-full overflow-hidden">
+            <div className="h-full bg-primary-500 rounded-full" style={{ width: `${r.progress}%` }} />
+          </div>
+        )},
+      ]}
+      formFields={fields}
+      emptyIcon={<ListTodo size={28} />}
+      emptyTitle="No AI tasks yet"
+      emptyDescription="Assign tasks to your AI employees for automated execution."
+      relations="*, agent:ai_agents(*)"
+      orderBy="created_at"
+    />
+  );
+}
+
+export function ApprovalsPage() {
+  const { language } = useAuth();
+  const [approvals, setApprovals] = useState<Approval[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    const { data } = await supabase.from('approvals').select('*').order('created_at', { ascending: false });
+    setApprovals((data || []) as Approval[]);
+    setLoading(false);
+  }
+
+  async function decide(id: string, decision: string) {
+    await supabase.from('approvals').update({ status: decision === 'approved' ? 'approved' : 'rejected', decided_at: new Date().toISOString() }).eq('id', id);
+    load();
+  }
+
+  if (loading) return <Loading text={t('common.loading', language)} />;
+
+  return (
+    <div className="animate-fade-in">
+      <PageHeader title={t('nav.approvals', language)} subtitle="" />
+      {approvals.length === 0 ? (
+        <div className="card">
+          <EmptyState icon={<CheckSquare size={28} />} title="No approvals needed" description="AI actions requiring your approval will appear here." />
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {approvals.map(ap => (
+            <div key={ap.id} className="card p-4 flex items-center justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 ${
+                  ap.risk_level === 'high' ? 'bg-error-50 text-error-600' : ap.risk_level === 'medium' ? 'bg-warning-50 text-warning-600' : 'bg-success-50 text-success-600'
+                }`}>
+                  <Zap size={18} />
+                </div>
+                <div>
+                  <p className="font-medium text-ink-800">{ap.description}</p>
+                  <p className="text-xs text-ink-500 mt-0.5">{ap.agent_name} · {ap.action_type} · <Badge variant={ap.risk_level === 'high' ? 'error' : 'warning'}>{ap.risk_level}</Badge></p>
+                </div>
+              </div>
+              {ap.status === 'pending' ? (
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => decide(ap.id, 'approved')} className="btn-sm bg-success-600 text-white hover:bg-success-700 px-3 py-1.5 rounded-lg flex items-center gap-1 text-xs font-medium">
+                    <Check size={14} /> {t('common.approve', language)}
+                  </button>
+                  <button onClick={() => decide(ap.id, 'rejected')} className="btn-sm bg-error-500 text-white hover:bg-error-600 px-3 py-1.5 rounded-lg flex items-center gap-1 text-xs font-medium">
+                    <X size={14} /> {t('common.reject', language)}
+                  </button>
+                </div>
+              ) : (
+                <Badge variant={ap.status === 'approved' ? 'success' : 'error'}>{ap.status}</Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AIWorkflowsPage() {
+  const { language } = useAuth();
+  const fields: FormField[] = [
+    { key: 'name', label: t('common.name', language), type: 'text', required: true },
+    { key: 'description', label: 'Description', type: 'textarea' },
+    { key: 'trigger_type', label: 'Trigger', type: 'select', options: [
+      { value: 'manual', label: 'Manual' }, { value: 'schedule', label: 'Schedule' }, { value: 'event', label: 'Event' }, { value: 'webhook', label: 'Webhook' },
+    ], defaultValue: 'manual' },
+    { key: 'enabled', label: 'Enabled', type: 'select', options: [
+      { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' },
+    ], defaultValue: 'true' },
+  ];
+
+  return (
+    <ListPage<WorkflowType>
+      table="workflows"
+      title={t('nav.aiWorkflows', language)}
+      columns={[
+        { key: 'name', label: t('common.name', language), render: (r) => <span className="font-medium text-ink-800">{r.name}</span> },
+        { key: 'trigger_type', label: 'Trigger', render: (r) => r.trigger_type || '—' },
+        { key: 'enabled', label: 'Enabled', render: (r) => <Badge variant={r.enabled ? 'success' : 'neutral'}>{r.enabled ? 'Yes' : 'No'}</Badge> },
+        { key: 'run_count', label: 'Runs', render: (r) => r.run_count },
+      ]}
+      formFields={fields}
+      emptyIcon={<Workflow size={28} />}
+      emptyTitle="No workflows yet"
+      emptyDescription="Create automated workflows to streamline your business."
+      orderBy="created_at"
+    />
+  );
+}
+
+export function AIMemoryPage() {
+  const { language } = useAuth();
+  const fields: FormField[] = [
+    { key: 'type', label: 'Type', type: 'text', required: true },
+    { key: 'key', label: 'Key', type: 'text', required: true },
+    { key: 'value', label: 'Value', type: 'textarea', required: true },
+    { key: 'category', label: 'Category', type: 'text' },
+    { key: 'enabled', label: 'Enabled', type: 'select', options: [
+      { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' },
+    ], defaultValue: 'true' },
+  ];
+
+  return (
+    <ListPage<AIMemory>
+      table="ai_memory"
+      title={t('nav.aiMemory', language)}
+      columns={[
+        { key: 'key', label: 'Key', render: (r) => <span className="font-medium text-ink-800">{r.key}</span> },
+        { key: 'value', label: 'Value', render: (r) => <span className="text-ink-600 truncate max-w-xs block">{r.value}</span> },
+        { key: 'category', label: 'Category', render: (r) => r.category || '—' },
+        { key: 'enabled', label: 'Enabled', render: (r) => <Badge variant={r.enabled ? 'success' : 'neutral'}>{r.enabled ? 'Yes' : 'No'}</Badge> },
+      ]}
+      formFields={fields}
+      emptyIcon={<Brain size={28} />}
+      emptyTitle="No AI memories yet"
+      emptyDescription="Store knowledge and preferences for your AI employees."
+      orderBy="created_at"
+    />
+  );
+}
+
+export function KnowledgeBasePage() {
+  const { language } = useAuth();
+  const fields: FormField[] = [
+    { key: 'title', label: 'Title', type: 'text', required: true },
+    { key: 'type', label: 'Type', type: 'select', options: [
+      { value: 'document', label: 'Document' }, { value: 'url', label: 'URL' }, { value: 'text', label: 'Text' }, { value: 'faq', label: 'FAQ' },
+    ], defaultValue: 'document' },
+    { key: 'category', label: 'Category', type: 'text' },
+    { key: 'description', label: 'Description', type: 'textarea' },
+    { key: 'file_path', label: 'File URL', type: 'text' },
+  ];
+
+  return (
+    <ListPage<KnowledgeDocument>
+      table="knowledge_documents"
+      title={t('nav.knowledgeBase', language)}
+      columns={[
+        { key: 'title', label: 'Title', render: (r) => <span className="font-medium text-ink-800">{r.title}</span> },
+        { key: 'type', label: 'Type', render: (r) => <Badge variant="primary">{r.type || 'document'}</Badge> },
+        { key: 'category', label: 'Category', render: (r) => r.category || '—' },
+        { key: 'status', label: t('common.status', language), render: (r) => <Badge variant="success">{r.status}</Badge> },
+      ]}
+      formFields={fields}
+      emptyIcon={<BookOpen size={28} />}
+      emptyTitle="No knowledge documents yet"
+      emptyDescription="Upload documents to train your AI employees."
+      orderBy="created_at"
+    />
+  );
+}
