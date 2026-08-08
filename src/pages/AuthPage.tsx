@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, Globe, Loader2, ShieldCheck, TrendingUp, Headphones, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Globe, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
@@ -74,22 +74,22 @@ export function AuthPage() {
   }
 
   const highlights = [
-    { icon: TrendingUp, t: 'Pipelines & automatisation des ventes' },
-    { icon: Headphones, t: 'Service client unifié en temps réel' },
-    { icon: ShieldCheck, t: 'Sécurité RGPD & conformité multi-régions' },
+    'Pipelines & automatisation des ventes',
+    'Service client unifié en temps réel',
+    'Sécurité RGPD & conformité multi-régions',
   ];
 
   return (
     <div className="min-h-screen bg-white text-ink-900">
       <div className="grid min-h-screen lg:grid-cols-2">
-        {/* ───────── Brand / marketing panel ───────── */}
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-ink-950 p-10 text-white lg:flex xl:p-14">
-          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-600/30 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-accent-600/20 blur-3xl" />
+        {/* ───────── Brand / marketing panel (Salesforce cloud blue) ───────── */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-primary-600 p-10 text-white lg:flex xl:p-14">
+          <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-primary-800/40 blur-3xl" />
 
           <div className="relative">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary-600">
                 <Sparkles size={20} />
               </div>
               <span className="text-xl font-bold tracking-tight">Atlas CRM</span>
@@ -98,30 +98,51 @@ export function AuthPage() {
 
           <div className="relative">
             <h2 className="max-w-md text-3xl font-bold leading-tight tracking-tight xl:text-4xl">
-              La plateforme CRM propulsée par l’IA, pour les équipes ambitieuses.
+              La plateforme CRM agentique n°1
             </h2>
-            <p className="mt-5 max-w-md text-base leading-7 text-ink-300">
+            <p className="mt-5 max-w-md text-base leading-7 text-primary-100">
               Ventes, service client et intelligence artificielle réunis sur un seul cloud. Conçu pour Dubai, l’Afrique et le monde.
             </p>
             <ul className="mt-9 space-y-4">
               {highlights.map((h) => (
-                <li key={h.t} className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 flex-none items-center justify-center rounded-lg bg-white/10 text-primary-300">
-                    <h.icon size={18} />
+                <li key={h} className="flex items-center gap-3">
+                  <div className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white/20">
+                    <CheckCircle2 size={16} />
                   </div>
-                  <span className="text-sm text-ink-200">{h.t}</span>
+                  <span className="text-sm text-primary-50">{h}</span>
                 </li>
               ))}
             </ul>
+
+            {/* Dashboard illustration */}
+            <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary-100">Aperçu tableau de bord</p>
+                <span className="rounded-full bg-success-400/30 px-2 py-0.5 text-[10px] font-bold text-white">+12%</span>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {[['Revenu', '$248K'], ['Deals', '34'], ['Leads', '18']].map(([l, v]) => (
+                  <div key={l} className="rounded-lg bg-white/10 p-3">
+                    <p className="text-[10px] text-primary-100">{l}</p>
+                    <p className="mt-1 text-base font-bold">{v}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex h-16 items-end gap-1.5">
+                {[45, 70, 55, 85, 60, 95, 75].map((h, i) => (
+                  <div key={i} className="flex-1 rounded-t bg-white/40" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="relative flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+          <div className="relative flex items-center gap-3">
             <div className="flex -space-x-2">
               {['AM', 'KO', 'RD'].map((i) => (
-                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-ink-950 bg-primary-500 text-[11px] font-bold text-white">{i}</div>
+                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary-600 bg-white text-[11px] font-bold text-primary-600">{i}</div>
               ))}
             </div>
-            <p className="text-xs text-ink-300">Rejoint par plus de 150 000 professionnels à travers le monde.</p>
+            <p className="text-xs text-primary-100">Rejoint par plus de 150 000 professionnels à travers le monde.</p>
           </div>
         </div>
 
@@ -196,7 +217,7 @@ export function AuthPage() {
                     <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-ink-300 text-primary-600 focus:ring-primary-500" />
                     {t('auth.rememberMe', lang)}
                   </label>
-                  <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                  <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} className="text-sm font-semibold text-primary-700 hover:text-primary-800 transition-colors">
                     {t('auth.forgotPassword', lang)}
                   </button>
                 </div>
@@ -246,13 +267,13 @@ export function AuthPage() {
 
             <div className="mt-8 border-t border-ink-100 pt-6 text-center text-sm text-ink-600">
               {mode === 'forgot' ? (
-                <button onClick={() => { setMode('login'); setError(''); setMessage(''); }} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                <button onClick={() => { setMode('login'); setError(''); setMessage(''); }} className="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
                   {t('auth.backToLogin', lang)}
                 </button>
               ) : (
                 <span>
                   {mode === 'login' ? t('auth.noAccount', lang) : t('auth.haveAccount', lang)}{' '}
-                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }} className="font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }} className="font-semibold text-primary-700 hover:text-primary-800 transition-colors">
                     {mode === 'login' ? t('auth.signup', lang) : t('auth.login', lang)}
                   </button>
                 </span>
