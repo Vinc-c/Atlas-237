@@ -133,4 +133,32 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
 - Tabs: Account (org info, country, currency, timezone), Profile, Branding, Roles & Permissions, Security.
 - `refreshOrg()` in AuthContext reloads org after settings save.
 
+## Bilingualism (FR/EN) — completed audit
+All user-facing pages now support FR/EN via `t(key, language)` from `@/lib/i18n`
+or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
+- LandingPage: cloudProducts, industries, reports, matrixGroups (comparison
+  matrix) all use `{ fr, en }` objects accessed via `[lang]`.
+- AuthPage: highlights array, dashboard illustration labels, OAuth error
+  message all bilingual.
+- SuperAdminPages: entire section bilingual (dashboard cards, users/tenants
+  table, subscriptions, analytics, employee KPIs, sales codes, permissions
+  RBAC, audit log). `SuperAdminsList` uses bilingual founder confirm prompt.
+- SystemPages: notifications, audit log, branding tab, settings tabs bilingual.
+- AppLayout: super admin nav section bilingual; collapse toggle hidden on
+  mobile (lg:flex).
+- DashboardPage: removed fake hardcoded '12%' trend — StatCards now show
+  real data only, no fabricated metrics.
+- IntegrationPages: already had 53 `lang === 'fr'` checks; config field
+  labels (API Key, Secret Key, etc.) are technical terms, left in English.
+
+## Responsive design — mobile drawer
+- AppLayout sidebar is now a fixed drawer on mobile (`fixed lg:static`,
+  `-translate-x-full lg:translate-x-0`), toggled by a hamburger button
+  in the header (`lg:hidden`). Overlay closes on click outside or nav.
+- Collapse toggle button hidden on mobile (`hidden lg:flex`).
+- Main content padding responsive: `p-4 sm:p-6`.
+- Header padding responsive: `px-4 sm:px-6`.
+- No "Coming Soon" elements or non-functional buttons remain (verified
+  via grep for `coming soon`, `bientôt`, empty `onClick`, `href="#"`).
+
 
