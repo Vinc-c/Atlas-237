@@ -167,7 +167,7 @@ export function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-        <StatCard label={t('dash.revenue', lang)} value={fmtMoney(stats?.revenue || 0)} icon={<DollarSign size={20} />} color="success" trend={{ value: '12%', positive: true }} />
+        <StatCard label={t('dash.revenue', lang)} value={fmtMoney(stats?.revenue || 0)} icon={<DollarSign size={20} />} color="success" />
         <StatCard label={t('dash.newLeads', lang)} value={stats?.newLeads || 0} icon={<UserPlus size={20} />} color="primary" />
         <StatCard label={t('dash.hotLeads', lang)} value={stats?.hotLeads || 0} icon={<Flame size={20} />} color="error" />
         <StatCard label={t('dash.openDeals', lang)} value={stats?.openDeals || 0} icon={<Handshake size={20} />} color="primary" />

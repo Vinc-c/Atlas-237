@@ -105,6 +105,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, organization, language, signOut, isSuperAdmin, brandingLogoUrl } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const searchRoutes: Record<string, string> = {
@@ -147,13 +148,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const q = search.trim().toLowerCase();
     if (!q) return;
     const match = searchRoutes[q] || Object.entries(searchRoutes).find(([k]) => k.includes(q))?.[1];
-    if (match) { navigate(match); setSearch(''); }
+    if (match) { navigate(match); setSearch(''); setMobileOpen(false); }
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-ink-50">
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-ink-950/50 lg:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className={`${collapsed ? 'w-16' : 'w-60'} flex-shrink-0 bg-ink-900 text-white flex flex-col transition-all duration-200 sidebar-shadow overflow-hidden`}>
+      <aside className={`${collapsed ? 'w-16' : 'w-60'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} fixed lg:static inset-y-0 left-0 z-50 flex-shrink-0 bg-ink-900 text-white flex flex-col transition-all duration-200 sidebar-shadow overflow-hidden`}>
         {/* Logo — custom branding for paid plans, neutral placeholder otherwise (NO Atlas logo in dashboards) */}
         <div className="flex items-center gap-2.5 px-4 h-14 flex-shrink-0 border-b border-white/10">
           {brandingLogoUrl ? (
@@ -178,6 +184,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.to}
                   to={item.to}
                   end={item.to === '/app'}
+                  onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`
                   }
@@ -193,38 +200,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Super Admin section (platform-level, only for super admins) */}
           {isSuperAdmin && (
             <div className="pt-3 mt-3 border-t border-white/10">
-              {!collapsed && <div className="sidebar-section text-primary-400">Super Admin</div>}
-              <NavLink to="/super-admin" end className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Super Admin' : undefined}>
+              {!collapsed && <div className="sidebar-section text-primary-400">{t('superAdmin.title', language)}</div>}
+              <NavLink to="/super-admin" end onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.dashboard', language) : undefined}>
                 <ShieldCheck size={18} />
-                {!collapsed && <span>Dashboard</span>}
+                {!collapsed && <span>{t('superAdmin.dashboard', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/users" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Users' : undefined}>
+              <NavLink to="/super-admin/users" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.usersTenants', language) : undefined}>
                 <Users size={18} />
-                {!collapsed && <span>Users & Tenants</span>}
+                {!collapsed && <span>{t('superAdmin.usersTenants', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/subscriptions" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Subscriptions' : undefined}>
+              <NavLink to="/super-admin/subscriptions" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.subscriptions', language) : undefined}>
                 <Billing size={18} />
-                {!collapsed && <span>Subscriptions</span>}
+                {!collapsed && <span>{t('superAdmin.subscriptions', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/analytics" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Analytics' : undefined}>
+              <NavLink to="/super-admin/analytics" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.analytics', language) : undefined}>
                 <BarChart3 size={18} />
-                {!collapsed && <span>Analytics</span>}
+                {!collapsed && <span>{t('superAdmin.analytics', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/employees" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Employees' : undefined}>
+              <NavLink to="/super-admin/employees" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.employeeKpis', language) : undefined}>
                 <UserCog size={18} />
-                {!collapsed && <span>Employee KPIs</span>}
+                {!collapsed && <span>{t('superAdmin.employeeKpis', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/sales-codes" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Sales Codes' : undefined}>
+              <NavLink to="/super-admin/sales-codes" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.salesCodes', language) : undefined}>
                 <Receipt size={18} />
-                {!collapsed && <span>Sales Codes</span>}
+                {!collapsed && <span>{t('superAdmin.salesCodes', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/permissions" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Permissions' : undefined}>
+              <NavLink to="/super-admin/permissions" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.permissions', language) : undefined}>
                 <ShieldCheck size={18} />
-                {!collapsed && <span>Permissions</span>}
+                {!collapsed && <span>{t('superAdmin.permissions', language)}</span>}
               </NavLink>
-              <NavLink to="/super-admin/audit" className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? 'Audit Log' : undefined}>
+              <NavLink to="/super-admin/audit" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.auditLog', language) : undefined}>
                 <ScrollText size={18} />
-                {!collapsed && <span>Audit Log</span>}
+                {!collapsed && <span>{t('superAdmin.auditLog', language)}</span>}
               </NavLink>
             </div>
           )}
@@ -233,7 +240,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center py-2 text-ink-400 hover:text-white hover:bg-white/10 transition-colors border-t border-white/10"
+          className="hidden lg:flex items-center justify-center py-2 text-ink-400 hover:text-white hover:bg-white/10 transition-colors border-t border-white/10"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
         </button>
@@ -242,8 +249,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex-shrink-0 h-14 bg-white border-b border-ink-100 flex items-center justify-between px-6">
+        <header className="flex-shrink-0 h-14 bg-white border-b border-ink-100 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3 flex-1 max-w-md">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden p-2 -ml-2 rounded-lg text-ink-600 hover:bg-ink-100 transition-colors"
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
+            </button>
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
               <input
@@ -282,7 +296,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="p-6 max-w-7xl mx-auto">
+          <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             {children}
           </div>
         </main>

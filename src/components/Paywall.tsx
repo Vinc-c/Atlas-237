@@ -6,7 +6,8 @@ import { checkSubscriptionAccess, initiateFlutterwaveCheckout, recordSubscriptio
 import { Logo } from '@/components/Logo';
 
 export function Paywall({ children }: { children: React.ReactNode }) {
-  const { organization, session, loading } = useAuth();
+  const { organization, session, loading, language } = useAuth();
+  const lang = language;
   const [access, setAccess] = useState<{ allowed: boolean; status: string; plan: string; trialEndsAt: string | null; periodEnd: string | null } | null>(null);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -29,7 +30,6 @@ export function Paywall({ children }: { children: React.ReactNode }) {
 
   // Trial expired → show paywall
   const trialEnded = access.trialEndsAt ? new Date(access.trialEndsAt) < new Date() : false;
-  const lang = 'fr';
 
   async function handleSubscribe(plan: string) {
     if (!organization || !session?.user?.email) return;

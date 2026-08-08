@@ -44,7 +44,7 @@ export function NotificationsPage() {
   }
 
   async function clearAll() {
-    if (!confirm(language === 'fr' ? 'Supprimer toutes les notifications ?' : 'Clear all notifications?')) return;
+    if (!confirm(t('notif.clearConfirm', language))) return;
     let query = supabase.from('notifications').delete();
     if (profile?.id) query = query.eq('user_id', profile.id);
     await query;
@@ -62,13 +62,13 @@ export function NotificationsPage() {
         subtitle=""
         actions={notifications.length > 0 ? (
           <div className="flex gap-2">
-            {unreadCount > 0 && <button onClick={markAllRead} className="btn-secondary btn-sm">{language === 'fr' ? 'Tout marquer lu' : 'Mark all read'}</button>}
-            <button onClick={clearAll} className="btn-secondary btn-sm">{language === 'fr' ? 'Tout effacer' : 'Clear all'}</button>
+            {unreadCount > 0 && <button onClick={markAllRead} className="btn-secondary btn-sm">{t('notif.markAllRead', language)}</button>}
+            <button onClick={clearAll} className="btn-secondary btn-sm">{t('notif.clearAll', language)}</button>
           </div>
         ) : undefined}
       />
       {notifications.length === 0 ? (
-        <div className="card"><EmptyState icon={<Bell size={28} />} title="No notifications" description="You're all caught up! New notifications will appear here." /></div>
+        <div className="card"><EmptyState icon={<Bell size={28} />} title={t('notif.noNotifications', language)} description={t('notif.caughtUp', language)} /></div>
       ) : (
         <div className="space-y-2">
           {notifications.map(n => (
@@ -79,7 +79,7 @@ export function NotificationsPage() {
                 {n.message && <p className="text-sm text-ink-500 mt-0.5">{n.message}</p>}
                 <p className="text-xs text-ink-400 mt-1">{new Date(n.created_at).toLocaleString(language)}</p>
               </div>
-              {!n.read && <button onClick={() => markRead(n.id)} className="text-xs text-primary-600 hover:underline">Mark read</button>}
+              {!n.read && <button onClick={() => markRead(n.id)} className="text-xs text-primary-600 hover:underline">{t('notif.markRead', language)}</button>}
             </div>
           ))}
         </div>
@@ -104,15 +104,15 @@ export function AuditLogPage() {
     <div className="animate-fade-in">
       <PageHeader title={t('nav.auditLog', language)} subtitle="" />
       {logs.length === 0 ? (
-        <div className="card"><EmptyState icon={<ScrollText size={28} />} title="No audit logs" description="System and AI actions will be logged here for compliance." /></div>
+        <div className="card"><EmptyState icon={<ScrollText size={28} />} title={t('audit.noLogs', language)} description={t('audit.logsDesc', language)} /></div>
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full">
             <thead><tr className="border-b border-ink-100 bg-ink-50/50">
-              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Actor</th>
-              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Action</th>
-              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Entity</th>
-              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">Date</th>
+              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">{t('audit.actor', language)}</th>
+              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">{t('audit.action', language)}</th>
+              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">{t('audit.entity', language)}</th>
+              <th className="text-left text-xs font-semibold text-ink-500 uppercase px-4 py-3">{t('audit.date', language)}</th>
             </tr></thead>
             <tbody>
               {logs.map(log => (
@@ -143,7 +143,7 @@ export function SettingsPage() {
   const tabs = [
     { key: 'account' as const, label: language === 'fr' ? 'Compte' : 'Account', icon: Building2 },
     { key: 'profile' as const, label: language === 'fr' ? 'Profil' : 'Profile', icon: User },
-    { key: 'branding' as const, label: 'Branding', icon: ImageIcon },
+    { key: 'branding' as const, label: language === 'fr' ? 'Branding' : 'Branding', icon: ImageIcon },
     { key: 'roles' as const, label: language === 'fr' ? 'Rôles & Permissions' : 'Roles & Permissions', icon: ShieldCheck },
     { key: 'security' as const, label: language === 'fr' ? 'Sécurité' : 'Security', icon: Lock },
   ];
@@ -345,7 +345,7 @@ function BrandingTab({ language, organization, onSave }: { language: any; organi
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <ImageIcon className="text-ink-400" size={24} />
-          <h3 className="font-bold text-ink-800">Branding</h3>
+          <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Branding' : 'Branding'}</h3>
         </div>
         <div className="rounded-lg bg-ink-50 p-4 text-center">
           <p className="text-sm text-ink-600 mb-2">
@@ -363,7 +363,7 @@ function BrandingTab({ language, organization, onSave }: { language: any; organi
 
   return (
     <div className="card p-6">
-      <h3 className="font-bold text-ink-800 mb-4">Branding</h3>
+      <h3 className="font-bold text-ink-800 mb-4">{language === 'fr' ? 'Branding' : 'Branding'}</h3>
       <p className="text-sm text-ink-500 mb-4">
         {language === 'fr'
           ? "Téléchargez le logo de votre entreprise. Il remplacera le logo par défaut dans votre tableau de bord."
@@ -586,7 +586,7 @@ function SecurityTab({ language }: { language: any }) {
 
   async function signOutAll() {
     await supabase.auth.signOut({ scope: 'global' });
-    window.location.href = '/login';
+    window.location.href = '/auth';
   }
 
   if (loading) return <div className="card p-6 text-sm text-ink-500">{t('common.loading', language)}</div>;

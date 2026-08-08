@@ -29,23 +29,23 @@ export function SuperAdminLayout() {
       <div className="flex h-screen items-center justify-center bg-ink-50">
         <div className="text-center">
           <AlertTriangle className="mx-auto mb-3 text-error-500" size={48} />
-          <h1 className="text-xl font-bold text-ink-900">Access Denied</h1>
-          <p className="mt-2 text-sm text-ink-500">You do not have Super Admin privileges.</p>
-          <button onClick={() => navigate('/app')} className="btn-primary mt-4">Back to Dashboard</button>
+          <h1 className="text-xl font-bold text-ink-900">{t('superAdmin.accessDenied', language)}</h1>
+          <p className="mt-2 text-sm text-ink-500">{t('superAdmin.noPrivileges', language)}</p>
+          <button onClick={() => navigate('/app')} className="btn-primary mt-4">{t('superAdmin.backToDashboard', language)}</button>
         </div>
       </div>
     );
   }
 
   const navItems = [
-    { to: '/super-admin', label: 'Dashboard', icon: ShieldCheck, end: true },
-    { to: '/super-admin/users', label: 'Users & Tenants', icon: Users },
-    { to: '/super-admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
-    { to: '/super-admin/analytics', label: 'Analytics', icon: BarChart3 },
-    { to: '/super-admin/employees', label: 'Employee KPIs', icon: UserCog },
-    { to: '/super-admin/sales-codes', label: 'Sales Codes', icon: Receipt },
-    { to: '/super-admin/permissions', label: 'Permissions', icon: ShieldCheck },
-    { to: '/super-admin/audit', label: 'Audit Log', icon: ScrollText },
+    { to: '/super-admin', label: t('superAdmin.dashboard', language), icon: ShieldCheck, end: true },
+    { to: '/super-admin/users', label: t('superAdmin.usersTenants', language), icon: Users },
+    { to: '/super-admin/subscriptions', label: t('superAdmin.subscriptions', language), icon: CreditCard },
+    { to: '/super-admin/analytics', label: t('superAdmin.analytics', language), icon: BarChart3 },
+    { to: '/super-admin/employees', label: t('superAdmin.employeeKpis', language), icon: UserCog },
+    { to: '/super-admin/sales-codes', label: t('superAdmin.salesCodes', language), icon: Receipt },
+    { to: '/super-admin/permissions', label: t('superAdmin.permissions', language), icon: ShieldCheck },
+    { to: '/super-admin/audit', label: t('superAdmin.auditLog', language), icon: ScrollText },
   ];
 
   return (
@@ -55,7 +55,7 @@ export function SuperAdminLayout() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600">
             <ShieldCheck size={18} />
           </div>
-          <span className="font-bold text-lg">Super Admin</span>
+          <span className="font-bold text-lg">{t('superAdmin.title', language)}</span>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
           {navItems.map((item) => (
@@ -71,7 +71,7 @@ export function SuperAdminLayout() {
         </nav>
         <div className="border-t border-white/10 p-3">
           <button onClick={() => navigate('/app')} className="sidebar-item w-full text-left">
-            <Building2 size={18} /><span>Back to App</span>
+            <Building2 size={18} /><span>{t('superAdmin.backToApp', language)}</span>
           </button>
           <button onClick={() => { signOut(); navigate('/'); }} className="sidebar-item w-full text-left text-ink-400">
             <span>← {t('auth.login', language)}</span>
@@ -80,7 +80,7 @@ export function SuperAdminLayout() {
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-14 bg-white border-b border-ink-100 flex items-center justify-between px-6">
-          <h2 className="font-bold text-ink-900">Platform Control Center</h2>
+          <h2 className="font-bold text-ink-900">{t('superAdmin.platformControl', language)}</h2>
           <div className="flex items-center gap-2 text-sm text-ink-500">
             <ShieldCheck size={16} className="text-primary-600" />
             <span>{profile?.email}</span>
@@ -116,12 +116,12 @@ export function SuperAdminDashboard() {
   if (loading) return <Loading />;
 
   const cards = [
-    { label: 'Total Orgs', value: stats?.total_orgs ?? 0, icon: Building2, color: 'text-primary-600 bg-primary-50' },
-    { label: 'Total Users', value: stats?.total_users ?? 0, icon: Users, color: 'text-success-600 bg-success-50' },
-    { label: 'Active Subs', value: stats?.active_subs ?? 0, icon: CreditCard, color: 'text-warning-600 bg-warning-50' },
-    { label: 'MRR', value: formatMoney(stats?.mrr_cents ?? 0, 'USD', language), icon: DollarSign, color: 'text-error-600 bg-error-50' },
-    { label: 'Active Trials', value: stats?.active_trials ?? 0, icon: Activity, color: 'text-accent-600 bg-accent-50' },
-    { label: 'New (30d)', value: stats?.new_orgs_30d ?? 0, icon: TrendingUp, color: 'text-secondary-600 bg-secondary-50' },
+    { label: t('superAdmin.totalOrgs', language), value: stats?.total_orgs ?? 0, icon: Building2, color: 'text-primary-600 bg-primary-50' },
+    { label: t('superAdmin.totalUsers', language), value: stats?.total_users ?? 0, icon: Users, color: 'text-success-600 bg-success-50' },
+    { label: t('superAdmin.activeSubs', language), value: stats?.active_subs ?? 0, icon: CreditCard, color: 'text-warning-600 bg-warning-50' },
+    { label: t('superAdmin.mrr', language), value: formatMoney(stats?.mrr_cents ?? 0, 'USD', language), icon: DollarSign, color: 'text-error-600 bg-error-50' },
+    { label: t('superAdmin.activeTrials', language), value: stats?.active_trials ?? 0, icon: Activity, color: 'text-accent-600 bg-accent-50' },
+    { label: t('superAdmin.new30d', language), value: stats?.new_orgs_30d ?? 0, icon: TrendingUp, color: 'text-secondary-600 bg-secondary-50' },
   ];
 
   return (
@@ -138,7 +138,7 @@ export function SuperAdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="card p-6">
-          <h3 className="font-bold text-ink-800 mb-4">Plan Distribution</h3>
+          <h3 className="font-bold text-ink-800 mb-4">{t('superAdmin.planDistribution', language)}</h3>
           {[
             { label: 'Starter', count: stats?.starter_count ?? 0 },
             { label: 'Growth', count: stats?.growth_count ?? 0 },
@@ -156,7 +156,7 @@ export function SuperAdminDashboard() {
           })}
         </div>
         <div className="card p-6">
-          <h3 className="font-bold text-ink-800 mb-4">Super Admins</h3>
+          <h3 className="font-bold text-ink-800 mb-4">{t('superAdmin.superAdmins', language)}</h3>
           <SuperAdminsList />
         </div>
       </div>
@@ -168,7 +168,7 @@ export function SuperAdminDashboard() {
    Super Admins List (add/remove with min-2 rule)
    ═══════════════════════════════════════════════════════════ */
 function SuperAdminsList() {
-  const { user } = useAuth();
+  const { user, language } = useAuth();
   const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
@@ -189,7 +189,7 @@ function SuperAdminsList() {
     const email = newEmail.trim().toLowerCase();
     const { error: err } = await supabase.from('super_admins').insert({ email, is_founder: false, active: true });
     if (err) {
-      setError(err.message.includes('duplicate') ? 'Already a super admin' : err.message);
+      setError(err.message.includes('duplicate') ? t('superAdmin.alreadyAdmin', language) : err.message);
     } else {
       // Log the action
       await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'super_admin.add', p_target_type: 'super_admin', p_target_email: email });
@@ -203,12 +203,12 @@ function SuperAdminsList() {
     if (!user) return;
     const count = admins.filter((a) => a.active).length;
     if (count <= 2) {
-      setError('Cannot remove: minimum 2 active super admins required.');
+      setError(t('superAdmin.cannotRemove', language));
       return;
     }
     const confirmMsg = isFounder
-      ? `⚠️ FOUNDER PROTECTED ⚠️\n\nYou are about to remove founder ${email}.\nThis is a sensitive action. Type "CONFIRM" to proceed:`
-      : `Remove super admin ${email}?`;
+      ? `⚠️ ${language === 'fr' ? 'FONDATEUR PROTÉGÉ' : 'FOUNDER PROTECTED'} ⚠️\n\n${language === 'fr' ? `Vous êtes sur le point de supprimer le fondateur ${email}. Ceci est une action sensible. Tapez "CONFIRM" pour continuer :` : `You are about to remove founder ${email}. This is a sensitive action. Type "CONFIRM" to proceed:`}`
+      : (language === 'fr' ? `Supprimer le super admin ${email} ?` : `Remove super admin ${email}?`);
     const input = isFounder ? prompt(confirmMsg) : confirm(confirmMsg);
     if (isFounder && input !== 'CONFIRM') return;
     if (!isFounder && !input) return;
@@ -234,14 +234,14 @@ function SuperAdminsList() {
             <div className="flex items-center gap-2">
               <span className={`h-2 w-2 rounded-full ${a.active ? 'bg-success-500' : 'bg-ink-300'}`} />
               <span className="text-sm font-medium text-ink-700">{a.email}</span>
-              {a.is_founder && <span className="rounded-full bg-warning-100 px-2 py-0.5 text-[10px] font-bold text-warning-700">FOUNDER</span>}
+              {a.is_founder && <span className="rounded-full bg-warning-100 px-2 py-0.5 text-[10px] font-bold text-warning-700">{language === 'fr' ? 'FONDATEUR' : 'FOUNDER'}</span>}
               {a.twofa_required && <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-bold text-primary-700">2FA</span>}
             </div>
             <button
               onClick={() => removeAdmin(a.id, a.email, a.is_founder)}
               disabled={busy}
               className="p-1.5 rounded-lg text-error-500 hover:bg-error-50 transition"
-              title="Remove"
+              title={t('superAdmin.remove', language)}
             >
               <Trash2 size={14} />
             </button>
@@ -257,11 +257,11 @@ function SuperAdminsList() {
           type="email"
         />
         <button onClick={addAdmin} disabled={busy || !newEmail.trim()} className="btn-primary btn-sm">
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Add
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {t('superAdmin.add', language)}
         </button>
       </div>
       {error && <p className="mt-2 text-xs text-error-600">{error}</p>}
-      <p className="mt-2 text-[11px] text-ink-400">Min. 2 active admins enforced. Founders require typed confirmation.</p>
+      <p className="mt-2 text-[11px] text-ink-400">{t('superAdmin.minAdmins', language)}</p>
     </div>
   );
 }
@@ -312,10 +312,10 @@ export function SuperAdminUsersPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-ink-900">Tenants ({orgs.length})</h2>
+        <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.tenants', language)} ({orgs.length})</h2>
         <div className="relative w-64">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input className="input pl-9" placeholder="Search tenants..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-9" placeholder={t('superAdmin.searchTenants', language)} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
@@ -323,13 +323,13 @@ export function SuperAdminUsersPage() {
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Organization</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Plan</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Currency</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Country</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Trial Ends</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Created</th>
-              <th className="px-4 py-3 text-right font-semibold text-ink-700">Actions</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.organization', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.plan', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.currency', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.country', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.trialEnds', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.created', language)}</th>
+              <th className="px-4 py-3 text-right font-semibold text-ink-700">{t('superAdmin.actions', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -363,14 +363,14 @@ export function SuperAdminUsersPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <h3 className="px-4 py-3 font-bold text-ink-800 border-b border-ink-100">All Users ({profiles.length})</h3>
+        <h3 className="px-4 py-3 font-bold text-ink-800 border-b border-ink-100">{t('superAdmin.allUsers', language)} ({profiles.length})</h3>
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Email</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Role</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Active</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.name', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.email', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.role', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.active', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -384,7 +384,7 @@ export function SuperAdminUsersPage() {
             ))}
           </tbody>
         </table>
-        {profiles.length > 50 && <p className="px-4 py-2 text-xs text-ink-400">Showing first 50 of {profiles.length}</p>}
+        {profiles.length > 50 && <p className="px-4 py-2 text-xs text-ink-400">{language === 'fr' ? `Affichage des 50 premiers sur ${profiles.length}` : `Showing first 50 of ${profiles.length}`}</p>}
       </div>
     </div>
   );
@@ -409,18 +409,18 @@ export function SuperAdminSubscriptionsPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-bold text-ink-900">Subscriptions ({subs.length})</h2>
+      <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.subscriptions', language)} ({subs.length})</h2>
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Tenant</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Plan</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Amount</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Cycle</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Period End</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Tx Ref</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.tenant', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.plan', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.status', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.amount', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.cycle', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.periodEnd', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.txRef', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -438,7 +438,7 @@ export function SuperAdminSubscriptionsPage() {
               </tr>
             ))}
             {subs.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400">No subscriptions yet</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400">{t('superAdmin.noSubs', language)}</td></tr>
             )}
           </tbody>
         </table>
@@ -466,32 +466,32 @@ export function SuperAdminAnalyticsPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-bold text-ink-900">Platform Analytics</h2>
+      <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.platformAnalytics', language)}</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card p-6">
           <DollarSign className="text-success-600" size={24} />
           <p className="mt-3 text-3xl font-bold text-ink-900">{formatMoney(stats?.mrr_cents ?? 0, 'USD', language)}</p>
-          <p className="text-sm text-ink-500">Monthly Recurring Revenue</p>
+          <p className="text-sm text-ink-500">{t('superAdmin.mrrLabel', language)}</p>
         </div>
         <div className="card p-6">
           <TrendingUp className="text-primary-600" size={24} />
           <p className="mt-3 text-3xl font-bold text-ink-900">{formatMoney((stats?.mrr_cents ?? 0) * 12, 'USD', language)}</p>
-          <p className="text-sm text-ink-500">Annual Recurring Revenue (ARR)</p>
+          <p className="text-sm text-ink-500">{t('superAdmin.arrLabel', language)}</p>
         </div>
         <div className="card p-6">
           <Activity className="text-warning-600" size={24} />
           <p className="mt-3 text-3xl font-bold text-ink-900">{stats?.active_trials ?? 0}</p>
-          <p className="text-sm text-ink-500">Active Trials</p>
+          <p className="text-sm text-ink-500">{t('superAdmin.activeTrials', language)}</p>
         </div>
       </div>
 
       <div className="card p-6">
-        <h3 className="font-bold text-ink-800 mb-4">Growth Metrics</h3>
+        <h3 className="font-bold text-ink-800 mb-4">{t('superAdmin.growthMetrics', language)}</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div><p className="text-2xl font-bold text-ink-900">{stats?.total_orgs ?? 0}</p><p className="text-xs text-ink-500">Total Tenants</p></div>
-          <div><p className="text-2xl font-bold text-ink-900">{stats?.total_users ?? 0}</p><p className="text-xs text-ink-500">Total Users</p></div>
-          <div><p className="text-2xl font-bold text-ink-900">{stats?.new_orgs_30d ?? 0}</p><p className="text-xs text-ink-500">New (30 days)</p></div>
-          <div><p className="text-2xl font-bold text-ink-900">{stats?.active_subs ?? 0}</p><p className="text-xs text-ink-500">Active Subscriptions</p></div>
+          <div><p className="text-2xl font-bold text-ink-900">{stats?.total_orgs ?? 0}</p><p className="text-xs text-ink-500">{t('superAdmin.totalTenants', language)}</p></div>
+          <div><p className="text-2xl font-bold text-ink-900">{stats?.total_users ?? 0}</p><p className="text-xs text-ink-500">{t('superAdmin.totalUsers', language)}</p></div>
+          <div><p className="text-2xl font-bold text-ink-900">{stats?.new_orgs_30d ?? 0}</p><p className="text-xs text-ink-500">{t('superAdmin.new30days', language)}</p></div>
+          <div><p className="text-2xl font-bold text-ink-900">{stats?.active_subs ?? 0}</p><p className="text-xs text-ink-500">{t('superAdmin.activeSubscriptions', language)}</p></div>
         </div>
       </div>
     </div>
@@ -535,20 +535,20 @@ export function SuperAdminEmployeesPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-ink-900">Employee KPIs</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm"><Plus size={14} /> Add KPI</button>
+        <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.employeeKpis', language)}</h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm"><Plus size={14} /> {t('superAdmin.addKpi', language)}</button>
       </div>
 
       {showForm && (
         <div className="card p-6 space-y-3">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Employee Email</label><input className="input" value={form.employee_email} onChange={(e) => setForm({ ...form, employee_email: e.target.value })} /></div>
-            <div><label className="label">Employee Name</label><input className="input" value={form.employee_name} onChange={(e) => setForm({ ...form, employee_name: e.target.value })} /></div>
-            <div><label className="label">Period (e.g. 2026-Q3)</label><input className="input" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} /></div>
-            <div><label className="label">Target Revenue ($)</label><input className="input" type="number" value={form.target_revenue} onChange={(e) => setForm({ ...form, target_revenue: e.target.value })} /></div>
-            <div><label className="label">Target Deals</label><input className="input" type="number" value={form.target_deals} onChange={(e) => setForm({ ...form, target_deals: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.employeeEmail', language)}</label><input className="input" value={form.employee_email} onChange={(e) => setForm({ ...form, employee_email: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.employeeName', language)}</label><input className="input" value={form.employee_name} onChange={(e) => setForm({ ...form, employee_name: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.period', language)}</label><input className="input" value={form.period} onChange={(e) => setForm({ ...form, period: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.targetRevenue', language)}</label><input className="input" type="number" value={form.target_revenue} onChange={(e) => setForm({ ...form, target_revenue: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.targetDeals', language)}</label><input className="input" type="number" value={form.target_deals} onChange={(e) => setForm({ ...form, target_deals: e.target.value })} /></div>
           </div>
-          <button onClick={addKpi} className="btn-primary btn-sm">Save KPI</button>
+          <button onClick={addKpi} className="btn-primary btn-sm">{t('superAdmin.saveKpi', language)}</button>
         </div>
       )}
 
@@ -556,12 +556,12 @@ export function SuperAdminEmployeesPage() {
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Employee</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Period</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Target Rev</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Actual Rev</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Target Deals</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Activity Score</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.employee', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.period', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.targetRev', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.actualRev', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.targetDeals', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.activityScore', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -575,7 +575,7 @@ export function SuperAdminEmployeesPage() {
                 <td className="px-4 py-3"><span className="font-semibold text-primary-600">{k.activity_score || 0}</span></td>
               </tr>
             ))}
-            {kpis.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-400">No KPIs defined yet</td></tr>}
+            {kpis.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-400">{t('superAdmin.noKpis', language)}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -587,7 +587,7 @@ export function SuperAdminEmployeesPage() {
    Sales Codes (commercial tracking)
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminSalesCodesPage() {
-  const { user } = useAuth();
+  const { user, language } = useAuth();
   const [codes, setCodes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -621,20 +621,20 @@ export function SuperAdminSalesCodesPage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-ink-900">Sales Codes</h2>
-          <p className="text-sm text-ink-500">Track commercial referrals and conversions</p>
+          <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.salesCodes', language)}</h2>
+          <p className="text-sm text-ink-500">{t('superAdmin.trackReferrals', language)}</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm"><Plus size={14} /> Generate Code</button>
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary btn-sm"><Plus size={14} /> {t('superAdmin.generateCode', language)}</button>
       </div>
 
       {showForm && (
         <div className="card p-6 space-y-3">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Salesperson Email</label><input className="input" value={form.salesperson_email} onChange={(e) => setForm({ ...form, salesperson_email: e.target.value })} /></div>
-            <div><label className="label">Salesperson Name</label><input className="input" value={form.salesperson_name} onChange={(e) => setForm({ ...form, salesperson_name: e.target.value })} /></div>
-            <div><label className="label">Max Uses (blank = unlimited)</label><input className="input" type="number" value={form.max_uses} onChange={(e) => setForm({ ...form, max_uses: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.salespersonEmail', language)}</label><input className="input" value={form.salesperson_email} onChange={(e) => setForm({ ...form, salesperson_email: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.salespersonName', language)}</label><input className="input" value={form.salesperson_name} onChange={(e) => setForm({ ...form, salesperson_name: e.target.value })} /></div>
+            <div><label className="label">{t('superAdmin.maxUses', language)}</label><input className="input" type="number" value={form.max_uses} onChange={(e) => setForm({ ...form, max_uses: e.target.value })} /></div>
           </div>
-          <button onClick={addCode} className="btn-primary btn-sm">Generate</button>
+          <button onClick={addCode} className="btn-primary btn-sm">{t('superAdmin.generate', language)}</button>
         </div>
       )}
 
@@ -642,11 +642,11 @@ export function SuperAdminSalesCodesPage() {
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Code</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Salesperson</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Uses</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Created</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{language === 'fr' ? 'Code' : 'Code'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.salesperson', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.uses', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.status', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.created', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -655,11 +655,11 @@ export function SuperAdminSalesCodesPage() {
                 <td className="px-4 py-3 font-mono font-bold text-primary-600">{c.code}</td>
                 <td className="px-4 py-3"><p className="font-medium text-ink-900">{c.salesperson_name}</p><p className="text-xs text-ink-400">{c.salesperson_email}</p></td>
                 <td className="px-4 py-3 text-ink-600">{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
-                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.active ? 'bg-success-100 text-success-700' : 'bg-ink-100 text-ink-500'}`}>{c.active ? 'Active' : 'Inactive'}</span></td>
+                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${c.active ? 'bg-success-100 text-success-700' : 'bg-ink-100 text-ink-500'}`}>{c.active ? t('status.active', language) : t('status.inactive', language)}</span></td>
                 <td className="px-4 py-3 text-ink-500">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
-            {codes.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400">No sales codes generated yet</td></tr>}
+            {codes.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400">{t('superAdmin.noCodes', language)}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -700,19 +700,19 @@ export function SuperAdminPermissionsPage() {
       return { module, action };
     });
     await setRolePermissions(selectedRole.id, permList);
-    alert('Permissions saved');
+    alert(language === 'fr' ? 'Permissions enregistrées' : 'Permissions saved');
   }
 
   if (loading) return <Loading />;
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-bold text-ink-900">Platform Permissions (RBAC)</h2>
-      <p className="text-sm text-ink-500">Single permission engine for platform + tenant scope. Backend enforcement via <code className="bg-ink-100 px-1 rounded">rbac_check()</code> SQL function.</p>
+      <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.platformPermissions', language)}</h2>
+      <p className="text-sm text-ink-500">{t('superAdmin.permissionsDesc', language)} <code className="bg-ink-100 px-1 rounded">rbac_check()</code> SQL function.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card p-4">
-          <h3 className="font-bold text-ink-800 mb-3">Roles</h3>
+          <h3 className="font-bold text-ink-800 mb-3">{t('superAdmin.roles', language)}</h3>
           <div className="space-y-1">
             {roles.map((r) => (
               <button
@@ -721,7 +721,7 @@ export function SuperAdminPermissionsPage() {
                 className={`w-full text-left px-3 py-2 rounded-lg transition ${selectedRole?.id === r.id ? 'bg-primary-50 text-primary-700' : 'hover:bg-ink-50 text-ink-700'}`}
               >
                 <p className="font-medium text-sm">{r.name}</p>
-                <p className="text-xs text-ink-400 capitalize">{r.scope} · {r.is_system ? 'System' : 'Custom'}</p>
+                <p className="text-xs text-ink-400 capitalize">{r.scope} · {r.is_system ? (language === 'fr' ? 'Système' : 'System') : (language === 'fr' ? 'Personnalisé' : 'Custom')}</p>
               </button>
             ))}
           </div>
@@ -731,14 +731,14 @@ export function SuperAdminPermissionsPage() {
           {selectedRole ? (
             <>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-ink-800">{selectedRole.name} Permissions</h3>
-                <button onClick={savePermissions} className="btn-primary btn-sm">Save</button>
+                <h3 className="font-bold text-ink-800">{selectedRole.name} {t('superAdmin.permissions', language)}</h3>
+                <button onClick={savePermissions} className="btn-primary btn-sm">{t('superAdmin.save', language)}</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-ink-100">
-                      <th className="text-left py-2 font-semibold text-ink-700">Module</th>
+                      <th className="text-left py-2 font-semibold text-ink-700">{language === 'fr' ? 'Module' : 'Module'}</th>
                       {ACTIONS.map((a) => <th key={a.key} className="px-3 py-2 text-center font-semibold text-ink-700">{a.label[language === 'fr' ? 'fr' : 'en']}</th>)}
                     </tr>
                   </thead>
@@ -763,7 +763,7 @@ export function SuperAdminPermissionsPage() {
               </div>
             </>
           ) : (
-            <EmptyState icon={<ShieldCheck size={28} />} title="Select a role" description="Choose a role from the left to manage its permissions." />
+            <EmptyState icon={<ShieldCheck size={28} />} title={t('superAdmin.selectRole', language)} description={t('superAdmin.selectRoleDesc', language)} />
           )}
         </div>
       </div>
@@ -775,6 +775,7 @@ export function SuperAdminPermissionsPage() {
    Audit Log (immutable platform actions)
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminAuditPage() {
+  const { language } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -789,15 +790,15 @@ export function SuperAdminAuditPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <h2 className="text-xl font-bold text-ink-900">Platform Audit Log</h2>
+      <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.platformAuditLog', language)}</h2>
       <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-ink-50">
             <tr>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Timestamp</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Actor</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Action</th>
-              <th className="px-4 py-3 text-left font-semibold text-ink-700">Target</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.timestamp', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.actor', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.action', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.target', language)}</th>
             </tr>
           </thead>
           <tbody>
@@ -809,7 +810,7 @@ export function SuperAdminAuditPage() {
                 <td className="px-4 py-3 text-ink-600">{l.target_email || l.target_id || '—'}</td>
               </tr>
             ))}
-            {logs.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-ink-400">No audit entries yet</td></tr>}
+            {logs.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-ink-400">{t('superAdmin.noAudit', language)}</td></tr>}
           </tbody>
         </table>
       </div>

@@ -11,28 +11,28 @@ import { t } from '@/lib/i18n';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
 const cloudProducts = [
-  { icon: MessageSquare, name: 'Slack', desc: 'Connectez workflows et données conversationnelles là où le travail se fait.' },
-  { icon: BarChart3, name: 'Tableau', desc: 'Transformez l’analytique agentique en intelligence actionable.' },
-  { icon: Bot, name: 'Agentforce', desc: 'Créez des expériences agentiques de confiance qui agissent avec intention.' },
-  { icon: Cloud, name: 'Customer 360', desc: 'Ancrez chaque décision dans un contexte métier éprouvé.' },
-  { icon: Database, name: 'Data 360', desc: 'Une fondation de données gouvernée, unifiée et fiable.' },
+  { icon: MessageSquare, name: 'Slack', desc: { fr: 'Connectez workflows et données conversationnelles là où le travail se fait.', en: 'Connect workflows and conversational data where work happens.' } },
+  { icon: BarChart3, name: 'Tableau', desc: { fr: 'Transformez l’analytique agentique en intelligence actionable.', en: 'Turn agentic analytics into actionable intelligence.' } },
+  { icon: Bot, name: 'Agentforce', desc: { fr: 'Créez des expériences agentiques de confiance qui agissent avec intention.', en: 'Build trusted agentic experiences that act with intention.' } },
+  { icon: Cloud, name: 'Customer 360', desc: { fr: 'Ancrez chaque décision dans un contexte métier éprouvé.', en: 'Anchor every decision in proven business context.' } },
+  { icon: Database, name: 'Data 360', desc: { fr: 'Une fondation de données gouvernée, unifiée et fiable.', en: 'A governed, unified, and trusted data foundation.' } },
 ];
 
 const industries = [
-  { icon: Building2, name: 'Services financiers', desc: 'Connectez-vous proactivement aux clients pour des expériences IA à forte valeur.' },
-  { icon: TrendingUp, name: 'Retail', desc: 'Acquérez des clients rentables plus vite avec des données unifiées en temps réel.' },
-  { icon: ShieldCheck, name: 'Santé & Sciences de la vie', desc: 'Élevez vos équipes avec des agents IA pour des communautés plus saines.' },
-  { icon: Building2, name: 'Construction & Immobilier', desc: 'Fluidifiez vos processus et atteignez l’excellence opérationnelle.' },
-  { icon: Bot, name: 'Éducation', desc: 'Boostez la productivité et le support étudiant 24/7 avec une IA dédiée.' },
-  { icon: Workflow, name: 'Services pro', desc: 'Renforcez la confiance client, recrutez les bons talents et bâtissez la culture.' },
-  { icon: Cloud, name: 'Technologie', desc: 'Automatisez les workflows, unifiez les données et prospérez avec une IA fiable.' },
-  { icon: Workflow, name: 'Industrie', desc: 'Intégrez toutes vos données sur une chaîne de valeur unifiée.' },
+  { icon: Building2, name: { fr: 'Services financiers', en: 'Financial Services' }, desc: { fr: 'Connectez-vous proactivement aux clients pour des expériences IA à forte valeur.', en: 'Proactively connect with clients for high-value AI experiences.' } },
+  { icon: TrendingUp, name: { fr: 'Retail', en: 'Retail' }, desc: { fr: 'Acquérez des clients rentables plus vite avec des données unifiées en temps réel.', en: 'Acquire profitable customers faster with unified real-time data.' } },
+  { icon: ShieldCheck, name: { fr: 'Santé & Sciences de la vie', en: 'Health & Life Sciences' }, desc: { fr: 'Élevez vos équipes avec des agents IA pour des communautés plus saines.', en: 'Empower your teams with AI agents for healthier communities.' } },
+  { icon: Building2, name: { fr: 'Construction & Immobilier', en: 'Construction & Real Estate' }, desc: { fr: 'Fluidifiez vos processus et atteignez l’excellence opérationnelle.', en: 'Streamline your processes and reach operational excellence.' } },
+  { icon: Bot, name: { fr: 'Éducation', en: 'Education' }, desc: { fr: 'Boostez la productivité et le support étudiant 24/7 avec une IA dédiée.', en: 'Boost productivity and 24/7 student support with dedicated AI.' } },
+  { icon: Workflow, name: { fr: 'Services pro', en: 'Professional Services' }, desc: { fr: 'Renforcez la confiance client, recrutez les bons talents et bâtissez la culture.', en: 'Strengthen client trust, hire the right talent, and build culture.' } },
+  { icon: Cloud, name: { fr: 'Technologie', en: 'Technology' }, desc: { fr: 'Automatisez les workflows, unifiez les données et prospérez avec une IA fiable.', en: 'Automate workflows, unify data, and thrive with trusted AI.' } },
+  { icon: Workflow, name: { fr: 'Industrie', en: 'Manufacturing' }, desc: { fr: 'Intégrez toutes vos données sur une chaîne de valeur unifiée.', en: 'Integrate all your data on a unified value chain.' } },
 ];
 
 const reports = [
-  { tag: 'Rapport', title: 'Agentforce délivre un ROI plus rapide et à moindre coût qu’une approche DIY', cta: 'Lire le rapport Valoir' },
-  { tag: 'Rapport', title: 'Salesforce est élu n°1 des éditeurs logiciers mondiaux sur G2', cta: 'Lire le rapport G2' },
-  { tag: 'Rapport', title: 'Pourquoi Agentforce est le chemin le plus rapide vers la valeur entreprise', cta: 'Lire le rapport Futurum' },
+  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Agentforce délivre un ROI plus rapide et à moindre coût qu’une approche DIY', en: 'Agentforce delivers faster ROI at lower cost than a DIY approach' }, cta: { fr: 'Lire le rapport Valoir', en: 'Read Valoir report' } },
+  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Salesforce est élu n°1 des éditeurs logiciers mondiaux sur G2', en: 'Salesforce named #1 global software vendor on G2' }, cta: { fr: 'Lire le rapport G2', en: 'Read G2 report' } },
+  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Pourquoi Agentforce est le chemin le plus rapide vers la valeur entreprise', en: 'Why Agentforce is the fastest path to enterprise value' }, cta: { fr: 'Lire le rapport Futurum', en: 'Read Futurum report' } },
 ];
 
 const plans = [
@@ -42,43 +42,7 @@ const plans = [
   { name: 'Enterprise', monthly: null, tagline: { fr: 'Sur mesure', en: 'Custom' }, desc: { fr: 'Solution dédiée, API illimitée et accompagnement.', en: 'Dedicated solution, unlimited API and support.' }, cta: { fr: 'Contacter les ventes', en: 'Contact sales' }, popular: false },
 ];
 
-type Row = { label: string; values: (boolean | string)[] };
-const matrixGroups: { group: string; rows: Row[] }[] = [
-  {
-    group: 'Ventes & CRM',
-    rows: [
-      { label: 'Contacts illimités', values: [true, true, true, true] },
-      { label: 'Pipelines de ventes', values: [true, true, true, true] },
-      { label: 'Devis & facturation', values: [false, true, true, true] },
-      { label: 'Utilisateurs inclus', values: ['3', '10', '25', 'Illimité'] },
-    ],
-  },
-  {
-    group: 'Automatisation & IA',
-    rows: [
-      { label: 'Agents pré-construits (Agentforce)', values: [true, true, true, true] },
-      { label: 'Automations / workflows', values: [false, true, true, true] },
-      { label: 'Analyses prédictives', values: [false, false, true, true] },
-      { label: 'Workflows personnalisés', values: [false, false, true, true] },
-    ],
-  },
-  {
-    group: 'Service & Support',
-    rows: [
-      { label: 'Tickets clients', values: [false, true, true, true] },
-      { label: 'Base de connaissances', values: [false, false, true, true] },
-      { label: 'SLA & escalade', values: [false, false, true, true] },
-    ],
-  },
-  {
-    group: 'Sécurité & Administration',
-    rows: [
-      { label: 'SSO / SAML', values: [false, false, true, true] },
-      { label: 'Audit log', values: [false, true, true, true] },
-      { label: 'Support dédié', values: ['Email', 'Prioritaire', '24/7', 'Délégué'] },
-    ],
-  },
-];
+type Row = { label: { fr: string; en: string }; values: (boolean | string)[] };
 
 const faqs = [
   { q: 'Qu’est-ce qu’Atlas CRM ?', qEn: 'What is Atlas CRM?', a: 'Atlas CRM est la plateforme de gestion de la relation client n°1 propulsée par l’IA agentique. Elle réunit entreprises et clients via un ensemble unifié d’applications — alimentées par l’IA agentique et la donnée — qui aident chaque département (ventes, service, marketing, commerce, IT) à travailler comme un seul.', aEn: 'Atlas CRM is the #1 customer relationship management platform powered by agentic AI. It brings together companies and customers through a unified suite of applications — powered by agentic AI and data — that helps every department (sales, service, marketing, commerce, IT) work as one.' },
@@ -99,6 +63,43 @@ export function LandingPage() {
   const [annual, setAnnual] = useState(true);
   useScrollReveal();
   const price = (m: number | null) => (m === null ? (lang === 'fr' ? 'Sur devis' : 'Custom') : annual ? `$${Math.round(m * 10)}/${lang === 'fr' ? 'an' : 'yr'}` : `$${m}/${lang === 'fr' ? 'mois' : 'mo'}`);
+
+  const matrixGroups: { group: { fr: string; en: string }; rows: Row[] }[] = [
+    {
+      group: { fr: 'Ventes & CRM', en: 'Sales & CRM' },
+      rows: [
+        { label: { fr: 'Contacts illimités', en: 'Unlimited contacts' }, values: [true, true, true, true] },
+        { label: { fr: 'Pipelines de ventes', en: 'Sales pipelines' }, values: [true, true, true, true] },
+        { label: { fr: 'Devis & facturation', en: 'Quotes & invoicing' }, values: [false, true, true, true] },
+        { label: { fr: 'Utilisateurs inclus', en: 'Included users' }, values: ['3', '10', '25', lang === 'fr' ? 'Illimité' : 'Unlimited'] },
+      ],
+    },
+    {
+      group: { fr: 'Automatisation & IA', en: 'Automation & AI' },
+      rows: [
+        { label: { fr: 'Agents pré-construits (Agentforce)', en: 'Pre-built agents (Agentforce)' }, values: [true, true, true, true] },
+        { label: { fr: 'Automations / workflows', en: 'Automations / workflows' }, values: [false, true, true, true] },
+        { label: { fr: 'Analyses prédictives', en: 'Predictive analytics' }, values: [false, false, true, true] },
+        { label: { fr: 'Workflows personnalisés', en: 'Custom workflows' }, values: [false, false, true, true] },
+      ],
+    },
+    {
+      group: { fr: 'Service & Support', en: 'Service & Support' },
+      rows: [
+        { label: { fr: 'Tickets clients', en: 'Customer tickets' }, values: [false, true, true, true] },
+        { label: { fr: 'Base de connaissances', en: 'Knowledge base' }, values: [false, false, true, true] },
+        { label: { fr: 'SLA & escalade', en: 'SLA & escalation' }, values: [false, false, true, true] },
+      ],
+    },
+    {
+      group: { fr: 'Sécurité & Administration', en: 'Security & Administration' },
+      rows: [
+        { label: { fr: 'SSO / SAML', en: 'SSO / SAML' }, values: [false, false, true, true] },
+        { label: { fr: 'Journal d\'audit', en: 'Audit log' }, values: [false, true, true, true] },
+        { label: { fr: 'Support dédié', en: 'Dedicated support' }, values: ['Email', lang === 'fr' ? 'Prioritaire' : 'Priority', '24/7', lang === 'fr' ? 'Délégué' : 'Dedicated'] },
+      ],
+    },
+  ];
 
   return (
     <div className="bg-white text-ink-900">
@@ -174,7 +175,7 @@ export function LandingPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink-900">{p.name}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{lang === 'fr' ? p.desc : p.desc}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{p.desc[lang]}</p>
                 </div>
               </div>
             ))}
@@ -292,12 +293,12 @@ export function LandingPage() {
             </div>
             <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {industries.map((ind) => (
-                <div key={ind.name} className="group reveal rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <div key={ind.name[lang]} className="group reveal rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition group-hover:scale-110 group-hover:bg-primary-600 group-hover:text-white">
                     <ind.icon size={20} />
                   </div>
-                  <h3 className="mt-4 font-bold text-ink-900">{ind.name}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{ind.desc}</p>
+                  <h3 className="mt-4 font-bold text-ink-900">{ind.name[lang]}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{ind.desc[lang]}</p>
                   <Link to="/auth" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">
                     {lang === 'fr' ? 'En savoir plus' : 'Learn more'} <ArrowRight size={14} />
                   </Link>
@@ -319,10 +320,10 @@ export function LandingPage() {
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {reports.map((r) => (
-              <div key={r.title} className="reveal flex flex-col rounded-2xl border border-ink-100 bg-white p-7 shadow-sm transition hover:shadow-lg">
-                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 self-start">{r.tag}</span>
-                <h3 className="mt-4 flex-1 text-lg font-bold leading-7 text-ink-900">{r.title}</h3>
-                <Link to="/auth" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">{r.cta} <ArrowRight size={14} /></Link>
+              <div key={r.title[lang]} className="reveal flex flex-col rounded-2xl border border-ink-100 bg-white p-7 shadow-sm transition hover:shadow-lg">
+                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 self-start">{r.tag[lang]}</span>
+                <h3 className="mt-4 flex-1 text-lg font-bold leading-7 text-ink-900">{r.title[lang]}</h3>
+                <Link to="/auth" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">{r.cta[lang]} <ArrowRight size={14} /></Link>
               </div>
             ))}
           </div>
@@ -376,13 +377,13 @@ export function LandingPage() {
                   </thead>
                   <tbody>
                     {matrixGroups.map((group) => (
-                      <Fragment key={group.group}>
+                      <Fragment key={group.group[lang]}>
                         <tr className="bg-primary-50/50">
-                          <td colSpan={5} className="px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-primary-700">{group.group}</td>
+                          <td colSpan={5} className="px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-primary-700">{group.group[lang]}</td>
                         </tr>
                         {group.rows.map((row) => (
-                          <tr key={row.label} className="border-t border-ink-100 hover:bg-ink-50/50">
-                            <td className="px-6 py-3.5 text-left text-ink-700">{row.label}</td>
+                          <tr key={row.label[lang]} className="border-t border-ink-100 hover:bg-ink-50/50">
+                            <td className="px-6 py-3.5 text-left text-ink-700">{row.label[lang]}</td>
                             {row.values.map((v, i) => (
                               <td key={i} className="px-6 py-3.5 text-center"><Check value={v} /></td>
                             ))}

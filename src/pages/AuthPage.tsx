@@ -118,17 +118,15 @@ export function AuthPage() {
         options: { redirectTo: `${window.location.origin}/app` },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'OAuth Google indisponible');
+      setError(err instanceof Error ? err.message : (lang === 'fr' ? 'OAuth Google indisponible' : 'Google OAuth unavailable'));
     } finally {
       setOauthLoading(false);
     }
   }
 
-  const highlights = [
-    'Pipelines & automatisation des ventes',
-    'Service client unifié en temps réel',
-    'Sécurité RGPD & conformité multi-régions',
-  ];
+  const highlights = lang === 'fr'
+    ? ['Pipelines & automatisation des ventes', 'Service client unifié en temps réel', 'Sécurité RGPD & conformité multi-régions']
+    : ['Sales pipelines & automation', 'Unified real-time customer service', 'GDPR security & multi-region compliance'];
 
   return (
     <div className="min-h-screen bg-white text-ink-900">
@@ -166,11 +164,11 @@ export function AuthPage() {
             {/* Dashboard illustration */}
             <div className="mt-10 rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-sm">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary-100">Aperçu tableau de bord</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary-100">{lang === 'fr' ? 'Aperçu tableau de bord' : 'Dashboard preview'}</p>
                 <span className="rounded-full bg-success-400/30 px-2 py-0.5 text-[10px] font-bold text-white">+12%</span>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-3">
-                {[['Revenu', '$248K'], ['Deals', '34'], ['Leads', '18']].map(([l, v]) => (
+                {[[lang === 'fr' ? 'Revenu' : 'Revenue', '$248K'], [lang === 'fr' ? 'Deals' : 'Deals', '34'], [lang === 'fr' ? 'Leads' : 'Leads', '18']].map(([l, v]) => (
                   <div key={l} className="rounded-lg bg-white/10 p-3">
                     <p className="text-[10px] text-primary-100">{l}</p>
                     <p className="mt-1 text-base font-bold">{v}</p>
