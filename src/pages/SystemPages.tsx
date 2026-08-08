@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon } from 'lucide-react';
+import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon, Smartphone, Monitor } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
@@ -536,32 +536,146 @@ function RolesPermissionsTab({ language, organization }: { language: any; organi
 
 /* ── Security Tab ── */
 function SecurityTab({ language }: { language: any }) {
+  const { user } = useAuth();
+  const [factors, setFactors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [qrUrl, setQrUrl] = useState('');
+  const [factorId, setFactorId] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => { loadFactors(); }, []);
+
+  async function loadFactors() {
+    setLoading(true);
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      setFactors(data?.totp || []);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }
+
+  async function startEnroll() {
+    setError(''); setEnrolling(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', issuer: 'Atlas CRM' });
+      if (error) { setError(error.message); setEnrolling(false); return; }
+      setQrUrl(data.totp.qr_code || '');
+      setFactorId(data.id);
+    } catch (e: any) { setError(e.message); setEnrolling(false); }
+  }
+
+  async function verifyEnroll() {
+    setError('');
+    try {
+      const { data: challenge } = await supabase.auth.mfa.challenge({ factorId });
+      if (challenge?.error) { setError(challenge.error.message); return; }
+      const { error: verr } = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.id, code: verifyCode });
+      if (verr) { setError(verr.message); return; }
+      setEnrolling(false); setQrUrl(''); setFactorId(''); setVerifyCode('');
+      await loadFactors();
+    } catch (e: any) { setError(e.message); }
+  }
+
+  async function unenrollFactor(id: string) {
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
+    if (error) { setError(error.message); return; }
+    await loadFactors();
+  }
+
+  async function signOutAll() {
+    await supabase.auth.signOut({ scope: 'global' });
+    window.location.href = '/login';
+  }
+
+  if (loading) return <div className="card p-6 text-sm text-ink-500">{t('common.loading', language)}</div>;
+
+  const has2FA = factors.some((f) => f.status === 'verified');
+
   return (
     <div className="space-y-6">
+      {error && <div className="rounded-lg bg-error-50 border border-error-200 p-3 text-sm text-error-700">{error}</div>}
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <Lock className="text-ink-600" size={20} />
           <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Authentification à deux facteurs (2FA)' : 'Two-Factor Authentication (2FA)'}</h3>
+          {has2FA && <Badge variant="success">{language === 'fr' ? 'Activé' : 'Enabled'}</Badge>}
         </div>
         <p className="text-sm text-ink-500 mb-4">
           {language === 'fr'
-            ? "Renforcez la sécurité de votre compte avec l'authentification à deux facteurs."
-            : 'Secure your account with two-factor authentication.'}
+            ? "Renforcez la sécurité de votre compte avec l'authentification à deux facteurs TOTP (Google Authenticator, Authy, etc.)."
+            : 'Secure your account with TOTP two-factor authentication (Google Authenticator, Authy, etc.).'}
         </p>
-        <button className="btn-ghost btn-sm" disabled>
-          {language === 'fr' ? 'Activer 2FA' : 'Enable 2FA'} (coming soon)
-        </button>
+
+        {enrolling ? (
+          <div className="space-y-4">
+            {qrUrl && (
+              <div className="flex flex-col items-center gap-3 p-4 bg-ink-50 rounded-lg">
+                <img src={qrUrl} alt="QR Code" className="w-48 h-48" />
+                <p className="text-xs text-ink-500 text-center">
+                  {language === 'fr' ? 'Scannez ce QR code avec votre application d\'authentification, puis entrez le code à 6 chiffres ci-dessous.' : 'Scan this QR code with your authenticator app, then enter the 6-digit code below.'}
+                </p>
+              </div>
+            )}
+            <input
+              className="input"
+              value={verifyCode}
+              onChange={(e) => setVerifyCode(e.target.value)}
+              placeholder="123456"
+              maxLength={6}
+            />
+            <div className="flex gap-2">
+              <button onClick={verifyEnroll} disabled={verifyCode.length !== 6} className="btn-primary btn-sm">
+                {language === 'fr' ? 'Vérifier et activer' : 'Verify & enable'}
+              </button>
+              <button onClick={() => { setEnrolling(false); setQrUrl(''); setFactorId(''); }} className="btn-secondary btn-sm">
+                {t('common.cancel', language)}
+              </button>
+            </div>
+          </div>
+        ) : factors.length === 0 ? (
+          <button onClick={startEnroll} className="btn-primary btn-sm">
+            {language === 'fr' ? 'Activer 2FA' : 'Enable 2FA'}
+          </button>
+        ) : (
+          <div className="space-y-2">
+            {factors.map((f) => (
+              <div key={f.id} className="flex items-center justify-between p-3 bg-ink-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Smartphone size={16} className="text-ink-500" />
+                  <span className="text-sm font-medium text-ink-700">{f.friendly_name || 'Authenticator app'}</span>
+                  <Badge variant={f.status === 'verified' ? 'success' : 'neutral'}>{f.status}</Badge>
+                </div>
+                <button onClick={() => unenrollFactor(f.id)} className="text-xs text-error-600 hover:underline">
+                  {language === 'fr' ? 'Désactiver' : 'Remove'}
+                </button>
+              </div>
+            ))}
+            <button onClick={startEnroll} className="btn-secondary btn-sm mt-2">
+              {language === 'fr' ? 'Ajouter un appareil' : 'Add another device'}
+            </button>
+          </div>
+        )}
       </div>
+
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-4">
           <ShieldCheck className="text-ink-600" size={20} />
           <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Sessions actives' : 'Active Sessions'}</h3>
         </div>
         <p className="text-sm text-ink-500 mb-4">
-          {language === 'fr' ? 'Gérez vos sessions connectées sur différents appareils.' : 'Manage your active sessions across devices.'}
+          {language === 'fr' ? 'Gérez vos sessions connectées sur différents appareils. Vous pouvez déconnecter toutes les autres sessions.' : 'Manage your active sessions across devices. You can sign out of all other sessions.'}
         </p>
-        <button className="btn-ghost btn-sm" disabled>
-          {language === 'fr' ? 'Voir les sessions' : 'View sessions'} (coming soon)
+        <div className="flex items-center justify-between p-3 bg-ink-50 rounded-lg mb-3">
+          <div className="flex items-center gap-2">
+            <Monitor size={16} className="text-ink-500" />
+            <span className="text-sm font-medium text-ink-700">{language === 'fr' ? 'Cette session' : 'Current session'}</span>
+          </div>
+          <Badge variant="success">{language === 'fr' ? 'Actif' : 'Active'}</Badge>
+        </div>
+        <button onClick={signOutAll} className="btn-secondary btn-sm">
+          {language === 'fr' ? 'Déconnecter toutes les sessions' : 'Sign out all sessions'}
         </button>
       </div>
     </div>

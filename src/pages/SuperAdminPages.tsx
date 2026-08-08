@@ -4,6 +4,7 @@ import {
   ShieldCheck, Users, Building2, CreditCard, BarChart3, UserCog,
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
   AlertTriangle, TrendingUp, DollarSign, Activity, UserCheck, Search,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -296,6 +297,14 @@ export function SuperAdminUsersPage() {
     await load();
   }
 
+  async function changePlan(orgId: string, orgName: string, newPlan: string) {
+    if (!user) return;
+    const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
+    if (error) { alert(error.message); return; }
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'plan.change', p_target_type: 'organization', p_target_id: orgId, p_details: { new_plan: newPlan } });
+    await load();
+  }
+
   if (loading) return <Loading />;
 
   const filtered = orgs.filter((o) => o.name?.toLowerCase().includes(search.toLowerCase()));
@@ -327,13 +336,25 @@ export function SuperAdminUsersPage() {
             {filtered.map((o) => (
               <tr key={o.id} className="border-t border-ink-100 hover:bg-ink-50/50">
                 <td className="px-4 py-3 font-medium text-ink-900">{o.name}</td>
-                <td className="px-4 py-3"><span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 capitalize">{o.plan}</span></td>
+                <td className="px-4 py-3">
+                  <select
+                    value={o.plan}
+                    onChange={(e) => changePlan(o.id, o.name, e.target.value)}
+                    className="rounded-full border border-transparent bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 capitalize cursor-pointer hover:border-primary-300"
+                    title="Change plan"
+                  >
+                    <option value="trial">trial</option>
+                    <option value="starter">starter</option>
+                    <option value="pro">pro</option>
+                    <option value="enterprise">enterprise</option>
+                  </select>
+                </td>
                 <td className="px-4 py-3 text-ink-600">{o.currency}</td>
                 <td className="px-4 py-3 text-ink-600">{o.country || '—'}</td>
                 <td className="px-4 py-3 text-ink-600">{o.trial_ends_at ? new Date(o.trial_ends_at).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-3 text-ink-500">{new Date(o.created_at).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toggleSuspend(o.id, 'active')} className="btn-ghost btn-sm" title="Suspend/Reactivate"><Ban size={14} /></button>
+                  <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title="Suspend/Reactivate"><Ban size={14} /></button>
                 </td>
               </tr>
             ))}

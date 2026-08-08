@@ -1,4 +1,4 @@
-import { BarChart3, LayoutGrid, Lightbulb, TrendingUp, DollarSign, Users, Handshake, Target } from 'lucide-react';
+import { BarChart3, LayoutGrid, Lightbulb, TrendingUp, DollarSign, Users, Handshake, Target, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -53,18 +53,24 @@ export function DashboardsPage() {
   const { language, organization } = useAuth();
   const lang = language;
   const [stats, setStats] = useState({ revenue: 0, openDeals: 0, newLeads: 0 });
+  const [dashboards, setDashboards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const [dealsRes, leadsRes, paymentsRes] = await Promise.all([
+        const [dealsRes, leadsRes, paymentsRes, dashRes] = await Promise.all([
           supabase.from('deals').select('*', { count: 'exact', head: true }).eq('status', 'open'),
           supabase.from('leads').select('*', { count: 'exact', head: true }),
           supabase.from('payments').select('amount'),
+          supabase.from('dashboards').select('*').order('created_at', { ascending: false }),
         ]);
         const revenue = (paymentsRes.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
         setStats({ revenue, openDeals: dealsRes.count || 0, newLeads: leadsRes.count || 0 });
+        setDashboards((dashRes.data || []) as any[]);
       } catch {
         // tables may be empty
       } finally {
@@ -73,19 +79,88 @@ export function DashboardsPage() {
     })();
   }, []);
 
+  async function createDashboard() {
+    if (!organization || !name.trim()) return;
+    const { data, error } = await supabase.from('dashboards').insert({
+      org_id: organization.id,
+      name: name.trim(),
+      description: desc.trim(),
+      config: { widgets: ['revenue', 'deals', 'leads'] },
+    }).select().single();
+    if (!error && data) setDashboards(prev => [data, ...prev]);
+    setName(''); setDesc(''); setShowForm(false);
+  }
+
+  async function deleteDashboard(id: string) {
+    await supabase.from('dashboards').delete().eq('id', id);
+    setDashboards(prev => prev.filter(d => d.id !== id));
+  }
+
   const currency = organization?.currency || 'USD';
   const fmtMoney = (n: number) => new Intl.NumberFormat(lang, { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.dashboards', lang)} subtitle="" />
+      <PageHeader
+        title={t('nav.dashboards', lang)}
+        subtitle=""
+        actions={
+          <button onClick={() => setShowForm(true)} className="btn-primary btn-sm">
+            <Plus size={16} /> {lang === 'fr' ? 'Créer' : 'Create'}
+          </button>
+        }
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label={t('dash.revenue', lang)} value={loading ? '…' : fmtMoney(stats.revenue)} icon={<DollarSign size={20} />} color="success" />
         <StatCard label={t('dash.openDeals', lang)} value={loading ? '…' : String(stats.openDeals)} icon={<Handshake size={20} />} color="primary" />
         <StatCard label={t('dash.newLeads', lang)} value={loading ? '…' : String(stats.newLeads)} icon={<Users size={20} />} color="accent" />
       </div>
-      <div className="card mt-6">
-        <EmptyState icon={<LayoutGrid size={28} />} title="Custom Dashboards" description="Create custom dashboards with your key metrics and KPIs." />
+
+      {showForm && (
+        <div className="card mt-6 p-5 space-y-3">
+          <h3 className="font-bold text-ink-800">{lang === 'fr' ? 'Nouveau tableau de bord' : 'New Dashboard'}</h3>
+          <div>
+            <label className="label">{lang === 'fr' ? 'Nom' : 'Name'}</label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder={lang === 'fr' ? 'Tableau de bord ventes' : 'Sales dashboard'} />
+          </div>
+          <div>
+            <label className="label">{lang === 'fr' ? 'Description' : 'Description'}</label>
+            <input className="input" value={desc} onChange={e => setDesc(e.target.value)} placeholder={lang === 'fr' ? 'Vue d\'ensemble des ventes' : 'Sales overview'} />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={createDashboard} disabled={!name.trim()} className="btn-primary btn-sm">{t('common.create', lang)}</button>
+            <button onClick={() => setShowForm(false)} className="btn-secondary btn-sm">{t('common.cancel', lang)}</button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6">
+        {dashboards.length === 0 ? (
+          <div className="card">
+            <EmptyState icon={<LayoutGrid size={28} />} title={lang === 'fr' ? 'Aucun tableau de bord' : 'No dashboards'} description={lang === 'fr' ? 'Créez un tableau de bord personnalisé avec vos KPI.' : 'Create a custom dashboard with your key metrics.'} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {dashboards.map(d => (
+              <div key={d.id} className="card p-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                      <LayoutGrid size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-ink-800">{d.name}</h3>
+                      <p className="text-xs text-ink-500">{d.description || (lang === 'fr' ? 'Sans description' : 'No description')}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => deleteDashboard(d.id)} className="p-1.5 rounded text-ink-400 hover:bg-error-50 hover:text-error-600 transition-colors" title={lang === 'fr' ? 'Supprimer' : 'Delete'}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,19 +7,20 @@ import { PageHeader, Badge } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
+import { BrandLogo } from '@/components/BrandLogos';
 import type { Integration, ApiKey, Webhook as WebhookType } from '@/types';
 
 const AVAILABLE_APPS = [
-  { provider: 'gmail', name: 'Gmail', category: 'Email', color: 'bg-error-50 text-error-600' },
-  { provider: 'outlook', name: 'Outlook', category: 'Email', color: 'bg-primary-50 text-primary-600' },
-  { provider: 'stripe', name: 'Stripe', category: 'Payments', color: 'bg-secondary-50 text-secondary-600' },
-  { provider: 'slack', name: 'Slack', category: 'Communication', color: 'bg-accent-50 text-accent-600' },
-  { provider: 'zoom', name: 'Zoom', category: 'Video', color: 'bg-primary-50 text-primary-600' },
-  { provider: 'hubspot', name: 'HubSpot', category: 'CRM', color: 'bg-warning-50 text-warning-600' },
-  { provider: 'quickbooks', name: 'QuickBooks', category: 'Accounting', color: 'bg-secondary-50 text-secondary-600' },
-  { provider: 'mailchimp', name: 'Mailchimp', category: 'Marketing', color: 'bg-accent-50 text-accent-600' },
-  { provider: 'twilio', name: 'Twilio', category: 'SMS', color: 'bg-error-50 text-error-600' },
-  { provider: 'shopify', name: 'Shopify', category: 'E-commerce', color: 'bg-success-50 text-success-600' },
+  { provider: 'gmail', name: 'Gmail', category: 'Email' },
+  { provider: 'outlook', name: 'Outlook', category: 'Email' },
+  { provider: 'stripe', name: 'Stripe', category: 'Payments' },
+  { provider: 'slack', name: 'Slack', category: 'Communication' },
+  { provider: 'zoom', name: 'Zoom', category: 'Video' },
+  { provider: 'hubspot', name: 'HubSpot', category: 'CRM' },
+  { provider: 'quickbooks', name: 'QuickBooks', category: 'Accounting' },
+  { provider: 'mailchimp', name: 'Mailchimp', category: 'Marketing' },
+  { provider: 'twilio', name: 'Twilio', category: 'SMS' },
+  { provider: 'shopify', name: 'Shopify', category: 'E-commerce' },
 ];
 
 export function MarketplacePage() {
@@ -61,8 +62,8 @@ export function MarketplacePage() {
           return (
             <div key={app.provider} className="card-hover p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${app.color}`}>
-                  <Store size={22} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white ring-1 ring-ink-100 shadow-sm">
+                  <BrandLogo provider={app.provider} size={32} />
                 </div>
                 <div>
                   <h3 className="font-bold text-ink-800">{app.name}</h3>
@@ -120,8 +121,8 @@ export function ConnectedAppsPage() {
             <div key={intg.id} className="card p-5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-                    <Plug size={18} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white ring-1 ring-ink-100 shadow-sm">
+                    <BrandLogo provider={intg.provider} size={28} />
                   </div>
                   <div>
                     <p className="font-bold text-ink-800 capitalize">{intg.provider}</p>

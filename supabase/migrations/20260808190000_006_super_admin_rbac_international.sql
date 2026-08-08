@@ -314,6 +314,32 @@ CREATE POLICY "org admins manage team_members" ON public.team_members FOR ALL
   USING (team_id IN (SELECT id FROM public.teams WHERE org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid() AND role IN ('owner','admin'))));
 
 -- ============================================================
+-- 7b. CUSTOM DASHBOARDS (per-org saved dashboards)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.dashboards (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  config jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dashboards_org_id ON public.dashboards(org_id);
+
+ALTER TABLE public.dashboards ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "org members read dashboards" ON public.dashboards FOR SELECT
+  USING (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid()));
+CREATE POLICY "org members create dashboards" ON public.dashboards FOR INSERT
+  WITH CHECK (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid()));
+CREATE POLICY "org members update dashboards" ON public.dashboards FOR UPDATE
+  USING (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid()));
+CREATE POLICY "org members delete dashboards" ON public.dashboards FOR DELETE
+  USING (org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid()));
+
+-- ============================================================
 -- 8. DEFAULT RBAC roles per new org (trigger on organization insert)
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.seed_default_rbac_roles()
