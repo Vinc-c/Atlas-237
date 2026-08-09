@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthPage } from '@/pages/AuthPage';
 import { LandingPage } from '@/pages/LandingPage';
@@ -6,19 +7,55 @@ import { LegalPage } from '@/pages/LegalPage';
 import { AppLayout } from '@/components/AppLayout';
 import { Paywall } from '@/components/Paywall';
 import { Loading } from '@/components/Loading';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { AskAtlasPage, NotificationsPage, AuditLogPage, SettingsPage, BillingPage, UsagePage } from '@/pages/SystemPages';
-import { ContactsPage, CompaniesPage, LeadsPage, DealsPage, PipelinesPage, ActivitiesPage, CalendarPage } from '@/pages/CRMPages';
-import { ProductsPage, QuotesPage, OrdersPage, InvoicesPage, PaymentsPage, MarketingPage, SupportPage } from '@/pages/BusinessPages';
-import { AIEmployeesPage, AITasksPage, ApprovalsPage, AIWorkflowsPage, AIMemoryPage, KnowledgeBasePage } from '@/pages/AIPages';
-import { ReportsPage, DashboardsPage, AIInsightsPage } from '@/pages/AnalyticsPages';
-import { EmployeesPage, TeamsPage, PermissionsPage } from '@/pages/TeamPages';
-import { MarketplacePage, ConnectedAppsPage, APIWebhooksPage } from '@/pages/IntegrationPages';
-import {
-  SuperAdminLayout, SuperAdminDashboard, SuperAdminUsersPage,
-  SuperAdminSubscriptionsPage, SuperAdminAnalyticsPage, SuperAdminEmployeesPage,
-  SuperAdminSalesCodesPage, SuperAdminPermissionsPage, SuperAdminAuditPage,
-} from '@/pages/SuperAdminPages';
+
+// Lazy-load protected pages for faster initial load (smaller main bundle)
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const AskAtlasPage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.AskAtlasPage })));
+const NotificationsPage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.NotificationsPage })));
+const AuditLogPage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.AuditLogPage })));
+const SettingsPage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.SettingsPage })));
+const BillingPage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.BillingPage })));
+const UsagePage = lazy(() => import('@/pages/SystemPages').then(m => ({ default: m.UsagePage })));
+const ContactsPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.ContactsPage })));
+const CompaniesPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.CompaniesPage })));
+const LeadsPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.LeadsPage })));
+const DealsPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.DealsPage })));
+const PipelinesPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.PipelinesPage })));
+const ActivitiesPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.ActivitiesPage })));
+const CalendarPage = lazy(() => import('@/pages/CRMPages').then(m => ({ default: m.CalendarPage })));
+const ProductsPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.ProductsPage })));
+const QuotesPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.QuotesPage })));
+const OrdersPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.OrdersPage })));
+const InvoicesPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.InvoicesPage })));
+const PaymentsPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.PaymentsPage })));
+const MarketingPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.MarketingPage })));
+const SupportPage = lazy(() => import('@/pages/BusinessPages').then(m => ({ default: m.SupportPage })));
+const AIEmployeesPage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.AIEmployeesPage })));
+const AITasksPage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.AITasksPage })));
+const ApprovalsPage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.ApprovalsPage })));
+const AIWorkflowsPage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.AIWorkflowsPage })));
+const AIMemoryPage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.AIMemoryPage })));
+const KnowledgeBasePage = lazy(() => import('@/pages/AIPages').then(m => ({ default: m.KnowledgeBasePage })));
+const ReportsPage = lazy(() => import('@/pages/AnalyticsPages').then(m => ({ default: m.ReportsPage })));
+const DashboardsPage = lazy(() => import('@/pages/AnalyticsPages').then(m => ({ default: m.DashboardsPage })));
+const AIInsightsPage = lazy(() => import('@/pages/AnalyticsPages').then(m => ({ default: m.AIInsightsPage })));
+const EmployeesPage = lazy(() => import('@/pages/TeamPages').then(m => ({ default: m.EmployeesPage })));
+const TeamsPage = lazy(() => import('@/pages/TeamPages').then(m => ({ default: m.TeamsPage })));
+const PermissionsPage = lazy(() => import('@/pages/TeamPages').then(m => ({ default: m.PermissionsPage })));
+const MarketplacePage = lazy(() => import('@/pages/IntegrationPages').then(m => ({ default: m.MarketplacePage })));
+const ConnectedAppsPage = lazy(() => import('@/pages/IntegrationPages').then(m => ({ default: m.ConnectedAppsPage })));
+const APIWebhooksPage = lazy(() => import('@/pages/IntegrationPages').then(m => ({ default: m.APIWebhooksPage })));
+const SuperAdminLayout = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminLayout })));
+const SuperAdminDashboard = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminDashboard })));
+const SuperAdminUsersPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminUsersPage })));
+const SuperAdminSubscriptionsPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminSubscriptionsPage })));
+const SuperAdminAnalyticsPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminAnalyticsPage })));
+const SuperAdminEmployeesPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminEmployeesPage })));
+const SuperAdminSalesCodesPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminSalesCodesPage })));
+const SuperAdminPermissionsPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminPermissionsPage })));
+const SuperAdminAuditPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminAuditPage })));
+
+const PageFallback = () => <div className="flex h-full items-center justify-center"><Loading /></div>;
 
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
@@ -29,6 +66,7 @@ function ProtectedRoutes() {
   return (
     <Paywall>
       <AppLayout>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route index element={<DashboardPage />} />
         <Route path="ask-atlas" element={<AskAtlasPage />} />
@@ -74,6 +112,7 @@ function ProtectedRoutes() {
         <Route path="billing" element={<BillingPage />} />
         <Route path="usage" element={<UsagePage />} />
       </Routes>
+        </Suspense>
       </AppLayout>
     </Paywall>
   );
@@ -102,14 +141,14 @@ export default function App() {
           <Route path="/auth" element={<AuthRoutes />} />
           <Route path="/app/*" element={<ProtectedRoutes />} />
           <Route path="/super-admin" element={<SuperAdminRoute />}>
-            <Route index element={<SuperAdminDashboard />} />
-            <Route path="users" element={<SuperAdminUsersPage />} />
-            <Route path="subscriptions" element={<SuperAdminSubscriptionsPage />} />
-            <Route path="analytics" element={<SuperAdminAnalyticsPage />} />
-            <Route path="employees" element={<SuperAdminEmployeesPage />} />
-            <Route path="sales-codes" element={<SuperAdminSalesCodesPage />} />
-            <Route path="permissions" element={<SuperAdminPermissionsPage />} />
-            <Route path="audit" element={<SuperAdminAuditPage />} />
+            <Route index element={<Suspense fallback={<PageFallback />}><SuperAdminDashboard /></Suspense>} />
+            <Route path="users" element={<Suspense fallback={<PageFallback />}><SuperAdminUsersPage /></Suspense>} />
+            <Route path="subscriptions" element={<Suspense fallback={<PageFallback />}><SuperAdminSubscriptionsPage /></Suspense>} />
+            <Route path="analytics" element={<Suspense fallback={<PageFallback />}><SuperAdminAnalyticsPage /></Suspense>} />
+            <Route path="employees" element={<Suspense fallback={<PageFallback />}><SuperAdminEmployeesPage /></Suspense>} />
+            <Route path="sales-codes" element={<Suspense fallback={<PageFallback />}><SuperAdminSalesCodesPage /></Suspense>} />
+            <Route path="permissions" element={<Suspense fallback={<PageFallback />}><SuperAdminPermissionsPage /></Suspense>} />
+            <Route path="audit" element={<Suspense fallback={<PageFallback />}><SuperAdminAuditPage /></Suspense>} />
           </Route>
           <Route path="/legal/:page" element={<LegalRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -132,5 +171,5 @@ function SuperAdminRoute() {
   if (loading) return <Loading fullPage />;
   if (!session) return <Navigate to="/auth" replace />;
   if (!isSuperAdmin) return <Navigate to="/app" replace />;
-  return <SuperAdminLayout />;
+  return <Suspense fallback={<Loading fullPage />}><SuperAdminLayout /></Suspense>;
 }
