@@ -1,30 +1,40 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, CreditCard, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, CreditCard, CheckCircle2, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { checkSubscriptionAccess, initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutterwaveConfigured } from '@/lib/flutterwave';
+import { supabase } from '@/lib/supabase';
 import { Logo } from '@/components/Logo';
 
 export function Paywall({ children }: { children: React.ReactNode }) {
-  const { organization, session, loading, language } = useAuth();
+  const { organization, session, loading, language, isSuperAdmin } = useAuth();
   const lang = language;
   const [access, setAccess] = useState<{ allowed: boolean; status: string; plan: string; trialEndsAt: string | null; periodEnd: string | null } | null>(null);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [exempt, setExempt] = useState(false);
 
   useEffect(() => {
     if (loading || !organization) return;
-    checkSubscriptionAccess(organization.id).then((res) => {
+    (async () => {
+      if (isSuperAdmin) { setExempt(true); setChecking(false); return; }
+      if (session?.user?.id) {
+        try {
+          const { data: isExempt } = await supabase.rpc('is_platform_exempt', { check_user_id: session.user.id });
+          if (isExempt) { setExempt(true); setChecking(false); return; }
+        } catch { /* function may not exist */ }
+      }
+      const res = await checkSubscriptionAccess(organization.id);
       setAccess(res);
       setChecking(false);
-    });
-  }, [organization, loading]);
+    })();
+  }, [organization, loading, isSuperAdmin, session]);
 
   if (loading || checking) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-primary-600" size={32} /></div>;
   }
 
-  if (!access || access.allowed) {
+  if (exempt || !access || access.allowed) {
     return <>{children}</>;
   }
 

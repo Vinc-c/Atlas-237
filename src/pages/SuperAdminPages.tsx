@@ -4,13 +4,14 @@ import {
   ShieldCheck, Users, Building2, CreditCard, BarChart3, UserCog,
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
   AlertTriangle, TrendingUp, DollarSign, Activity, UserCheck, Search,
-  Settings,
+  Settings, Briefcase, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight,
+  UserPlus, Phone, Mail, Pencil, X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
 import { formatMoney } from '@/lib/i18n-countries';
-import { MODULES, ACTIONS, fetchRoles, createRole, deleteRole, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
+import { MODULES, ACTIONS, fetchRoles, fetchPermissions, createRole, deleteRole, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
 
@@ -41,8 +42,10 @@ export function SuperAdminLayout() {
     { to: '/super-admin', label: t('superAdmin.dashboard', language), icon: ShieldCheck, end: true },
     { to: '/super-admin/users', label: t('superAdmin.usersTenants', language), icon: Users },
     { to: '/super-admin/subscriptions', label: t('superAdmin.subscriptions', language), icon: CreditCard },
+    { to: '/super-admin/accounting', label: language === 'fr' ? 'Comptabilité' : 'Accounting', icon: Wallet },
     { to: '/super-admin/analytics', label: t('superAdmin.analytics', language), icon: BarChart3 },
     { to: '/super-admin/employees', label: t('superAdmin.employeeKpis', language), icon: UserCog },
+    { to: '/super-admin/staff', label: language === 'fr' ? 'Personnel' : 'Staff', icon: Briefcase },
     { to: '/super-admin/sales-codes', label: t('superAdmin.salesCodes', language), icon: Receipt },
     { to: '/super-admin/permissions', label: t('superAdmin.permissions', language), icon: ShieldCheck },
     { to: '/super-admin/audit', label: t('superAdmin.auditLog', language), icon: ScrollText },
@@ -96,19 +99,20 @@ export function SuperAdminLayout() {
    Super Admin Dashboard
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminDashboard() {
-  const { language } = useAuth();
+  const { language, user } = useAuth();
   const [stats, setStats] = useState<any>(null);
+  const [finance, setFinance] = useState<any>(null);
+  const [staffCount, setStaffCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      try {
-        const { data } = await supabase.rpc('is_super_admin', { check_user_id: (await supabase.auth.getUser()).data.user?.id });
-        if (!data) return;
-      } catch { /* */ }
-      // Fetch platform stats from view
       const { data: view } = await supabase.from('platform_stats').select('*').limit(1).maybeSingle();
       setStats(view);
+      const { data: fin } = await supabase.from('platform_finance_summary').select('*').limit(1).maybeSingle();
+      setFinance(fin);
+      const { count } = await supabase.from('platform_staff').select('*', { count: 'exact', head: true }).eq('active', true);
+      setStaffCount(count || 0);
       setLoading(false);
     })();
   }, []);
@@ -124,16 +128,53 @@ export function SuperAdminDashboard() {
     { label: t('superAdmin.new30d', language), value: stats?.new_orgs_30d ?? 0, icon: TrendingUp, color: 'text-secondary-600 bg-secondary-50' },
   ];
 
+  const netProfit = (finance?.revenue_mtd ?? 0) - (finance?.expenses_mtd ?? 0);
+
   return (
     <div className="animate-fade-in space-y-6">
+      {/* Welcome header */}
+      <div className="card p-6 bg-gradient-to-r from-ink-950 to-ink-800 text-white border-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{language === 'fr' ? 'Tableau de Bord Plateforme' : 'Platform Dashboard'}</h1>
+            <p className="mt-1 text-sm text-ink-300">{language === 'fr' ? "Vue d'ensemble complète de la plateforme Atlas CRM" : 'Complete overview of the Atlas CRM platform'}</p>
+          </div>
+          <ShieldCheck size={40} className="text-primary-400" />
+        </div>
+      </div>
+
+      {/* Key metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {cards.map((c) => (
-          <div key={c.label} className="card p-4">
+          <div key={c.label} className="card p-4 hover:shadow-card-hover transition-shadow">
             <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${c.color}`}><c.icon size={20} /></div>
             <p className="mt-3 text-2xl font-bold text-ink-900">{c.value}</p>
             <p className="text-xs text-ink-500">{c.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Finance summary row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-success-600"><ArrowUpRight size={18} /><span className="text-xs font-semibold uppercase tracking-wide">{language === 'fr' ? 'Revenus Mois' : 'Revenue MTD'}</span></div>
+          <p className="mt-2 text-2xl font-bold text-ink-900">{formatMoney(finance?.revenue_mtd ?? 0, 'USD', language)}</p>
+          <p className="text-xs text-ink-400">{finance?.revenue_count_mtd ?? 0} {language === 'fr' ? 'entrées' : 'entries'}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-error-600"><ArrowDownRight size={18} /><span className="text-xs font-semibold uppercase tracking-wide">{language === 'fr' ? 'Dépenses Mois' : 'Expenses MTD'}</span></div>
+          <p className="mt-2 text-2xl font-bold text-ink-900">{formatMoney(finance?.expenses_mtd ?? 0, 'USD', language)}</p>
+          <p className="text-xs text-ink-400">{finance?.expense_count_mtd ?? 0} {language === 'fr' ? 'entrées' : 'entries'}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-primary-600"><PiggyBank size={18} /><span className="text-xs font-semibold uppercase tracking-wide">{language === 'fr' ? 'Profit Net Mois' : 'Net Profit MTD'}</span></div>
+          <p className={`mt-2 text-2xl font-bold ${netProfit >= 0 ? 'text-success-700' : 'text-error-700'}`}>{formatMoney(netProfit, 'USD', language)}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-warning-600"><Wallet size={18} /><span className="text-xs font-semibold uppercase tracking-wide">MRR</span></div>
+          <p className="mt-2 text-2xl font-bold text-ink-900">{formatMoney(finance?.subscription_mrr ?? 0, 'USD', language)}</p>
+          <p className="text-xs text-ink-400">{language === 'fr' ? 'Abonnements actifs' : 'Active subscriptions'}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -150,7 +191,7 @@ export function SuperAdminDashboard() {
             return (
               <div key={p.label} className="mb-3">
                 <div className="flex justify-between text-sm mb-1"><span className="font-medium text-ink-700">{p.label}</span><span className="text-ink-500">{p.count} ({pct}%)</span></div>
-                <div className="h-2 bg-ink-100 rounded-full overflow-hidden"><div className="h-full bg-primary-500 rounded-full" style={{ width: `${pct}%` }} /></div>
+                <div className="h-2 bg-ink-100 rounded-full overflow-hidden"><div className="h-full bg-primary-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} /></div>
               </div>
             );
           })}
@@ -159,6 +200,22 @@ export function SuperAdminDashboard() {
           <h3 className="font-bold text-ink-800 mb-4">{t('superAdmin.superAdmins', language)}</h3>
           <SuperAdminsList />
         </div>
+      </div>
+
+      {/* Quick links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: language === 'fr' ? 'Personnel' : 'Staff', icon: Briefcase, to: '/super-admin/staff', count: staffCount },
+          { label: language === 'fr' ? 'Comptabilité' : 'Accounting', icon: Wallet, to: '/super-admin/accounting' },
+          { label: t('superAdmin.salesCodes', language), icon: Receipt, to: '/super-admin/sales-codes' },
+          { label: t('superAdmin.auditLog', language), icon: ScrollText, to: '/super-admin/audit' },
+        ].map((q) => (
+          <button key={q.to} onClick={() => window.location.assign(q.to)} className="card p-4 text-left hover:shadow-card-hover transition-shadow">
+            <q.icon size={20} className="text-primary-600" />
+            <p className="mt-2 font-semibold text-ink-800">{q.label}</p>
+            {q.count !== undefined && <p className="text-xs text-ink-400">{q.count} {language === 'fr' ? 'actifs' : 'active'}</p>}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -813,6 +870,471 @@ export function SuperAdminAuditPage() {
             {logs.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-ink-400">{t('superAdmin.noAudit', language)}</td></tr>}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Staff Management (platform staff with custom roles)
+   ═══════════════════════════════════════════════════════════ */
+export function SuperAdminStaffPage() {
+  const { user, language } = useAuth();
+  const [staff, setStaff] = useState<any[]>([]);
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({ email: '', full_name: '', role_id: '', department: '', phone: '' });
+  const [roleForm, setRoleForm] = useState({ name: '', description: '' });
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    const [{ data: staffData }, { data: roleData }] = await Promise.all([
+      supabase.from('platform_staff').select('*').order('created_at', { ascending: false }),
+      supabase.from('platform_staff_roles').select('*').order('name'),
+    ]);
+    setStaff(staffData || []);
+    setRoles(roleData || []);
+    setLoading(false);
+  }
+
+  async function addStaff() {
+    if (!form.email.trim() || !form.full_name.trim() || !user) return;
+    setBusy(true); setError('');
+    const selectedRole = roles.find((r) => r.id === form.role_id);
+    const { error: err } = await supabase.from('platform_staff').insert({
+      email: form.email.trim().toLowerCase(),
+      full_name: form.full_name.trim(),
+      role_id: form.role_id || null,
+      role_name: selectedRole?.name || 'Support Agent',
+      department: form.department || null,
+      phone: form.phone || null,
+      exempt_from_billing: true,
+      created_by: user.id,
+    });
+    if (err) {
+      setError(err.message.includes('duplicate') ? (language === 'fr' ? 'Cet email existe déjà' : 'This email already exists') : err.message);
+    } else {
+      await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'staff.add', p_target_type: 'platform_staff', p_target_email: form.email.trim().toLowerCase() });
+      setForm({ email: '', full_name: '', role_id: '', department: '', phone: '' });
+      setShowForm(false);
+      await load();
+    }
+    setBusy(false);
+  }
+
+  async function updateStaff() {
+    if (!editingStaff || !user) return;
+    setBusy(true); setError('');
+    const selectedRole = roles.find((r) => r.id === form.role_id);
+    const { error: err } = await supabase.from('platform_staff').update({
+      full_name: form.full_name.trim(),
+      role_id: form.role_id || null,
+      role_name: selectedRole?.name || 'Support Agent',
+      department: form.department || null,
+      phone: form.phone || null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', editingStaff.id);
+    if (err) { setError(err.message); }
+    else {
+      setEditingStaff(null);
+      setForm({ email: '', full_name: '', role_id: '', department: '', phone: '' });
+      await load();
+    }
+    setBusy(false);
+  }
+
+  async function toggleStaffActive(id: string, email: string, currentActive: boolean) {
+    if (!user) return;
+    await supabase.from('platform_staff').update({ active: !currentActive, updated_at: new Date().toISOString() }).eq('id', id);
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: currentActive ? 'staff.deactivate' : 'staff.activate', p_target_type: 'platform_staff', p_target_email: email });
+    await load();
+  }
+
+  async function removeStaff(id: string, email: string) {
+    if (!user) return;
+    if (!confirm(language === 'fr' ? `Supprimer le membre du personnel ${email} ?` : `Remove staff member ${email}?`)) return;
+    await supabase.from('platform_staff').delete().eq('id', id);
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'staff.remove', p_target_type: 'platform_staff', p_target_email: email });
+    await load();
+  }
+
+  async function addRole() {
+    if (!roleForm.name.trim() || !user) return;
+    setBusy(true); setError('');
+    const { error: err } = await supabase.from('platform_staff_roles').insert({
+      name: roleForm.name.trim(),
+      description: roleForm.description || null,
+      is_system: false,
+      created_by: user.id,
+    });
+    if (err) { setError(err.message); }
+    else {
+      setRoleForm({ name: '', description: '' });
+      setShowRoleForm(false);
+      await load();
+    }
+    setBusy(false);
+  }
+
+  function startEdit(s: any) {
+    setEditingStaff(s);
+    setForm({ email: s.email, full_name: s.full_name, role_id: s.role_id || '', department: s.department || '', phone: s.phone || '' });
+    setShowForm(true);
+  }
+
+  if (loading) return <Loading />;
+
+  const fr = language === 'fr';
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-ink-900">{fr ? 'Gestion du Personnel' : 'Staff Management'}</h2>
+          <p className="text-sm text-ink-500">{fr ? 'Personnel de la plateforme avec rôles personnalisés — exempté de facturation' : 'Platform staff with custom roles — exempt from billing'}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowRoleForm(!showRoleForm)} className="btn-secondary btn-sm"><Plus size={14} /> {fr ? 'Nouveau Rôle' : 'New Role'}</button>
+          <button onClick={() => { setShowForm(!showForm); setEditingStaff(null); setForm({ email: '', full_name: '', role_id: '', department: '', phone: '' }); }} className="btn-primary btn-sm"><UserPlus size={14} /> {fr ? 'Ajouter Personnel' : 'Add Staff'}</button>
+        </div>
+      </div>
+
+      {error && <div className="rounded-lg bg-error-50 border border-error-200 px-4 py-2 text-sm text-error-700">{error}</div>}
+
+      {/* Role creation form */}
+      {showRoleForm && (
+        <div className="card p-6 space-y-3">
+          <h3 className="font-bold text-ink-800">{fr ? 'Créer un Rôle Personnalisé' : 'Create Custom Role'}</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">{fr ? 'Nom du rôle' : 'Role name'}</label><input className="input" value={roleForm.name} onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Description' : 'Description'}</label><input className="input" value={roleForm.description} onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })} /></div>
+          </div>
+          <button onClick={addRole} disabled={busy} className="btn-primary btn-sm">{busy ? <Loader2 size={14} className="animate-spin" /> : null} {fr ? 'Créer' : 'Create'}</button>
+        </div>
+      )}
+
+      {/* Staff add/edit form */}
+      {showForm && (
+        <div className="card p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-ink-800">{editingStaff ? (fr ? 'Modifier le Personnel' : 'Edit Staff') : (fr ? 'Ajouter un Membre du Personnel' : 'Add Staff Member')}</h3>
+            <button onClick={() => { setShowForm(false); setEditingStaff(null); }} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={16} /></button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">{fr ? 'Email' : 'Email'}</label><input className="input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!!editingStaff} /></div>
+            <div><label className="label">{fr ? 'Nom complet' : 'Full name'}</label><input className="input" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+            <div>
+              <label className="label">{fr ? 'Rôle' : 'Role'}</label>
+              <select className="input" value={form.role_id} onChange={(e) => setForm({ ...form, role_id: e.target.value })}>
+                <option value="">{fr ? 'Sélectionner...' : 'Select...'}</option>
+                {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+            <div><label className="label">{fr ? 'Département' : 'Department'}</label><input className="input" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Téléphone' : 'Phone'}</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          </div>
+          <button onClick={editingStaff ? updateStaff : addStaff} disabled={busy} className="btn-primary btn-sm">
+            {busy ? <Loader2 size={14} className="animate-spin" /> : null} {editingStaff ? (fr ? 'Enregistrer' : 'Save') : (fr ? 'Ajouter' : 'Add')}
+          </button>
+        </div>
+      )}
+
+      {/* Staff list */}
+      <div className="card overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-ink-50">
+            <tr>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Nom' : 'Name'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Email' : 'Email'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Rôle' : 'Role'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Département' : 'Department'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Statut' : 'Status'}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{fr ? 'Facturation' : 'Billing'}</th>
+              <th className="px-4 py-3 text-right font-semibold text-ink-700">{fr ? 'Actions' : 'Actions'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {staff.map((s) => (
+              <tr key={s.id} className="border-t border-ink-100 hover:bg-ink-50/50">
+                <td className="px-4 py-3 font-medium text-ink-900">{s.full_name}</td>
+                <td className="px-4 py-3 text-ink-600">{s.email}</td>
+                <td className="px-4 py-3"><span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">{s.role_name}</span></td>
+                <td className="px-4 py-3 text-ink-600">{s.department || '—'}</td>
+                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.active ? 'bg-success-100 text-success-700' : 'bg-ink-100 text-ink-500'}`}>{s.active ? (fr ? 'Actif' : 'Active') : (fr ? 'Inactif' : 'Inactive')}</span></td>
+                <td className="px-4 py-3"><span className="rounded-full bg-success-50 px-2 py-0.5 text-xs font-semibold text-success-600">{fr ? 'Exempté' : 'Exempt'}</span></td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => startEdit(s)} className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50" title={fr ? 'Modifier' : 'Edit'}><Pencil size={14} /></button>
+                    <button onClick={() => toggleStaffActive(s.id, s.email, s.active)} className="p-1.5 rounded-lg text-warning-600 hover:bg-warning-50" title={fr ? 'Activer/Désactiver' : 'Toggle Active'}><Ban size={14} /></button>
+                    <button onClick={() => removeStaff(s.id, s.email)} className="p-1.5 rounded-lg text-error-500 hover:bg-error-50" title={fr ? 'Supprimer' : 'Remove'}><Trash2 size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {staff.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400">{fr ? 'Aucun membre du personnel. Ajoutez-en un pour commencer.' : 'No staff members yet. Add one to get started.'}</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Available roles */}
+      <div className="card p-6">
+        <h3 className="font-bold text-ink-800 mb-3">{fr ? 'Rôles Disponibles' : 'Available Roles'}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {roles.map((r) => (
+            <div key={r.id} className="rounded-lg border border-ink-100 p-4">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold text-ink-800">{r.name}</p>
+                {r.is_system && <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-bold text-ink-500">{fr ? 'SYSTÈME' : 'SYSTEM'}</span>}
+              </div>
+              <p className="mt-1 text-xs text-ink-500">{r.description || '—'}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Accounting / Finance Dashboard (platform-level)
+   ═══════════════════════════════════════════════════════════ */
+export function SuperAdminAccountingPage() {
+  const { user, language } = useAuth();
+  const [finance, setFinance] = useState<any>(null);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [revenue, setRevenue] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [showRevenueForm, setShowRevenueForm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({ category: '', description: '', amount: '', vendor: '', expense_date: '' });
+  const [revenueForm, setRevenueForm] = useState({ source: '', category: 'subscription', description: '', amount: '', revenue_date: '' });
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    const [{ data: fin }, { data: exp }, { data: rev }] = await Promise.all([
+      supabase.from('platform_finance_summary').select('*').limit(1).maybeSingle(),
+      supabase.from('platform_expenses').select('*').order('expense_date', { ascending: false }).limit(50),
+      supabase.from('platform_revenue').select('*').order('revenue_date', { ascending: false }).limit(50),
+    ]);
+    setFinance(fin);
+    setExpenses(exp || []);
+    setRevenue(rev || []);
+    setLoading(false);
+  }
+
+  async function addExpense() {
+    if (!expenseForm.amount || !expenseForm.category || !user) return;
+    setBusy(true);
+    await supabase.from('platform_expenses').insert({
+      category: expenseForm.category,
+      description: expenseForm.description || null,
+      amount_cents: Math.round(parseFloat(expenseForm.amount) * 100),
+      vendor: expenseForm.vendor || null,
+      expense_date: expenseForm.expense_date || new Date().toISOString().split('T')[0],
+      created_by: user.id,
+    });
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'expense.add', p_target_type: 'platform_expense', p_details: { amount: expenseForm.amount, category: expenseForm.category } });
+    setExpenseForm({ category: '', description: '', amount: '', vendor: '', expense_date: '' });
+    setShowExpenseForm(false);
+    await load();
+    setBusy(false);
+  }
+
+  async function addRevenue() {
+    if (!revenueForm.amount || !revenueForm.source || !user) return;
+    setBusy(true);
+    await supabase.from('platform_revenue').insert({
+      source: revenueForm.source,
+      category: revenueForm.category,
+      description: revenueForm.description || null,
+      amount_cents: Math.round(parseFloat(revenueForm.amount) * 100),
+      revenue_date: revenueForm.revenue_date || new Date().toISOString().split('T')[0],
+    });
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'revenue.add', p_target_type: 'platform_revenue', p_details: { amount: revenueForm.amount, source: revenueForm.source } });
+    setRevenueForm({ source: '', category: 'subscription', description: '', amount: '', revenue_date: '' });
+    setShowRevenueForm(false);
+    await load();
+    setBusy(false);
+  }
+
+  async function deleteExpense(id: string) {
+    if (!confirm(language === 'fr' ? 'Supprimer cette dépense ?' : 'Delete this expense?')) return;
+    await supabase.from('platform_expenses').delete().eq('id', id);
+    await load();
+  }
+
+  async function deleteRevenue(id: string) {
+    if (!confirm(language === 'fr' ? 'Supprimer ce revenu ?' : 'Delete this revenue entry?')) return;
+    await supabase.from('platform_revenue').delete().eq('id', id);
+    await load();
+  }
+
+  if (loading) return <Loading />;
+
+  const fr = language === 'fr';
+  const netProfit = (finance?.revenue_mtd ?? 0) - (finance?.expenses_mtd ?? 0);
+  const netTotal = (finance?.revenue_total ?? 0) - (finance?.expenses_total ?? 0);
+
+  const expenseCategories = ['Salaries', 'Infrastructure', 'Marketing', 'Software', 'Office', 'Legal', 'Other'];
+  const revenueCategories = ['subscription', 'one_time', 'service', 'other'];
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-ink-900">{fr ? 'Comptabilité & Finance' : 'Accounting & Finance'}</h2>
+          <p className="text-sm text-ink-500">{fr ? 'Gestion financière de la plateforme' : 'Platform financial management'}</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setShowRevenueForm(!showRevenueForm)} className="btn-secondary btn-sm"><ArrowUpRight size={14} /> {fr ? 'Ajouter Revenu' : 'Add Revenue'}</button>
+          <button onClick={() => setShowExpenseForm(!showExpenseForm)} className="btn-primary btn-sm"><ArrowDownRight size={14} /> {fr ? 'Ajouter Dépense' : 'Add Expense'}</button>
+        </div>
+      </div>
+
+      {/* Finance summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-success-600"><ArrowUpRight size={20} /><span className="text-xs font-semibold uppercase tracking-wide">{fr ? 'Revenus du Mois' : 'Revenue MTD'}</span></div>
+          <p className="mt-2 text-2xl font-bold text-ink-900">{formatMoney(finance?.revenue_mtd ?? 0, 'USD', language)}</p>
+          <p className="text-xs text-ink-400">{finance?.revenue_count_mtd ?? 0} {fr ? 'entrées' : 'entries'}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-error-600"><ArrowDownRight size={20} /><span className="text-xs font-semibold uppercase tracking-wide">{fr ? 'Dépenses du Mois' : 'Expenses MTD'}</span></div>
+          <p className="mt-2 text-2xl font-bold text-ink-900">{formatMoney(finance?.expenses_mtd ?? 0, 'USD', language)}</p>
+          <p className="text-xs text-ink-400">{finance?.expense_count_mtd ?? 0} {fr ? 'entrées' : 'entries'}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-primary-600"><PiggyBank size={20} /><span className="text-xs font-semibold uppercase tracking-wide">{fr ? 'Profit Net du Mois' : 'Net Profit MTD'}</span></div>
+          <p className={`mt-2 text-2xl font-bold ${netProfit >= 0 ? 'text-success-700' : 'text-error-700'}`}>{formatMoney(netProfit, 'USD', language)}</p>
+        </div>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 text-accent-600"><Wallet size={20} /><span className="text-xs font-semibold uppercase tracking-wide">{fr ? 'Profit Net Total' : 'Total Net Profit'}</span></div>
+          <p className={`mt-2 text-2xl font-bold ${netTotal >= 0 ? 'text-success-700' : 'text-error-700'}`}>{formatMoney(netTotal, 'USD', language)}</p>
+        </div>
+      </div>
+
+      {/* MRR card */}
+      <div className="card p-5 bg-gradient-to-r from-primary-50 to-accent-50 border-primary-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">{fr ? 'Revenu Mensuel Récurrent (MRR)' : 'Monthly Recurring Revenue (MRR)'}</p>
+            <p className="mt-1 text-3xl font-bold text-primary-900">{formatMoney(finance?.subscription_mrr ?? 0, 'USD', language)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-ink-500">{fr ? 'ARR Projeté' : 'Projected ARR'}</p>
+            <p className="text-xl font-bold text-primary-700">{formatMoney((finance?.subscription_mrr ?? 0) * 12, 'USD', language)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Expense form */}
+      {showExpenseForm && (
+        <div className="card p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-ink-800">{fr ? 'Nouvelle Dépense' : 'New Expense'}</h3>
+            <button onClick={() => setShowExpenseForm(false)} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={16} /></button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div>
+              <label className="label">{fr ? 'Catégorie' : 'Category'}</label>
+              <select className="input" value={expenseForm.category} onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}>
+                <option value="">{fr ? 'Sélectionner...' : 'Select...'}</option>
+                {expenseCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div><label className="label">{fr ? 'Montant (USD)' : 'Amount (USD)'}</label><input className="input" type="number" step="0.01" value={expenseForm.amount} onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Fournisseur' : 'Vendor'}</label><input className="input" value={expenseForm.vendor} onChange={(e) => setExpenseForm({ ...expenseForm, vendor: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Description' : 'Description'}</label><input className="input" value={expenseForm.description} onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Date' : 'Date'}</label><input className="input" type="date" value={expenseForm.expense_date} onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })} /></div>
+          </div>
+          <button onClick={addExpense} disabled={busy} className="btn-primary btn-sm">{busy ? <Loader2 size={14} className="animate-spin" /> : null} {fr ? 'Enregistrer' : 'Save'}</button>
+        </div>
+      )}
+
+      {/* Revenue form */}
+      {showRevenueForm && (
+        <div className="card p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-ink-800">{fr ? 'Nouveau Revenu' : 'New Revenue'}</h3>
+            <button onClick={() => setShowRevenueForm(false)} className="p-1.5 rounded-lg hover:bg-ink-100"><X size={16} /></button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div><label className="label">{fr ? 'Source' : 'Source'}</label><input className="input" value={revenueForm.source} onChange={(e) => setRevenueForm({ ...revenueForm, source: e.target.value })} /></div>
+            <div>
+              <label className="label">{fr ? 'Catégorie' : 'Category'}</label>
+              <select className="input" value={revenueForm.category} onChange={(e) => setRevenueForm({ ...revenueForm, category: e.target.value })}>
+                {revenueCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div><label className="label">{fr ? 'Montant (USD)' : 'Amount (USD)'}</label><input className="input" type="number" step="0.01" value={revenueForm.amount} onChange={(e) => setRevenueForm({ ...revenueForm, amount: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Description' : 'Description'}</label><input className="input" value={revenueForm.description} onChange={(e) => setRevenueForm({ ...revenueForm, description: e.target.value })} /></div>
+            <div><label className="label">{fr ? 'Date' : 'Date'}</label><input className="input" type="date" value={revenueForm.revenue_date} onChange={(e) => setRevenueForm({ ...revenueForm, revenue_date: e.target.value })} /></div>
+          </div>
+          <button onClick={addRevenue} disabled={busy} className="btn-primary btn-sm">{busy ? <Loader2 size={14} className="animate-spin" /> : null} {fr ? 'Enregistrer' : 'Save'}</button>
+        </div>
+      )}
+
+      {/* Revenue and Expense tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue table */}
+        <div className="card overflow-hidden">
+          <h3 className="px-4 py-3 font-bold text-ink-800 border-b border-ink-100 flex items-center gap-2"><ArrowUpRight size={16} className="text-success-600" /> {fr ? 'Revenus Récents' : 'Recent Revenue'}</h3>
+          <table className="w-full text-sm">
+            <thead className="bg-ink-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Source' : 'Source'}</th>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Montant' : 'Amount'}</th>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Date' : 'Date'}</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {revenue.map((r) => (
+                <tr key={r.id} className="border-t border-ink-100">
+                  <td className="px-3 py-2"><p className="font-medium text-ink-900">{r.source}</p><p className="text-xs text-ink-400 capitalize">{r.category}</p></td>
+                  <td className="px-3 py-2 font-semibold text-success-700">{formatMoney(r.amount_cents, r.currency || 'USD', language)}</td>
+                  <td className="px-3 py-2 text-ink-500 text-xs">{new Date(r.revenue_date).toLocaleDateString()}</td>
+                  <td className="px-3 py-2 text-right"><button onClick={() => deleteRevenue(r.id)} className="p-1 rounded text-error-400 hover:bg-error-50"><Trash2 size={12} /></button></td>
+                </tr>
+              ))}
+              {revenue.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-ink-400">{fr ? 'Aucun revenu enregistré' : 'No revenue recorded'}</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Expense table */}
+        <div className="card overflow-hidden">
+          <h3 className="px-4 py-3 font-bold text-ink-800 border-b border-ink-100 flex items-center gap-2"><ArrowDownRight size={16} className="text-error-600" /> {fr ? 'Dépenses Récentes' : 'Recent Expenses'}</h3>
+          <table className="w-full text-sm">
+            <thead className="bg-ink-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Catégorie' : 'Category'}</th>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Montant' : 'Amount'}</th>
+                <th className="px-3 py-2 text-left font-semibold text-ink-700">{fr ? 'Date' : 'Date'}</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {expenses.map((e) => (
+                <tr key={e.id} className="border-t border-ink-100">
+                  <td className="px-3 py-2"><p className="font-medium text-ink-900">{e.category}</p><p className="text-xs text-ink-400">{e.vendor || e.description || '—'}</p></td>
+                  <td className="px-3 py-2 font-semibold text-error-700">{formatMoney(e.amount_cents, e.currency || 'USD', language)}</td>
+                  <td className="px-3 py-2 text-ink-500 text-xs">{new Date(e.expense_date).toLocaleDateString()}</td>
+                  <td className="px-3 py-2 text-right"><button onClick={() => deleteExpense(e.id)} className="p-1 rounded text-error-400 hover:bg-error-50"><Trash2 size={12} /></button></td>
+                </tr>
+              ))}
+              {expenses.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-ink-400">{fr ? 'Aucune dépense enregistrée' : 'No expenses recorded'}</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

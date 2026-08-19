@@ -54,6 +54,8 @@ const SuperAdminEmployeesPage = lazy(() => import('@/pages/SuperAdminPages').the
 const SuperAdminSalesCodesPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminSalesCodesPage })));
 const SuperAdminPermissionsPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminPermissionsPage })));
 const SuperAdminAuditPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminAuditPage })));
+const SuperAdminStaffPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminStaffPage })));
+const SuperAdminAccountingPage = lazy(() => import('@/pages/SuperAdminPages').then(m => ({ default: m.SuperAdminAccountingPage })));
 
 const PageFallback = () => <div className="flex h-full items-center justify-center"><Loading /></div>;
 
@@ -149,6 +151,8 @@ export default function App() {
             <Route path="sales-codes" element={<Suspense fallback={<PageFallback />}><SuperAdminSalesCodesPage /></Suspense>} />
             <Route path="permissions" element={<Suspense fallback={<PageFallback />}><SuperAdminPermissionsPage /></Suspense>} />
             <Route path="audit" element={<Suspense fallback={<PageFallback />}><SuperAdminAuditPage /></Suspense>} />
+            <Route path="staff" element={<Suspense fallback={<PageFallback />}><SuperAdminStaffPage /></Suspense>} />
+            <Route path="accounting" element={<Suspense fallback={<PageFallback />}><SuperAdminAccountingPage /></Suspense>} />
           </Route>
           <Route path="/legal/:page" element={<LegalRoute />} />
           <Route path="*" element={<Navigate to="/" replace />} />
