@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Logo } from '@/components/Logo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
-type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
+export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
 
 const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: string; fr: string }; updated: string }> = {
   privacy: { icon: ShieldCheck, title: { en: 'Privacy Policy', fr: 'Politique de Confidentialité' }, updated: '2026-08-08' },
@@ -31,7 +31,6 @@ const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: stri
 
 function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | 'pt' | 'ar' }) {
   const fr = lang === 'fr';
-  const en = !fr;
   const h2 = (fr: string, en: string) => <h2 className="mt-8 text-xl font-bold text-ink-900">{fr ? fr : en}</h2>;
 
   switch (page) {

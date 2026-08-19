@@ -3,18 +3,17 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import {
   ShieldCheck, Users, Building2, CreditCard, BarChart3, UserCog,
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
-  AlertTriangle, TrendingUp, DollarSign, Activity, UserCheck, Search,
-  Settings,
+  AlertTriangle, TrendingUp, DollarSign, Activity, Search,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
 import { formatMoney } from '@/lib/i18n-countries';
-import { MODULES, ACTIONS, fetchRoles, createRole, deleteRole, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
+import { MODULES, ACTIONS, fetchRoles, fetchPermissions, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
+import type { Organization, Profile } from '@/types';
 
-const FOUNDER_EMAILS = ['vincentnogue@yahoo.com', 'vincentnogue2@gmail.com', 'webdxb1@gmail.com'];
 
 /* ═══════════════════════════════════════════════════════════
    Super Admin Layout (separate from tenant AppLayout)
@@ -92,12 +91,25 @@ export function SuperAdminLayout() {
   );
 }
 
+interface PlatformStats {
+  total_orgs?: number;
+  total_users?: number;
+  active_subs?: number;
+  mrr_cents?: number;
+  active_trials?: number;
+  new_orgs_30d?: number;
+  starter_count?: number;
+  growth_count?: number;
+  pro_count?: number;
+  enterprise_count?: number;
+}
+
 /* ═══════════════════════════════════════════════════════════
    Super Admin Dashboard
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminDashboard() {
   const { language } = useAuth();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -167,9 +179,18 @@ export function SuperAdminDashboard() {
 /* ═══════════════════════════════════════════════════════════
    Super Admins List (add/remove with min-2 rule)
    ═══════════════════════════════════════════════════════════ */
+interface SuperAdminRecord {
+  id: string;
+  email: string;
+  active: boolean;
+  is_founder: boolean;
+  twofa_required?: boolean;
+  created_at?: string;
+}
+
 function SuperAdminsList() {
   const { user, language } = useAuth();
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<SuperAdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -271,8 +292,8 @@ function SuperAdminsList() {
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminUsersPage() {
   const { user, language } = useAuth();
-  const [orgs, setOrgs] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -393,9 +414,21 @@ export function SuperAdminUsersPage() {
 /* ═══════════════════════════════════════════════════════════
    Subscriptions Management
    ═══════════════════════════════════════════════════════════ */
+interface SubscriptionRecord {
+  id: string;
+  plan: string;
+  status: string;
+  price_cents: number;
+  currency?: string;
+  billing_cycle?: string;
+  current_period_end?: string | null;
+  flutterwave_tx_ref?: string | null;
+  organizations?: { name?: string } | null;
+}
+
 export function SuperAdminSubscriptionsPage() {
   const { language } = useAuth();
-  const [subs, setSubs] = useState<any[]>([]);
+  const [subs, setSubs] = useState<SubscriptionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -452,7 +485,7 @@ export function SuperAdminSubscriptionsPage() {
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminAnalyticsPage() {
   const { language } = useAuth();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -501,9 +534,20 @@ export function SuperAdminAnalyticsPage() {
 /* ═══════════════════════════════════════════════════════════
    Employee KPIs
    ═══════════════════════════════════════════════════════════ */
+interface EmployeeKpiRecord {
+  id: string;
+  employee_email: string;
+  employee_name?: string;
+  period: string;
+  target_revenue_cents: number;
+  actual_revenue_cents?: number;
+  target_deals?: number;
+  activity_score?: number;
+}
+
 export function SuperAdminEmployeesPage() {
   const { language } = useAuth();
-  const [kpis, setKpis] = useState<any[]>([]);
+  const [kpis, setKpis] = useState<EmployeeKpiRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ employee_email: '', employee_name: '', period: '', target_revenue: '', target_deals: '' });
@@ -570,7 +614,7 @@ export function SuperAdminEmployeesPage() {
                 <td className="px-4 py-3"><p className="font-medium text-ink-900">{k.employee_name}</p><p className="text-xs text-ink-400">{k.employee_email}</p></td>
                 <td className="px-4 py-3 text-ink-600">{k.period}</td>
                 <td className="px-4 py-3 text-ink-600">{formatMoney(k.target_revenue_cents, 'USD', language)}</td>
-                <td className="px-4 py-3 text-ink-600">{formatMoney(k.actual_revenue_cents, 'USD', language)}</td>
+                <td className="px-4 py-3 text-ink-600">{formatMoney(k.actual_revenue_cents ?? 0, 'USD', language)}</td>
                 <td className="px-4 py-3 text-ink-600">{k.target_deals}</td>
                 <td className="px-4 py-3"><span className="font-semibold text-primary-600">{k.activity_score || 0}</span></td>
               </tr>
@@ -586,9 +630,20 @@ export function SuperAdminEmployeesPage() {
 /* ═══════════════════════════════════════════════════════════
    Sales Codes (commercial tracking)
    ═══════════════════════════════════════════════════════════ */
+interface SalesCodeRecord {
+  id: string;
+  code: string;
+  salesperson_name: string;
+  salesperson_email: string;
+  uses_count?: number;
+  max_uses?: number | null;
+  active: boolean;
+  created_at: string;
+}
+
 export function SuperAdminSalesCodesPage() {
   const { user, language } = useAuth();
-  const [codes, setCodes] = useState<any[]>([]);
+  const [codes, setCodes] = useState<SalesCodeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ salesperson_email: '', salesperson_name: '', max_uses: '' });
@@ -774,9 +829,18 @@ export function SuperAdminPermissionsPage() {
 /* ═══════════════════════════════════════════════════════════
    Audit Log (immutable platform actions)
    ═══════════════════════════════════════════════════════════ */
+interface AuditLogRecord {
+  id: string;
+  created_at: string;
+  actor_email?: string;
+  action: string;
+  target_email?: string | null;
+  target_id?: string | null;
+}
+
 export function SuperAdminAuditPage() {
   const { language } = useAuth();
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

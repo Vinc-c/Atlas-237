@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
+import { getErrorMessage } from '@/lib/errors';
 import { PageHeader, Badge } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
@@ -58,7 +59,8 @@ export function MarketplacePage() {
   useEffect(() => {
     supabase.from('integrations').select('provider,status')
       .then(({ data }) => {
-        setConnected((data || []).filter((i: Integration) => i.status === 'connected').map((i: Integration) => i.provider));
+        const rows = (data || []) as Pick<Integration, 'provider' | 'status'>[];
+        setConnected(rows.filter((i) => i.status === 'connected').map((i) => i.provider));
       });
   }, []);
 
@@ -399,8 +401,8 @@ export function APIWebhooksPage() {
       });
       setTestResult(prev => ({ ...prev, [wh.id]: { ok: res.ok, msg: `${res.status} ${res.statusText}` } }));
       await supabase.from('webhooks').update({ last_response_code: res.status, last_triggered_at: new Date().toISOString() }).eq('id', wh.id);
-    } catch (e: any) {
-      setTestResult(prev => ({ ...prev, [wh.id]: { ok: false, msg: e.message } }));
+    } catch (e) {
+      setTestResult(prev => ({ ...prev, [wh.id]: { ok: false, msg: getErrorMessage(e) } }));
     }
     setTesting(null);
   }

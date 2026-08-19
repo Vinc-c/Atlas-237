@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bot, ListTodo, Workflow, Brain, BookOpen, CheckSquare, Plus, Zap, Check, X } from 'lucide-react';
+import { Bot, ListTodo, Workflow, Brain, BookOpen, CheckSquare, Zap, Check, X } from 'lucide-react';
 import { ListPage, type FormField } from '@/components/ListPage';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';

@@ -1,4 +1,4 @@
-import { BarChart3, LayoutGrid, Lightbulb, TrendingUp, DollarSign, Users, Handshake, Target, Plus, Trash2 } from 'lucide-react';
+import { LayoutGrid, Lightbulb, DollarSign, Users, Handshake, Target, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -49,11 +49,18 @@ export function ReportsPage() {
   );
 }
 
+interface DashboardRecord {
+  id: string;
+  name: string;
+  description?: string | null;
+  created_at?: string;
+}
+
 export function DashboardsPage() {
   const { language, organization } = useAuth();
   const lang = language;
   const [stats, setStats] = useState({ revenue: 0, openDeals: 0, newLeads: 0 });
-  const [dashboards, setDashboards] = useState<any[]>([]);
+  const [dashboards, setDashboards] = useState<DashboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -70,7 +77,7 @@ export function DashboardsPage() {
         ]);
         const revenue = (paymentsRes.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
         setStats({ revenue, openDeals: dealsRes.count || 0, newLeads: leadsRes.count || 0 });
-        setDashboards((dashRes.data || []) as any[]);
+        setDashboards((dashRes.data || []) as DashboardRecord[]);
       } catch {
         // tables may be empty
       } finally {

@@ -163,7 +163,7 @@ const LEGAL_PAGES = ['privacy','terms','cookies','about','security','contact','c
 function LegalRoute() {
   const { page } = useParams();
   if (!page || !LEGAL_PAGES.includes(page)) return <Navigate to="/" replace />;
-  return <LegalPage page={page as any} />;
+  return <LegalPage page={page as LegalPage} />;
 }
 
 function SuperAdminRoute() {
