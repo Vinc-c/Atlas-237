@@ -1,0 +1,310 @@
+// International data: countries (ISO 3166-1) + currencies (ISO 4217)
+// Used by onboarding (signup) and Settings page.
+
+export interface Country {
+  code: string;      // ISO 3166-1 alpha-2
+  name: string;
+  nameFr: string;
+  currency: string;  // default currency code for this country
+  dialCode: string;
+}
+
+export interface Currency {
+  code: string;      // ISO 4217
+  name: string;
+  symbol: string;
+  decimals: number;
+}
+
+// Major currencies covering the majority of world economies
+export const CURRENCIES: Currency[] = [
+  { code: 'USD', name: 'US Dollar', symbol: '$', decimals: 2 },
+  { code: 'EUR', name: 'Euro', symbol: '€', decimals: 2 },
+  { code: 'GBP', name: 'British Pound', symbol: '£', decimals: 2 },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', decimals: 0 },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', decimals: 2 },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', decimals: 2 },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', decimals: 2 },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', decimals: 2 },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', decimals: 2 },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', decimals: 2 },
+  { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼', decimals: 2 },
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R', decimals: 2 },
+  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', decimals: 2 },
+  { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh', decimals: 2 },
+  { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵', decimals: 2 },
+  { code: 'EGP', name: 'Egyptian Pound', symbol: '£', decimals: 2 },
+  { code: 'MAD', name: 'Moroccan Dirham', symbol: 'DH', decimals: 2 },
+  { code: 'XOF', name: 'West African CFA Franc', symbol: 'CFA', decimals: 0 },
+  { code: 'XAF', name: 'Central African CFA Franc', symbol: 'FCFA', decimals: 0 },
+  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$', decimals: 2 },
+  { code: 'MXN', name: 'Mexican Peso', symbol: '$', decimals: 2 },
+  { code: 'ARS', name: 'Argentine Peso', symbol: '$', decimals: 2 },
+  { code: 'COP', name: 'Colombian Peso', symbol: '$', decimals: 2 },
+  { code: 'CLP', name: 'Chilean Peso', symbol: '$', decimals: 0 },
+  { code: 'PEN', name: 'Peruvian Sol', symbol: 'S/', decimals: 2 },
+  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', decimals: 2 },
+  { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$', decimals: 2 },
+  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM', decimals: 2 },
+  { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', decimals: 0 },
+  { code: 'THB', name: 'Thai Baht', symbol: '฿', decimals: 2 },
+  { code: 'PHP', name: 'Philippine Peso', symbol: '₱', decimals: 2 },
+  { code: 'VND', name: 'Vietnamese Dong', symbol: '₫', decimals: 0 },
+  { code: 'KRW', name: 'South Korean Won', symbol: '₩', decimals: 0 },
+  { code: 'TRY', name: 'Turkish Lira', symbol: '₺', decimals: 2 },
+  { code: 'RUB', name: 'Russian Ruble', symbol: '₽', decimals: 2 },
+  { code: 'UAH', name: 'Ukrainian Hryvnia', symbol: '₴', decimals: 2 },
+  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł', decimals: 2 },
+  { code: 'SEK', name: 'Swedish Krona', symbol: 'kr', decimals: 2 },
+  { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr', decimals: 2 },
+  { code: 'DKK', name: 'Danish Krone', symbol: 'kr', decimals: 2 },
+  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč', decimals: 2 },
+  { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft', decimals: 0 },
+  { code: 'RON', name: 'Romanian Leu', symbol: 'lei', decimals: 2 },
+  { code: 'ILS', name: 'Israeli Shekel', symbol: '₪', decimals: 2 },
+  { code: 'PKR', name: 'Pakistani Rupee', symbol: '₨', decimals: 2 },
+  { code: 'BDT', name: 'Bangladeshi Taka', symbol: '৳', decimals: 2 },
+  { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$', decimals: 2 },
+  { code: 'TND', name: 'Tunisian Dinar', symbol: 'DT', decimals: 3 },
+  { code: 'DZD', name: 'Algerian Dinar', symbol: 'DA', decimals: 2 },
+  { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br', decimals: 2 },
+  { code: 'TZS', name: 'Tanzanian Shilling', symbol: 'TSh', decimals: 0 },
+  { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh', decimals: 0 },
+  { code: 'RWF', name: 'Rwandan Franc', symbol: 'RF', decimals: 0 },
+  { code: 'XOF', name: 'CFA Franc BCEAO', symbol: 'CFA', decimals: 0 },
+];
+
+// Full country list (ISO 3166-1 alpha-2) — 195 countries
+export const COUNTRIES: Country[] = [
+  { code: 'AF', name: 'Afghanistan', nameFr: 'Afghanistan', currency: 'AFN', dialCode: '+93' },
+  { code: 'AL', name: 'Albania', nameFr: 'Albanie', currency: 'ALL', dialCode: '+355' },
+  { code: 'DZ', name: 'Algeria', nameFr: 'Algérie', currency: 'DZD', dialCode: '+213' },
+  { code: 'AD', name: 'Andorra', nameFr: 'Andorre', currency: 'EUR', dialCode: '+376' },
+  { code: 'AO', name: 'Angola', nameFr: 'Angola', currency: 'AOA', dialCode: '+244' },
+  { code: 'AR', name: 'Argentina', nameFr: 'Argentine', currency: 'ARS', dialCode: '+54' },
+  { code: 'AM', name: 'Armenia', nameFr: 'Arménie', currency: 'AMD', dialCode: '+374' },
+  { code: 'AU', name: 'Australia', nameFr: 'Australie', currency: 'AUD', dialCode: '+61' },
+  { code: 'AT', name: 'Austria', nameFr: 'Autriche', currency: 'EUR', dialCode: '+43' },
+  { code: 'AZ', name: 'Azerbaijan', nameFr: 'Azerbaïdjan', currency: 'AZN', dialCode: '+994' },
+  { code: 'BS', name: 'Bahamas', nameFr: 'Bahamas', currency: 'BSD', dialCode: '+1242' },
+  { code: 'BH', name: 'Bahrain', nameFr: 'Bahreïn', currency: 'BHD', dialCode: '+973' },
+  { code: 'BD', name: 'Bangladesh', nameFr: 'Bangladesh', currency: 'BDT', dialCode: '+880' },
+  { code: 'BB', name: 'Barbados', nameFr: 'Barbade', currency: 'BBD', dialCode: '+1246' },
+  { code: 'BY', name: 'Belarus', nameFr: 'Biélorussie', currency: 'BYN', dialCode: '+375' },
+  { code: 'BE', name: 'Belgium', nameFr: 'Belgique', currency: 'EUR', dialCode: '+32' },
+  { code: 'BZ', name: 'Belize', nameFr: 'Belize', currency: 'BZD', dialCode: '+501' },
+  { code: 'BJ', name: 'Benin', nameFr: 'Bénin', currency: 'XOF', dialCode: '+229' },
+  { code: 'BT', name: 'Bhutan', nameFr: 'Bhoutan', currency: 'BTN', dialCode: '+975' },
+  { code: 'BO', name: 'Bolivia', nameFr: 'Bolivie', currency: 'BOB', dialCode: '+591' },
+  { code: 'BA', name: 'Bosnia and Herzegovina', nameFr: 'Bosnie-Herzégovine', currency: 'BAM', dialCode: '+387' },
+  { code: 'BW', name: 'Botswana', nameFr: 'Botswana', currency: 'BWP', dialCode: '+267' },
+  { code: 'BR', name: 'Brazil', nameFr: 'Brésil', currency: 'BRL', dialCode: '+55' },
+  { code: 'BN', name: 'Brunei', nameFr: 'Brunei', currency: 'BND', dialCode: '+673' },
+  { code: 'BG', name: 'Bulgaria', nameFr: 'Bulgarie', currency: 'BGN', dialCode: '+359' },
+  { code: 'BF', name: 'Burkina Faso', nameFr: 'Burkina Faso', currency: 'XOF', dialCode: '+226' },
+  { code: 'BI', name: 'Burundi', nameFr: 'Burundi', currency: 'BIF', dialCode: '+257' },
+  { code: 'KH', name: 'Cambodia', nameFr: 'Cambodge', currency: 'KHR', dialCode: '+855' },
+  { code: 'CM', name: 'Cameroon', nameFr: 'Cameroun', currency: 'XAF', dialCode: '+237' },
+  { code: 'CA', name: 'Canada', nameFr: 'Canada', currency: 'CAD', dialCode: '+1' },
+  { code: 'CV', name: 'Cape Verde', nameFr: 'Cap-Vert', currency: 'CVE', dialCode: '+238' },
+  { code: 'CF', name: 'Central African Republic', nameFr: 'République centrafricaine', currency: 'XAF', dialCode: '+236' },
+  { code: 'TD', name: 'Chad', nameFr: 'Tchad', currency: 'XAF', dialCode: '+235' },
+  { code: 'CL', name: 'Chile', nameFr: 'Chili', currency: 'CLP', dialCode: '+56' },
+  { code: 'CN', name: 'China', nameFr: 'Chine', currency: 'CNY', dialCode: '+86' },
+  { code: 'CO', name: 'Colombia', nameFr: 'Colombie', currency: 'COP', dialCode: '+57' },
+  { code: 'KM', name: 'Comoros', nameFr: 'Comores', currency: 'KMF', dialCode: '+269' },
+  { code: 'CG', name: 'Congo', nameFr: 'Congo', currency: 'XAF', dialCode: '+242' },
+  { code: 'CD', name: 'Congo (DRC)', nameFr: 'Congo (RDC)', currency: 'CDF', dialCode: '+243' },
+  { code: 'CR', name: 'Costa Rica', nameFr: 'Costa Rica', currency: 'CRC', dialCode: '+506' },
+  { code: 'CI', name: "Côte d'Ivoire", nameFr: "Côte d'Ivoire", currency: 'XOF', dialCode: '+225' },
+  { code: 'HR', name: 'Croatia', nameFr: 'Croatie', currency: 'EUR', dialCode: '+385' },
+  { code: 'CU', name: 'Cuba', nameFr: 'Cuba', currency: 'CUP', dialCode: '+53' },
+  { code: 'CY', name: 'Cyprus', nameFr: 'Chypre', currency: 'EUR', dialCode: '+357' },
+  { code: 'CZ', name: 'Czech Republic', nameFr: 'Tchéquie', currency: 'CZK', dialCode: '+420' },
+  { code: 'DK', name: 'Denmark', nameFr: 'Danemark', currency: 'DKK', dialCode: '+45' },
+  { code: 'DJ', name: 'Djibouti', nameFr: 'Djibouti', currency: 'DJF', dialCode: '+253' },
+  { code: 'DO', name: 'Dominican Republic', nameFr: 'République dominicaine', currency: 'DOP', dialCode: '+1809' },
+  { code: 'EC', name: 'Ecuador', nameFr: 'Équateur', currency: 'USD', dialCode: '+593' },
+  { code: 'EG', name: 'Egypt', nameFr: 'Égypte', currency: 'EGP', dialCode: '+20' },
+  { code: 'SV', name: 'El Salvador', nameFr: 'El Salvador', currency: 'USD', dialCode: '+503' },
+  { code: 'GQ', name: 'Equatorial Guinea', nameFr: 'Guinée équatoriale', currency: 'XAF', dialCode: '+240' },
+  { code: 'ER', name: 'Eritrea', nameFr: 'Érythrée', currency: 'ERN', dialCode: '+291' },
+  { code: 'EE', name: 'Estonia', nameFr: 'Estonie', currency: 'EUR', dialCode: '+372' },
+  { code: 'SZ', name: 'Eswatini', nameFr: 'Eswatini', currency: 'SZL', dialCode: '+268' },
+  { code: 'ET', name: 'Ethiopia', nameFr: 'Éthiopie', currency: 'ETB', dialCode: '+251' },
+  { code: 'FJ', name: 'Fiji', nameFr: 'Fidji', currency: 'FJD', dialCode: '+679' },
+  { code: 'FI', name: 'Finland', nameFr: 'Finlande', currency: 'EUR', dialCode: '+358' },
+  { code: 'FR', name: 'France', nameFr: 'France', currency: 'EUR', dialCode: '+33' },
+  { code: 'GA', name: 'Gabon', nameFr: 'Gabon', currency: 'XAF', dialCode: '+241' },
+  { code: 'GM', name: 'Gambia', nameFr: 'Gambie', currency: 'GMD', dialCode: '+220' },
+  { code: 'GE', name: 'Georgia', nameFr: 'Géorgie', currency: 'GEL', dialCode: '+995' },
+  { code: 'DE', name: 'Germany', nameFr: 'Allemagne', currency: 'EUR', dialCode: '+49' },
+  { code: 'GH', name: 'Ghana', nameFr: 'Ghana', currency: 'GHS', dialCode: '+233' },
+  { code: 'GR', name: 'Greece', nameFr: 'Grèce', currency: 'EUR', dialCode: '+30' },
+  { code: 'GL', name: 'Greenland', nameFr: 'Groenland', currency: 'DKK', dialCode: '+299' },
+  { code: 'GT', name: 'Guatemala', nameFr: 'Guatemala', currency: 'GTQ', dialCode: '+502' },
+  { code: 'GN', name: 'Guinea', nameFr: 'Guinée', currency: 'GNF', dialCode: '+224' },
+  { code: 'GW', name: 'Guinea-Bissau', nameFr: 'Guinée-Bissau', currency: 'XOF', dialCode: '+245' },
+  { code: 'GY', name: 'Guyana', nameFr: 'Guyana', currency: 'GYD', dialCode: '+592' },
+  { code: 'HT', name: 'Haiti', nameFr: 'Haïti', currency: 'HTG', dialCode: '+509' },
+  { code: 'HN', name: 'Honduras', nameFr: 'Honduras', currency: 'HNL', dialCode: '+504' },
+  { code: 'HK', name: 'Hong Kong', nameFr: 'Hong Kong', currency: 'HKD', dialCode: '+852' },
+  { code: 'HU', name: 'Hungary', nameFr: 'Hongrie', currency: 'HUF', dialCode: '+36' },
+  { code: 'IS', name: 'Iceland', nameFr: 'Islande', currency: 'ISK', dialCode: '+354' },
+  { code: 'IN', name: 'India', nameFr: 'Inde', currency: 'INR', dialCode: '+91' },
+  { code: 'ID', name: 'Indonesia', nameFr: 'Indonésie', currency: 'IDR', dialCode: '+62' },
+  { code: 'IR', name: 'Iran', nameFr: 'Iran', currency: 'IRR', dialCode: '+98' },
+  { code: 'IQ', name: 'Iraq', nameFr: 'Irak', currency: 'IQD', dialCode: '+964' },
+  { code: 'IE', name: 'Ireland', nameFr: 'Irlande', currency: 'EUR', dialCode: '+353' },
+  { code: 'IL', name: 'Israel', nameFr: 'Israël', currency: 'ILS', dialCode: '+972' },
+  { code: 'IT', name: 'Italy', nameFr: 'Italie', currency: 'EUR', dialCode: '+39' },
+  { code: 'JM', name: 'Jamaica', nameFr: 'Jamaïque', currency: 'JMD', dialCode: '+1876' },
+  { code: 'JP', name: 'Japan', nameFr: 'Japon', currency: 'JPY', dialCode: '+81' },
+  { code: 'JO', name: 'Jordan', nameFr: 'Jordanie', currency: 'JOD', dialCode: '+962' },
+  { code: 'KZ', name: 'Kazakhstan', nameFr: 'Kazakhstan', currency: 'KZT', dialCode: '+7' },
+  { code: 'KE', name: 'Kenya', nameFr: 'Kenya', currency: 'KES', dialCode: '+254' },
+  { code: 'KI', name: 'Kiribati', nameFr: 'Kiribati', currency: 'AUD', dialCode: '+686' },
+  { code: 'KP', name: 'North Korea', nameFr: 'Corée du Nord', currency: 'KPW', dialCode: '+850' },
+  { code: 'KR', name: 'South Korea', nameFr: 'Corée du Sud', currency: 'KRW', dialCode: '+82' },
+  { code: 'KW', name: 'Kuwait', nameFr: 'Koweït', currency: 'KWD', dialCode: '+965' },
+  { code: 'KG', name: 'Kyrgyzstan', nameFr: 'Kirghizistan', currency: 'KGS', dialCode: '+996' },
+  { code: 'LA', name: 'Laos', nameFr: 'Laos', currency: 'LAK', dialCode: '+856' },
+  { code: 'LV', name: 'Latvia', nameFr: 'Lettonie', currency: 'EUR', dialCode: '+371' },
+  { code: 'LB', name: 'Lebanon', nameFr: 'Liban', currency: 'LBP', dialCode: '+961' },
+  { code: 'LS', name: 'Lesotho', nameFr: 'Lesotho', currency: 'LSL', dialCode: '+266' },
+  { code: 'LR', name: 'Liberia', nameFr: 'Liberia', currency: 'LRD', dialCode: '+231' },
+  { code: 'LY', name: 'Libya', nameFr: 'Libye', currency: 'LYD', dialCode: '+218' },
+  { code: 'LI', name: 'Liechtenstein', nameFr: 'Liechtenstein', currency: 'CHF', dialCode: '+423' },
+  { code: 'LT', name: 'Lithuania', nameFr: 'Lituanie', currency: 'EUR', dialCode: '+370' },
+  { code: 'LU', name: 'Luxembourg', nameFr: 'Luxembourg', currency: 'EUR', dialCode: '+352' },
+  { code: 'MO', name: 'Macao', nameFr: 'Macao', currency: 'MOP', dialCode: '+853' },
+  { code: 'MG', name: 'Madagascar', nameFr: 'Madagascar', currency: 'MGA', dialCode: '+261' },
+  { code: 'MW', name: 'Malawi', nameFr: 'Malawi', currency: 'MWK', dialCode: '+265' },
+  { code: 'MY', name: 'Malaysia', nameFr: 'Malaisie', currency: 'MYR', dialCode: '+60' },
+  { code: 'MV', name: 'Maldives', nameFr: 'Maldives', currency: 'MVR', dialCode: '+960' },
+  { code: 'ML', name: 'Mali', nameFr: 'Mali', currency: 'XOF', dialCode: '+223' },
+  { code: 'MT', name: 'Malta', nameFr: 'Malte', currency: 'EUR', dialCode: '+356' },
+  { code: 'MR', name: 'Mauritania', nameFr: 'Mauritanie', currency: 'MRU', dialCode: '+222' },
+  { code: 'MU', name: 'Mauritius', nameFr: 'Maurice', currency: 'MUR', dialCode: '+230' },
+  { code: 'MX', name: 'Mexico', nameFr: 'Mexique', currency: 'MXN', dialCode: '+52' },
+  { code: 'MD', name: 'Moldova', nameFr: 'Moldavie', currency: 'MDL', dialCode: '+373' },
+  { code: 'MC', name: 'Monaco', nameFr: 'Monaco', currency: 'EUR', dialCode: '+377' },
+  { code: 'MN', name: 'Mongolia', nameFr: 'Mongolie', currency: 'MNT', dialCode: '+976' },
+  { code: 'ME', name: 'Montenegro', nameFr: 'Monténégro', currency: 'EUR', dialCode: '+382' },
+  { code: 'MA', name: 'Morocco', nameFr: 'Maroc', currency: 'MAD', dialCode: '+212' },
+  { code: 'MZ', name: 'Mozambique', nameFr: 'Mozambique', currency: 'MZN', dialCode: '+258' },
+  { code: 'MM', name: 'Myanmar', nameFr: 'Myanmar', currency: 'MMK', dialCode: '+95' },
+  { code: 'NA', name: 'Namibia', nameFr: 'Namibie', currency: 'NAD', dialCode: '+264' },
+  { code: 'NP', name: 'Nepal', nameFr: 'Népal', currency: 'NPR', dialCode: '+977' },
+  { code: 'NL', name: 'Netherlands', nameFr: 'Pays-Bas', currency: 'EUR', dialCode: '+31' },
+  { code: 'NZ', name: 'New Zealand', nameFr: 'Nouvelle-Zélande', currency: 'NZD', dialCode: '+64' },
+  { code: 'NI', name: 'Nicaragua', nameFr: 'Nicaragua', currency: 'NIO', dialCode: '+505' },
+  { code: 'NE', name: 'Niger', nameFr: 'Niger', currency: 'XOF', dialCode: '+227' },
+  { code: 'NG', name: 'Nigeria', nameFr: 'Nigeria', currency: 'NGN', dialCode: '+234' },
+  { code: 'MK', name: 'North Macedonia', nameFr: 'Macédoine du Nord', currency: 'MKD', dialCode: '+389' },
+  { code: 'NO', name: 'Norway', nameFr: 'Norvège', currency: 'NOK', dialCode: '+47' },
+  { code: 'OM', name: 'Oman', nameFr: 'Oman', currency: 'OMR', dialCode: '+968' },
+  { code: 'PK', name: 'Pakistan', nameFr: 'Pakistan', currency: 'PKR', dialCode: '+92' },
+  { code: 'PS', name: 'Palestine', nameFr: 'Palestine', currency: 'ILS', dialCode: '+970' },
+  { code: 'PA', name: 'Panama', nameFr: 'Panama', currency: 'PAB', dialCode: '+507' },
+  { code: 'PG', name: 'Papua New Guinea', nameFr: 'Papouasie-Nouvelle-Guinée', currency: 'PGK', dialCode: '+675' },
+  { code: 'PY', name: 'Paraguay', nameFr: 'Paraguay', currency: 'PYG', dialCode: '+595' },
+  { code: 'PE', name: 'Peru', nameFr: 'Pérou', currency: 'PEN', dialCode: '+51' },
+  { code: 'PH', name: 'Philippines', nameFr: 'Philippines', currency: 'PHP', dialCode: '+63' },
+  { code: 'PL', name: 'Poland', nameFr: 'Pologne', currency: 'PLN', dialCode: '+48' },
+  { code: 'PT', name: 'Portugal', nameFr: 'Portugal', currency: 'EUR', dialCode: '+351' },
+  { code: 'QA', name: 'Qatar', nameFr: 'Qatar', currency: 'QAR', dialCode: '+974' },
+  { code: 'RO', name: 'Romania', nameFr: 'Roumanie', currency: 'RON', dialCode: '+40' },
+  { code: 'RU', name: 'Russia', nameFr: 'Russie', currency: 'RUB', dialCode: '+7' },
+  { code: 'RW', name: 'Rwanda', nameFr: 'Rwanda', currency: 'RWF', dialCode: '+250' },
+  { code: 'SA', name: 'Saudi Arabia', nameFr: 'Arabie saoudite', currency: 'SAR', dialCode: '+966' },
+  { code: 'SN', name: 'Senegal', nameFr: 'Sénégal', currency: 'XOF', dialCode: '+221' },
+  { code: 'RS', name: 'Serbia', nameFr: 'Serbie', currency: 'RSD', dialCode: '+381' },
+  { code: 'SC', name: 'Seychelles', nameFr: 'Seychelles', currency: 'SCR', dialCode: '+248' },
+  { code: 'SL', name: 'Sierra Leone', nameFr: 'Sierra Leone', currency: 'SLL', dialCode: '+232' },
+  { code: 'SG', name: 'Singapore', nameFr: 'Singapour', currency: 'SGD', dialCode: '+65' },
+  { code: 'SK', name: 'Slovakia', nameFr: 'Slovaquie', currency: 'EUR', dialCode: '+421' },
+  { code: 'SI', name: 'Slovenia', nameFr: 'Slovénie', currency: 'EUR', dialCode: '+386' },
+  { code: 'SO', name: 'Somalia', nameFr: 'Somalie', currency: 'SOS', dialCode: '+252' },
+  { code: 'ZA', name: 'South Africa', nameFr: 'Afrique du Sud', currency: 'ZAR', dialCode: '+27' },
+  { code: 'SS', name: 'South Sudan', nameFr: 'Soudan du Sud', currency: 'SSP', dialCode: '+211' },
+  { code: 'ES', name: 'Spain', nameFr: 'Espagne', currency: 'EUR', dialCode: '+34' },
+  { code: 'LK', name: 'Sri Lanka', nameFr: 'Sri Lanka', currency: 'LKR', dialCode: '+94' },
+  { code: 'SD', name: 'Sudan', nameFr: 'Soudan', currency: 'SDG', dialCode: '+249' },
+  { code: 'SR', name: 'Suriname', nameFr: 'Suriname', currency: 'SRD', dialCode: '+597' },
+  { code: 'SE', name: 'Sweden', nameFr: 'Suède', currency: 'SEK', dialCode: '+46' },
+  { code: 'CH', name: 'Switzerland', nameFr: 'Suisse', currency: 'CHF', dialCode: '+41' },
+  { code: 'SY', name: 'Syria', nameFr: 'Syrie', currency: 'SYP', dialCode: '+963' },
+  { code: 'TW', name: 'Taiwan', nameFr: 'Taïwan', currency: 'TWD', dialCode: '+886' },
+  { code: 'TJ', name: 'Tajikistan', nameFr: 'Tadjikistan', currency: 'TJS', dialCode: '+992' },
+  { code: 'TZ', name: 'Tanzania', nameFr: 'Tanzanie', currency: 'TZS', dialCode: '+255' },
+  { code: 'TH', name: 'Thailand', nameFr: 'Thaïlande', currency: 'THB', dialCode: '+66' },
+  { code: 'TL', name: 'Timor-Leste', nameFr: 'Timor oriental', currency: 'USD', dialCode: '+670' },
+  { code: 'TG', name: 'Togo', nameFr: 'Togo', currency: 'XOF', dialCode: '+228' },
+  { code: 'TT', name: 'Trinidad and Tobago', nameFr: 'Trinité-et-Tobago', currency: 'TTD', dialCode: '+1868' },
+  { code: 'TN', name: 'Tunisia', nameFr: 'Tunisie', currency: 'TND', dialCode: '+216' },
+  { code: 'TR', name: 'Turkey', nameFr: 'Turquie', currency: 'TRY', dialCode: '+90' },
+  { code: 'TM', name: 'Turkmenistan', nameFr: 'Turkménistan', currency: 'TMT', dialCode: '+993' },
+  { code: 'UG', name: 'Uganda', nameFr: 'Ouganda', currency: 'UGX', dialCode: '+256' },
+  { code: 'UA', name: 'Ukraine', nameFr: 'Ukraine', currency: 'UAH', dialCode: '+380' },
+  { code: 'AE', name: 'United Arab Emirates', nameFr: 'Émirats arabes unis', currency: 'AED', dialCode: '+971' },
+  { code: 'GB', name: 'United Kingdom', nameFr: 'Royaume-Uni', currency: 'GBP', dialCode: '+44' },
+  { code: 'US', name: 'United States', nameFr: 'États-Unis', currency: 'USD', dialCode: '+1' },
+  { code: 'UY', name: 'Uruguay', nameFr: 'Uruguay', currency: 'UYU', dialCode: '+598' },
+  { code: 'UZ', name: 'Uzbekistan', nameFr: 'Ouzbékistan', currency: 'UZS', dialCode: '+998' },
+  { code: 'VE', name: 'Venezuela', nameFr: 'Venezuela', currency: 'VES', dialCode: '+58' },
+  { code: 'VN', name: 'Vietnam', nameFr: 'Vietnam', currency: 'VND', dialCode: '+84' },
+  { code: 'YE', name: 'Yemen', nameFr: 'Yémen', currency: 'YER', dialCode: '+967' },
+  { code: 'ZM', name: 'Zambia', nameFr: 'Zambie', currency: 'ZMW', dialCode: '+260' },
+  { code: 'ZW', name: 'Zimbabwe', nameFr: 'Zimbabwe', currency: 'ZWL', dialCode: '+263' },
+];
+
+// Common timezones
+export const TIMEZONES: string[] = [
+  'UTC',
+  'Africa/Abidjan', 'Africa/Cairo', 'Africa/Casablanca', 'Africa/Dakar', 'Africa/Johannesburg',
+  'Africa/Lagos', 'Africa/Nairobi', 'Africa/Tunis',
+  'America/Argentina/Buenos_Aires', 'America/Bogota', 'America/Chicago', 'America/Los_Angeles',
+  'America/Mexico_City', 'America/New_York', 'America/Sao_Paulo', 'America/Toronto',
+  'Asia/Bangkok', 'Asia/Dubai', 'Asia/Hong_Kong', 'Asia/Kolkata', 'Asia/Seoul',
+  'Asia/Shanghai', 'Asia/Singapore', 'Asia/Tokyo',
+  'Europe/Amsterdam', 'Europe/Berlin', 'Europe/Brussels', 'Europe/Dublin', 'Europe/Lisbon',
+  'Europe/London', 'Europe/Madrid', 'Europe/Paris', 'Europe/Rome', 'Europe/Zurich',
+  'Pacific/Auckland', 'Pacific/Sydney',
+];
+
+export function getCurrency(code: string): Currency {
+  return CURRENCIES.find((c) => c.code === code) || CURRENCIES[0];
+}
+
+export function getCountry(code: string): Country | undefined {
+  return COUNTRIES.find((c) => c.code === code);
+}
+
+export function getCountryName(code: string, lang: 'en' | 'fr' | 'es' | 'pt' | 'ar'): string {
+  const c = getCountry(code);
+  if (!c) return code;
+  return lang === 'fr' ? c.nameFr : c.name;
+}
+
+/** Format a monetary amount according to currency */
+export function formatMoney(cents: number, currencyCode: string, lang: string = 'en'): string {
+  const cur = getCurrency(currencyCode);
+  const value = cents / Math.pow(10, cur.decimals);
+  const locale = lang === 'fr' ? 'fr-FR' : 'en-US';
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: cur.code,
+      minimumFractionDigits: cur.decimals,
+      maximumFractionDigits: cur.decimals,
+    }).format(value);
+  } catch {
+    return `${cur.symbol}${value.toFixed(cur.decimals)}`;
+  }
+}
+
+/** Suggest default currency for a country code */
+export function suggestCurrency(countryCode: string): string {
+  return getCountry(countryCode)?.currency || 'USD';
+}
