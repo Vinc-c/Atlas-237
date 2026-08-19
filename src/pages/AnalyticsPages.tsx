@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
 import { PageHeader, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
+import { UpgradeGate } from '@/components/UpgradeGate';
+import { hasFeature } from '@/lib/plans';
 
 export function ReportsPage() {
   const { language } = useAuth();
@@ -105,6 +107,8 @@ export function DashboardsPage() {
 
   const currency = organization?.currency || 'USD';
   const fmtMoney = (n: number) => new Intl.NumberFormat(lang, { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+  const plan = organization?.plan || 'starter';
+  const customDashboardsAllowed = hasFeature(plan, 'customDashboards');
 
   return (
     <div className="animate-fade-in">
@@ -112,9 +116,11 @@ export function DashboardsPage() {
         title={t('nav.dashboards', lang)}
         subtitle=""
         actions={
-          <button onClick={() => setShowForm(true)} className="btn-primary btn-sm">
-            <Plus size={16} /> {lang === 'fr' ? 'Créer' : 'Create'}
-          </button>
+          customDashboardsAllowed ? (
+            <button onClick={() => setShowForm(true)} className="btn-primary btn-sm">
+              <Plus size={16} /> {lang === 'fr' ? 'Créer' : 'Create'}
+            </button>
+          ) : undefined
         }
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -123,6 +129,12 @@ export function DashboardsPage() {
         <StatCard label={t('dash.newLeads', lang)} value={loading ? '…' : String(stats.newLeads)} icon={<Users size={20} />} color="accent" />
       </div>
 
+      {!customDashboardsAllowed ? (
+        <div className="mt-6">
+          <UpgradeGate language={lang} feature={lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards'} minPlan="pro" />
+        </div>
+      ) : (
+      <>
       {showForm && (
         <div className="card mt-6 p-5 space-y-3">
           <h3 className="font-bold text-ink-800">{lang === 'fr' ? 'Nouveau tableau de bord' : 'New Dashboard'}</h3>
@@ -169,13 +181,17 @@ export function DashboardsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
 
 export function AIInsightsPage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
   const lang = language;
+  const plan = organization?.plan || 'starter';
+  const allowed = hasFeature(plan, 'advancedAnalytics');
   const [insights, setInsights] = useState<{ title: string; desc: string; severity: 'error' | 'warning' | 'success' }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -223,6 +239,8 @@ export function AIInsightsPage() {
       </div>
     );
   }
+
+  if (!allowed) return <UpgradeGate language={lang} feature={lang === 'fr' ? 'Analytique avancée & Insights IA' : 'Advanced Analytics & AI Insights'} minPlan="growth" />;
 
   return (
     <div className="animate-fade-in">

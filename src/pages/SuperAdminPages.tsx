@@ -3,7 +3,7 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import {
   ShieldCheck, Users, Building2, CreditCard, BarChart3, UserCog,
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
-  AlertTriangle, TrendingUp, DollarSign, Activity, Search,
+  AlertTriangle, TrendingUp, DollarSign, Activity, Search, CalendarPlus,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -114,13 +114,8 @@ export function SuperAdminDashboard() {
 
   useEffect(() => {
     (async () => {
-      try {
-        const { data } = await supabase.rpc('is_super_admin', { check_user_id: (await supabase.auth.getUser()).data.user?.id });
-        if (!data) return;
-      } catch { /* */ }
-      // Fetch platform stats from view
-      const { data: view } = await supabase.from('platform_stats').select('*').limit(1).maybeSingle();
-      setStats(view);
+      const { data, error } = await supabase.rpc('get_platform_stats');
+      if (!error) setStats((data && data[0]) || null);
       setLoading(false);
     })();
   }, []);
@@ -322,7 +317,42 @@ export function SuperAdminUsersPage() {
     if (!user) return;
     const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
     if (error) { alert(error.message); return; }
+    // Keep the org's active/most-recent subscription row in sync so billing pages stay coherent.
+    await supabase.from('subscriptions').update({ plan: newPlan }).eq('org_id', orgId).eq('status', 'active');
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'plan.change', p_target_type: 'organization', p_target_id: orgId, p_details: { new_plan: newPlan } });
+    await load();
+  }
+
+  async function extendAccess(org: Organization, days: number) {
+    if (!user) return;
+    const now = new Date();
+    if (org.status === 'trial' || (org.trial_ends_at && new Date(org.trial_ends_at) > now) || !org.trial_ends_at) {
+      // Extend the trial window
+      const base = org.trial_ends_at && new Date(org.trial_ends_at) > now ? new Date(org.trial_ends_at) : now;
+      base.setDate(base.getDate() + days);
+      const { error } = await supabase.from('organizations').update({ trial_ends_at: base.toISOString() }).eq('id', org.id);
+      if (error) { alert(error.message); return; }
+    }
+    // Also extend the active paid subscription period, if any
+    const { data: sub } = await supabase.from('subscriptions').select('id,current_period_end').eq('org_id', org.id).eq('status', 'active').maybeSingle();
+    if (sub) {
+      const base = sub.current_period_end && new Date(sub.current_period_end) > now ? new Date(sub.current_period_end) : now;
+      base.setDate(base.getDate() + days);
+      await supabase.from('subscriptions').update({ current_period_end: base.toISOString() }).eq('id', sub.id);
+    }
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: org.id, p_details: { days } });
+    await load();
+  }
+
+  async function deleteTenant(org: Organization) {
+    if (!user) return;
+    const confirmText = language === 'fr'
+      ? `Supprimer définitivement "${org.name}" et toutes ses données (contacts, deals, factures, utilisateurs...) ? Cette action est irréversible.`
+      : `Permanently delete "${org.name}" and all of its data (contacts, deals, invoices, users...)? This cannot be undone.`;
+    if (!window.confirm(confirmText)) return;
+    const { error } = await supabase.from('organizations').delete().eq('id', org.id);
+    if (error) { alert(error.message); return; }
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'tenant.delete', p_target_type: 'organization', p_target_id: org.id, p_details: { name: org.name } });
     await load();
   }
 
@@ -350,6 +380,7 @@ export function SuperAdminUsersPage() {
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.country', language)}</th>
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.trialEnds', language)}</th>
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.created', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.status', language)}</th>
               <th className="px-4 py-3 text-right font-semibold text-ink-700">{t('superAdmin.actions', language)}</th>
             </tr>
           </thead>
@@ -362,20 +393,29 @@ export function SuperAdminUsersPage() {
                     value={o.plan}
                     onChange={(e) => changePlan(o.id, o.name, e.target.value)}
                     className="rounded-full border border-transparent bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 capitalize cursor-pointer hover:border-primary-300"
-                    title="Change plan"
+                    title={t('superAdmin.changePlan', language)}
                   >
-                    <option value="trial">trial</option>
-                    <option value="starter">starter</option>
-                    <option value="pro">pro</option>
-                    <option value="enterprise">enterprise</option>
+                    <option value="starter">Starter</option>
+                    <option value="growth">Growth</option>
+                    <option value="pro">Pro</option>
+                    <option value="enterprise">Enterprise</option>
                   </select>
                 </td>
                 <td className="px-4 py-3 text-ink-600">{o.currency}</td>
                 <td className="px-4 py-3 text-ink-600">{o.country || '—'}</td>
                 <td className="px-4 py-3 text-ink-600">{o.trial_ends_at ? new Date(o.trial_ends_at).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-3 text-ink-500">{new Date(o.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${o.status === 'suspended' ? 'bg-error-50 text-error-700' : 'bg-success-50 text-success-700'}`}>
+                    {o.status || 'active'}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title="Suspend/Reactivate"><Ban size={14} /></button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => extendAccess(o, 30)} className="btn-ghost btn-sm" title={t('superAdmin.extend30', language)}><CalendarPlus size={14} /></button>
+                    <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title={o.status === 'suspended' ? t('superAdmin.reactivate', language) : t('superAdmin.suspend', language)}><Ban size={14} /></button>
+                    <button onClick={() => deleteTenant(o)} className="btn-ghost btn-sm text-error-600 hover:bg-error-50" title={t('superAdmin.deleteTenant', language)}><Trash2 size={14} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -489,8 +529,8 @@ export function SuperAdminAnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('platform_stats').select('*').limit(1).maybeSingle().then(({ data }) => {
-      setStats(data);
+    supabase.rpc('get_platform_stats').then(({ data, error }) => {
+      if (!error) setStats((data && data[0]) || null);
       setLoading(false);
     });
   }, []);

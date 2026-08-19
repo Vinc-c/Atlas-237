@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { BrandLogo } from '@/components/BrandLogos';
+import { UpgradeGate } from '@/components/UpgradeGate';
+import { hasFeature } from '@/lib/plans';
 import type { Integration, ApiKey, Webhook as WebhookType } from '@/types';
 
 interface AppDef {
@@ -21,6 +23,7 @@ interface AppDef {
 }
 
 const AVAILABLE_APPS: AppDef[] = [
+  { provider: 'libooks', name: 'Libooks', category: 'Accounting', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'lbk_live_xxx', type: 'password' }, { key: 'workspace_id', label: 'Workspace ID', placeholder: 'e.g. your Libooks workspace slug' }], docsUrl: 'https://libooks.liafrik.com' },
   { provider: 'gmail', name: 'Gmail', category: 'Email', authType: 'oauth', docsUrl: 'https://developers.google.com/gmail/api' },
   { provider: 'outlook', name: 'Outlook', category: 'Email', authType: 'oauth', docsUrl: 'https://learn.microsoft.com/graph' },
   { provider: 'stripe', name: 'Stripe', category: 'Payments', authType: 'api_key', configFields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'sk_live_...', type: 'password' }, { key: 'publishable_key', label: 'Publishable Key', placeholder: 'pk_live_...' }], docsUrl: 'https://stripe.com/docs/api' },
@@ -313,8 +316,10 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 }
 
 export function APIWebhooksPage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
   const lang = language;
+  const plan = organization?.plan || 'starter';
+  const allowed = hasFeature(plan, 'apiAccess') || hasFeature(plan, 'webhooks');
   const [tab, setTab] = useState<'keys' | 'webhooks'>('keys');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookType[]>([]);
@@ -408,6 +413,7 @@ export function APIWebhooksPage() {
   }
 
   if (loading) return <Loading text={t('common.loading', lang)} />;
+  if (!allowed) return <UpgradeGate language={lang} feature="API & Webhooks" minPlan="growth" />;
 
   return (
     <div className="animate-fade-in">

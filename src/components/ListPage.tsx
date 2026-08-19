@@ -31,6 +31,9 @@ interface ListPageProps<T extends { id: string }> {
   relations?: string;
   orderBy?: string;
   importable?: boolean;
+  /** Optional plan-based cap on total rows. When reached, "New" is disabled with an upgrade hint. */
+  maxRows?: number | null;
+  maxRowsMessage?: string;
 }
 
 export interface FormField {
@@ -256,7 +259,7 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
 }
 
 export function ListPage<T extends { id: string }>({
-  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable,
+  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable, maxRows, maxRowsMessage,
 }: ListPageProps<T>) {
   const { language } = useAuth();
   const [rows, setRows] = useState<T[]>([]);
@@ -343,12 +346,21 @@ export function ListPage<T extends { id: string }>({
                 <Upload size={16} /> {language === 'fr' ? 'Importer' : 'Import'}
               </button>
             )}
-            <button onClick={openCreate} className="btn-primary btn-sm">
+            <button
+              onClick={openCreate}
+              disabled={maxRows != null && rows.length >= maxRows}
+              title={maxRows != null && rows.length >= maxRows ? maxRowsMessage : undefined}
+              className="btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Plus size={16} /> {t('common.add', language)}
             </button>
           </div>
         }
       />
+
+      {maxRows != null && rows.length >= maxRows && maxRowsMessage && (
+        <p className="mb-4 text-xs text-warning-700 bg-warning-50 rounded-lg px-3 py-2">{maxRowsMessage}</p>
+      )}
 
       <div className="mb-4 relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
