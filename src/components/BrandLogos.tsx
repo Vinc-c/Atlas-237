@@ -143,6 +143,16 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
           <rect x="5" y="9" width="4" height="6" rx="0.5" fill="#fff" opacity="0.95" />
         </svg>
       );
+    case 'libooks':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Libooks">
+          <rect width="24" height="24" rx="5" fill="#0F766E" />
+          <path d="M6 6.5a1 1 0 0 1 1-1h5.5a3 3 0 0 1 0 6H7a1 1 0 0 1-1-1v-4Z" fill="#fff" opacity="0.95" />
+          <path d="M6 12.5a1 1 0 0 1 1-1h6.5a3 3 0 0 1 0 6H7a1 1 0 0 1-1-1v-4Z" fill="#fff" />
+          <circle cx="12.5" cy="8.5" r="1" fill="#0F766E" />
+          <circle cx="13.5" cy="15" r="1.1" fill="#0F766E" />
+        </svg>
+      );
     default:
       return (
         <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label={provider}>

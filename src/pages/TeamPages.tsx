@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
+import { hasFeature, getPlanFeatures } from '@/lib/plans';
 import type { Profile, Role } from '@/types';
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
@@ -33,9 +34,13 @@ export function EmployeesPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('member');
+  const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
     if (organization) load();
+    // load() closes over `organization` but the effect already re-runs on organization?.id
+    // changes; see rationale in SystemPages.tsx.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organization?.id]);
 
   async function load() {
@@ -66,6 +71,14 @@ export function EmployeesPage() {
 
   async function sendInvite() {
     if (!inviteEmail.trim() || !organization) return;
+    const maxUsers = getPlanFeatures(organization.plan).maxUsers;
+    if (maxUsers !== 'unlimited' && employees.length >= maxUsers) {
+      setInviteError(lang === 'fr'
+        ? `Limite de ${maxUsers} utilisateurs atteinte pour le plan ${organization.plan}. Passez à un plan supérieur pour inviter plus de monde.`
+        : `You've reached the ${maxUsers}-user limit for the ${organization.plan} plan. Upgrade to invite more people.`);
+      return;
+    }
+    setInviteError('');
     setSaving(true);
     const { error } = await supabase.auth.signInWithOtp({
       email: inviteEmail.trim(),
@@ -187,16 +200,26 @@ export function EmployeesPage() {
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />} {lang === 'fr' ? 'Envoyer' : 'Send'}
             </button>
           </div>
+          {inviteError && <p className="text-xs text-error-600">{inviteError}</p>}
         </div>
       </Modal>
     </div>
   );
 }
 
+interface TeamRecord {
+  id: string;
+  name: string;
+  description?: string | null;
+  lead_id?: string | null;
+  org_id?: string;
+  created_at?: string;
+}
+
 export function TeamsPage() {
   const { language, organization } = useAuth();
   const lang = language;
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<TeamRecord[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -204,11 +227,15 @@ export function TeamsPage() {
   const [description, setDescription] = useState('');
   const [leadId, setLeadId] = useState('');
   const [saving, setSaving] = useState(false);
-  const [manageTeam, setManageTeam] = useState<any | null>(null);
+  const [manageTeam, setManageTeam] = useState<TeamRecord | null>(null);
   const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [addMemberId, setAddMemberId] = useState('');
 
-  useEffect(() => { if (organization) load(); }, [organization?.id]);
+  useEffect(() => {
+    if (organization) load();
+    // see rationale in EmployeesPage above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   async function load() {
     if (!organization) return;
@@ -240,10 +267,10 @@ export function TeamsPage() {
     await load();
   }
 
-  async function openManage(team: any) {
+  async function openManage(team: TeamRecord) {
     setManageTeam(team);
     const { data } = await supabase.from('team_members').select('profile_id').eq('team_id', team.id);
-    const memberIds = (data || []).map((m: any) => m.profile_id);
+    const memberIds = (data || []).map((m: { profile_id: string }) => m.profile_id);
     setTeamMembers(employees.filter(e => memberIds.includes(e.id)));
   }
 
@@ -386,6 +413,8 @@ export function TeamsPage() {
 
 export function PermissionsPage() {
   const { language, organization } = useAuth();
+  const plan = organization?.plan || 'starter';
+  const customRolesAllowed = hasFeature(plan, 'customRoles');
   const [roles, setRoles] = useState<RbacRole[]>([]);
   const [selectedRole, setSelectedRole] = useState<RbacRole | null>(null);
   const [perms, setPerms] = useState<Record<string, boolean>>({});
@@ -395,7 +424,11 @@ export function PermissionsPage() {
   const [newRoleDesc, setNewRoleDesc] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (organization) loadRoles(); }, [organization?.id]);
+  useEffect(() => {
+    if (organization) loadRoles();
+    // see rationale in EmployeesPage above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   async function loadRoles() {
     if (!organization) return;
@@ -413,7 +446,7 @@ export function PermissionsPage() {
   }
 
   async function handleCreateRole() {
-    if (!organization || !newRoleName.trim()) return;
+    if (!organization || !newRoleName.trim() || !customRolesAllowed) return;
     const role = await createRole(organization.id, newRoleName, newRoleDesc);
     if (role) {
       setNewRoleName(''); setNewRoleDesc(''); setShowNewRole(false);
@@ -450,9 +483,18 @@ export function PermissionsPage() {
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Rôles' : 'Roles'}</h3>
-            <button onClick={() => setShowNewRole(!showNewRole)} className="btn-ghost btn-sm">+</button>
+            {customRolesAllowed && (
+              <button onClick={() => setShowNewRole(!showNewRole)} className="btn-ghost btn-sm">+</button>
+            )}
           </div>
-          {showNewRole && (
+          {!customRolesAllowed && (
+            <p className="mb-3 text-xs text-ink-400 rounded-lg bg-ink-50 p-3">
+              {language === 'fr'
+                ? 'La création de rôles personnalisés est disponible à partir du plan Growth.'
+                : 'Creating custom roles is available starting on the Growth plan.'}
+            </p>
+          )}
+          {showNewRole && customRolesAllowed && (
             <div className="mb-3 space-y-2 p-3 rounded-lg bg-ink-50">
               <input className="input" placeholder={language === 'fr' ? 'Nom du rôle' : 'Role name'} value={newRoleName} onChange={e => setNewRoleName(e.target.value)} />
               <input className="input" placeholder={language === 'fr' ? 'Description' : 'Description'} value={newRoleDesc} onChange={e => setNewRoleDesc(e.target.value)} />

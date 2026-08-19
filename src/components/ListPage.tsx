@@ -5,7 +5,8 @@ import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
-import { PageHeader, Badge } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
+import { PageHeader } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
@@ -30,6 +31,9 @@ interface ListPageProps<T extends { id: string }> {
   relations?: string;
   orderBy?: string;
   importable?: boolean;
+  /** Optional plan-based cap on total rows. When reached, "New" is disabled with an upgrade hint. */
+  maxRows?: number | null;
+  maxRowsMessage?: string;
 }
 
 export interface FormField {
@@ -49,7 +53,6 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
   language: string;
 }) {
   const lang = language;
-  const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fieldMap, setFieldMap] = useState<Record<string, string>>({});
@@ -61,7 +64,6 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
 
   function handleFile(f: File) {
     setError('');
-    setFile(f);
     const ext = f.name.split('.').pop()?.toLowerCase();
     if (ext === 'csv') {
       Papa.parse(f, {
@@ -89,7 +91,7 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
           setHeaders(cols);
           autoMap(cols);
           setStep('map');
-        } catch (err: any) { setError(err.message); }
+        } catch (err) { setError(getErrorMessage(err)); }
       };
       reader.readAsArrayBuffer(f);
     } else {
@@ -140,8 +142,8 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
       if (insErr) throw insErr;
       setImportedCount(data.length);
       setStep('done');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setImporting(false);
     }
@@ -256,8 +258,8 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
   );
 }
 
-export function ListPage<T extends { id: string; [key: string]: unknown }>({
-  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable,
+export function ListPage<T extends { id: string }>({
+  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable, maxRows, maxRowsMessage,
 }: ListPageProps<T>) {
   const { language } = useAuth();
   const [rows, setRows] = useState<T[]>([]);
@@ -277,7 +279,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
     if (orderBy) query = query.order(orderBy, { ascending: false });
     else query = query.order('created_at', { ascending: false });
     const { data, error } = await query;
-    if (!error) setRows((data || []) as T[]);
+    if (!error) setRows((data || []) as unknown as T[]);
     setLoading(false);
   }, [table, select, relations, orderBy]);
 
@@ -294,7 +296,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
   function openEdit(row: T) {
     setEditing(row);
     const data: Record<string, unknown> = {};
-    formFields.forEach(f => { data[f.key] = row[f.key]; });
+    formFields.forEach(f => { data[f.key] = (row as Record<string, unknown>)[f.key]; });
     setFormData(data);
     setModalOpen(true);
   }
@@ -327,7 +329,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
 
   const filtered = search
     ? rows.filter(r => {
-        const searchable = columns.map(c => String(r[c.key] ?? '')).join(' ').toLowerCase();
+        const searchable = columns.map(c => String((r as Record<string, unknown>)[c.key] ?? '')).join(' ').toLowerCase();
         return searchable.includes(search.toLowerCase());
       })
     : rows;
@@ -344,12 +346,21 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
                 <Upload size={16} /> {language === 'fr' ? 'Importer' : 'Import'}
               </button>
             )}
-            <button onClick={openCreate} className="btn-primary btn-sm">
+            <button
+              onClick={openCreate}
+              disabled={maxRows != null && rows.length >= maxRows}
+              title={maxRows != null && rows.length >= maxRows ? maxRowsMessage : undefined}
+              className="btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Plus size={16} /> {t('common.add', language)}
             </button>
           </div>
         }
       />
+
+      {maxRows != null && rows.length >= maxRows && maxRowsMessage && (
+        <p className="mb-4 text-xs text-warning-700 bg-warning-50 rounded-lg px-3 py-2">{maxRowsMessage}</p>
+      )}
 
       <div className="mb-4 relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
@@ -391,7 +402,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
                   <tr key={row.id} className="group border-b border-ink-50 last:border-0 table-row-hover">
                     {columns.map(col => (
                       <td key={col.key} className={`px-4 py-3 text-sm text-ink-700 ${col.className || ''}`}>
-                        {col.render ? col.render(row) : String(row[col.key] ?? '—')}
+                        {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '—')}
                       </td>
                     ))}
                     <td className="px-4 py-3">

@@ -1,6 +1,37 @@
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
+interface FlutterwaveCallbackResponse {
+  status: string;
+  transaction_id?: string | number;
+  id?: string | number;
+}
+
+interface FlutterwaveModalHandle {
+  close: () => void;
+}
+
+interface FlutterwaveCheckoutOptions {
+  public_key: string | undefined;
+  tx_ref: string;
+  amount: string;
+  currency: string;
+  payment_options: string;
+  customer: { email: string };
+  custom_title: string;
+  custom_description: string;
+  redirect_url: string;
+  on_close: () => void;
+  callback: (response: FlutterwaveCallbackResponse) => void;
+}
+
+declare global {
+  interface Window {
+    FlutterwaveCheckout?: (options: FlutterwaveCheckoutOptions) => FlutterwaveModalHandle;
+  }
+}
+
+
 export const PLAN_PRICES: Record<string, { cents: number; label: string }> = {
   starter: { cents: 1900, label: 'Starter — $19/mo' },
   growth: { cents: 4900, label: 'Growth — $49/mo' },
@@ -65,7 +96,7 @@ export function initiateFlutterwaveCheckout(params: {
   // Load Flutterwave inline script
   const existing = document.getElementById('flutterwave-script');
   const loadScript = () => new Promise<void>((resolve) => {
-    if ((window as any).FlutterwaveCheckout) return resolve();
+    if (window.FlutterwaveCheckout) return resolve();
     if (existing) {
       existing.addEventListener('load', () => resolve());
       return;
@@ -79,7 +110,7 @@ export function initiateFlutterwaveCheckout(params: {
   });
 
   loadScript().then(() => {
-    const modal = (window as any).FlutterwaveCheckout({
+    const modal = window.FlutterwaveCheckout?.({
       public_key: FLW_PUBLIC_KEY,
       tx_ref: txRef,
       amount: (price.cents / 100).toFixed(2),
@@ -90,11 +121,11 @@ export function initiateFlutterwaveCheckout(params: {
       custom_description: price.label,
       redirect_url: `${window.location.origin}/app/billing?flw_status=success&tx_ref=${txRef}`,
       on_close: () => onClose(),
-      callback: (response: any) => {
+      callback: (response: FlutterwaveCallbackResponse) => {
         if (response.status === 'completed' || response.status === 'successful') {
           onSuccess(txRef, String(response.transaction_id || response.id || ''));
         }
-        modal.close();
+        modal?.close();
       },
     });
   });

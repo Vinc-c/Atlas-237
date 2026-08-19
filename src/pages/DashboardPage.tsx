@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   DollarSign, UserPlus, Flame, Handshake, AlertTriangle,
   Calendar, CheckCircle, Receipt, LifeBuoy, Bot, Clock,
-  TrendingUp, Sparkles, Zap, X
+  TrendingUp, Sparkles, Zap, X, Activity
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { StatCard, PageHeader } from '@/components/ui';
 import { Loading } from '@/components/Loading';
-import type { AITask, Approval, Activity } from '@/types';
+import type { AITask, Approval, Activity as ActivityRecord } from '@/types';
 
 interface DashboardStats {
   revenue: number;
@@ -29,7 +29,7 @@ interface DashboardStats {
 export function DashboardPage() {
   const { language, profile, organization } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [recentActivities, setRecentActivities] = useState<ActivityRecord[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<Approval[]>([]);
   const [aiTasks, setAiTasks] = useState<AITask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,7 @@ export function DashboardPage() {
         aiCompleted: aiCompletedRes.count || 0,
         aiPending: aiPendingRes.count || 0,
       });
-      setRecentActivities(activitiesRes.data as Activity[] || []);
+      setRecentActivities(activitiesRes.data as ActivityRecord[] || []);
       setPendingApprovals(approvalsRes.data as Approval[] || []);
       setAiTasks(aiTasksRes.data as AITask[] || []);
     } catch {
