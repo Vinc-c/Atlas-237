@@ -1,4 +1,4 @@
-import { useState, Fragment, useEffect, useRef } from 'react';
+import { useState, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldCheck, TrendingUp, Bot, BarChart3,
@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/context/AuthContext';
-import { t } from '@/lib/i18n';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
 const cloudProducts = [

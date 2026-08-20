@@ -7,7 +7,7 @@ import {
   Brain, BookOpen, CheckSquare, BarChart3, LayoutGrid, Lightbulb,
   UserCog, UsersRound, ShieldCheck, Store, Plug, Webhook, Bell,
   ScrollText, Settings, CreditCard as Billing, Gauge, Sparkles,
-  ChevronDown, ChevronRight, LogOut, Search, Image as ImageIcon
+  ChevronDown, ChevronRight, LogOut, Search
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';

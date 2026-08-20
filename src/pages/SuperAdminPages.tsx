@@ -5,7 +5,7 @@ import {
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
   AlertTriangle, TrendingUp, DollarSign, Activity, Search, CalendarPlus,
   Briefcase, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight,
-  UserPlus, Phone, Mail, Pencil, X,
+  UserPlus, Pencil, X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -246,9 +246,18 @@ export function SuperAdminDashboard() {
 /* ═══════════════════════════════════════════════════════════
    Super Admins List (add/remove with min-2 rule)
    ═══════════════════════════════════════════════════════════ */
+interface SuperAdminRecord {
+  id: string;
+  email: string;
+  active: boolean;
+  is_founder: boolean;
+  twofa_required?: boolean;
+  created_at?: string;
+}
+
 function SuperAdminsList() {
   const { user, language } = useAuth();
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<SuperAdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -514,9 +523,21 @@ export function SuperAdminUsersPage() {
 /* ═══════════════════════════════════════════════════════════
    Subscriptions Management
    ═══════════════════════════════════════════════════════════ */
+interface SubscriptionRecord {
+  id: string;
+  plan: string;
+  status: string;
+  price_cents: number;
+  currency?: string;
+  billing_cycle?: string;
+  current_period_end?: string | null;
+  flutterwave_tx_ref?: string | null;
+  organizations?: { name?: string } | null;
+}
+
 export function SuperAdminSubscriptionsPage() {
   const { language } = useAuth();
-  const [subs, setSubs] = useState<any[]>([]);
+  const [subs, setSubs] = useState<SubscriptionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -622,9 +643,20 @@ export function SuperAdminAnalyticsPage() {
 /* ═══════════════════════════════════════════════════════════
    Employee KPIs
    ═══════════════════════════════════════════════════════════ */
+interface EmployeeKpiRecord {
+  id: string;
+  employee_email: string;
+  employee_name?: string;
+  period: string;
+  target_revenue_cents: number;
+  actual_revenue_cents?: number;
+  target_deals?: number;
+  activity_score?: number;
+}
+
 export function SuperAdminEmployeesPage() {
   const { language } = useAuth();
-  const [kpis, setKpis] = useState<any[]>([]);
+  const [kpis, setKpis] = useState<EmployeeKpiRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ employee_email: '', employee_name: '', period: '', target_revenue: '', target_deals: '' });
@@ -691,7 +723,7 @@ export function SuperAdminEmployeesPage() {
                 <td className="px-4 py-3"><p className="font-medium text-ink-900">{k.employee_name}</p><p className="text-xs text-ink-400">{k.employee_email}</p></td>
                 <td className="px-4 py-3 text-ink-600">{k.period}</td>
                 <td className="px-4 py-3 text-ink-600">{formatMoney(k.target_revenue_cents, 'USD', language)}</td>
-                <td className="px-4 py-3 text-ink-600">{formatMoney(k.actual_revenue_cents, 'USD', language)}</td>
+                <td className="px-4 py-3 text-ink-600">{formatMoney(k.actual_revenue_cents ?? 0, 'USD', language)}</td>
                 <td className="px-4 py-3 text-ink-600">{k.target_deals}</td>
                 <td className="px-4 py-3"><span className="font-semibold text-primary-600">{k.activity_score || 0}</span></td>
               </tr>
@@ -707,9 +739,20 @@ export function SuperAdminEmployeesPage() {
 /* ═══════════════════════════════════════════════════════════
    Sales Codes (commercial tracking)
    ═══════════════════════════════════════════════════════════ */
+interface SalesCodeRecord {
+  id: string;
+  code: string;
+  salesperson_name: string;
+  salesperson_email: string;
+  uses_count?: number;
+  max_uses?: number | null;
+  active: boolean;
+  created_at: string;
+}
+
 export function SuperAdminSalesCodesPage() {
   const { user, language } = useAuth();
-  const [codes, setCodes] = useState<any[]>([]);
+  const [codes, setCodes] = useState<SalesCodeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ salesperson_email: '', salesperson_name: '', max_uses: '' });

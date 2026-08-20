@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ScrollText, Settings, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon, Smartphone, Monitor } from 'lucide-react';
+import type { Factor } from '@supabase/supabase-js';
+import { Bell, ScrollText, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon, Smartphone, Monitor } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
 import { getErrorMessage } from '@/lib/errors';
-import { initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutterwaveConfigured } from '@/lib/flutterwave';
+import { initiateFlutterwaveCheckout, recordSubscription, isFlutterwaveConfigured } from '@/lib/flutterwave';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
-import { COUNTRIES, CURRENCIES, TIMEZONES, getCurrency } from '@/lib/i18n-countries';
+import { COUNTRIES, CURRENCIES, TIMEZONES } from '@/lib/i18n-countries';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { getPlanFeatures, hasFeature } from '@/lib/plans';
-import type { Notification, AuditLog, Organization, Plan } from '@/types';
+import type { Notification, AuditLog, Organization, Plan, Profile } from '@/types';
+import type { Language } from '@/lib/i18n';
 
 export function NotificationsPage() {
   const { language, profile } = useAuth();
@@ -22,6 +24,7 @@ export function NotificationsPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
   async function load() {
@@ -178,7 +181,7 @@ export function SettingsPage() {
 }
 
 /* ── Account Tab ── */
-function AccountTab({ language, organization, onSave }: { language: any; organization: Organization | null; onSave: () => Promise<void> }) {
+function AccountTab({ language, organization, onSave }: { language: Language; organization: Organization | null; onSave: () => Promise<void> }) {
   const [org, setOrg] = useState<Organization | null>(organization);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -246,7 +249,7 @@ function AccountTab({ language, organization, onSave }: { language: any; organiz
 }
 
 /* ── Profile Tab ── */
-function ProfileTab({ language, profile }: { language: any; profile: any }) {
+function ProfileTab({ language, profile }: { language: Language; profile: Profile | null }) {
   const [firstName, setFirstName] = useState(profile?.first_name || '');
   const [lastName, setLastName] = useState(profile?.last_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -297,7 +300,7 @@ function ProfileTab({ language, profile }: { language: any; profile: any }) {
 }
 
 /* ── Branding Tab (conditional on plan) ── */
-function BrandingTab({ language, organization, onSave }: { language: any; organization: Organization | null; onSave: () => Promise<void> }) {
+function BrandingTab({ language, organization, onSave }: { language: Language; organization: Organization | null; onSave: () => Promise<void> }) {
   const [logoUrl, setLogoUrl] = useState(organization?.logo_url || '');
   const [brandingEnabled, setBrandingEnabled] = useState(organization?.branding_enabled || false);
   const [uploading, setUploading] = useState(false);
@@ -397,7 +400,7 @@ function BrandingTab({ language, organization, onSave }: { language: any; organi
 }
 
 /* ── Roles & Permissions Tab (tenant scope) ── */
-function RolesPermissionsTab({ language, organization }: { language: any; organization: Organization | null }) {
+function RolesPermissionsTab({ language, organization }: { language: Language; organization: Organization | null }) {
   const [roles, setRoles] = useState<RbacRole[]>([]);
   const [selectedRole, setSelectedRole] = useState<RbacRole | null>(null);
   const [perms, setPerms] = useState<Record<string, boolean>>({});
@@ -406,7 +409,10 @@ function RolesPermissionsTab({ language, organization }: { language: any; organi
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDesc, setNewRoleDesc] = useState('');
 
-  useEffect(() => { if (organization) loadRoles(); }, [organization?.id]);
+  useEffect(() => {
+    if (organization) loadRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   async function loadRoles() {
     if (!organization) return;
@@ -536,9 +542,8 @@ function RolesPermissionsTab({ language, organization }: { language: any; organi
 }
 
 /* ── Security Tab ── */
-function SecurityTab({ language }: { language: any }) {
-  const { user } = useAuth();
-  const [factors, setFactors] = useState<any[]>([]);
+function SecurityTab({ language }: { language: Language }) {
+  const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');

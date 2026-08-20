@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
+import { getErrorMessage } from '@/lib/errors';
 import { PageHeader, Badge } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
@@ -434,8 +435,8 @@ export function APIWebhooksPage() {
       if (result.ok) {
         await supabase.from('webhooks').update({ last_response_code: 200, last_triggered_at: new Date().toISOString() }).eq('id', wh.id);
       }
-    } catch (e: any) {
-      setTestResult(prev => ({ ...prev, [wh.id]: { ok: false, msg: e.message } }));
+    } catch (e) {
+      setTestResult(prev => ({ ...prev, [wh.id]: { ok: false, msg: getErrorMessage(e) } }));
     }
     setTesting(null);
   }

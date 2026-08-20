@@ -5,7 +5,8 @@ import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
-import { PageHeader, Badge } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
+import { PageHeader } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
@@ -49,7 +50,6 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
   language: string;
 }) {
   const lang = language;
-  const [file, setFile] = useState<File | null>(null);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fieldMap, setFieldMap] = useState<Record<string, string>>({});
@@ -61,7 +61,6 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
 
   function handleFile(f: File) {
     setError('');
-    setFile(f);
     const ext = f.name.split('.').pop()?.toLowerCase();
     if (ext === 'csv') {
       Papa.parse(f, {
@@ -89,7 +88,7 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
           setHeaders(cols);
           autoMap(cols);
           setStep('map');
-        } catch (err: any) { setError(err.message); }
+        } catch (err) { setError(getErrorMessage(err)); }
       };
       reader.readAsArrayBuffer(f);
     } else {
@@ -140,8 +139,8 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
       if (insErr) throw insErr;
       setImportedCount(data.length);
       setStep('done');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setImporting(false);
     }

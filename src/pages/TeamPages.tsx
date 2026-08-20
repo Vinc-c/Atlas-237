@@ -36,6 +36,10 @@ export function EmployeesPage() {
 
   useEffect(() => {
     if (organization) load();
+    // load() closes over `organization` but the effect already re-runs on organization?.id
+    // changes; including load/organization as deps would cause redundant re-fetches since
+    // load is a new function reference every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organization?.id]);
 
   async function load() {
@@ -196,10 +200,19 @@ export function EmployeesPage() {
   );
 }
 
+interface TeamRecord {
+  id: string;
+  name: string;
+  description?: string | null;
+  lead_id?: string | null;
+  org_id?: string;
+  created_at?: string;
+}
+
 export function TeamsPage() {
   const { language, organization } = useAuth();
   const lang = language;
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<TeamRecord[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -207,11 +220,14 @@ export function TeamsPage() {
   const [description, setDescription] = useState('');
   const [leadId, setLeadId] = useState('');
   const [saving, setSaving] = useState(false);
-  const [manageTeam, setManageTeam] = useState<any | null>(null);
+  const [manageTeam, setManageTeam] = useState<TeamRecord | null>(null);
   const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [addMemberId, setAddMemberId] = useState('');
 
-  useEffect(() => { if (organization) load(); }, [organization?.id]);
+  useEffect(() => {
+    if (organization) load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   async function load() {
     if (!organization) return;
@@ -243,10 +259,10 @@ export function TeamsPage() {
     await load();
   }
 
-  async function openManage(team: any) {
+  async function openManage(team: TeamRecord) {
     setManageTeam(team);
     const { data } = await supabase.from('team_members').select('profile_id').eq('team_id', team.id);
-    const memberIds = (data || []).map((m: any) => m.profile_id);
+    const memberIds = (data || []).map((m: { profile_id: string }) => m.profile_id);
     setTeamMembers(employees.filter(e => memberIds.includes(e.id)));
   }
 
@@ -398,7 +414,10 @@ export function PermissionsPage() {
   const [newRoleDesc, setNewRoleDesc] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (organization) loadRoles(); }, [organization?.id]);
+  useEffect(() => {
+    if (organization) loadRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.id]);
 
   async function loadRoles() {
     if (!organization) return;
