@@ -60,6 +60,9 @@ function Check({ value }: { value: boolean | string }) {
 export function LandingPage() {
   const { language, setLanguage } = useAuth();
   const lang = language;
+  // La page d'accueil n'a de copy qu'en fr/en ; on retombe sur 'en' pour les autres langues
+  // pour éviter un contenu vide si le profil utilisateur est en es/pt/ar.
+  const contentLang: 'fr' | 'en' = lang === 'fr' ? 'fr' : 'en';
   const [annual, setAnnual] = useState(true);
   useScrollReveal();
   const price = (m: number | null) => (m === null ? (lang === 'fr' ? 'Sur devis' : 'Custom') : annual ? `$${Math.round(m * 10)}/${lang === 'fr' ? 'an' : 'yr'}` : `$${m}/${lang === 'fr' ? 'mois' : 'mo'}`);
@@ -175,7 +178,7 @@ export function LandingPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ink-900">{p.name}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{p.desc[lang]}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{p.desc[contentLang]}</p>
                 </div>
               </div>
             ))}
@@ -293,12 +296,12 @@ export function LandingPage() {
             </div>
             <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {industries.map((ind) => (
-                <div key={ind.name[lang]} className="group reveal rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <div key={ind.name[contentLang]} className="group reveal rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition group-hover:scale-110 group-hover:bg-primary-600 group-hover:text-white">
                     <ind.icon size={20} />
                   </div>
-                  <h3 className="mt-4 font-bold text-ink-900">{ind.name[lang]}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{ind.desc[lang]}</p>
+                  <h3 className="mt-4 font-bold text-ink-900">{ind.name[contentLang]}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-ink-600">{ind.desc[contentLang]}</p>
                   <Link to="/auth" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">
                     {lang === 'fr' ? 'En savoir plus' : 'Learn more'} <ArrowRight size={14} />
                   </Link>
@@ -320,10 +323,10 @@ export function LandingPage() {
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {reports.map((r) => (
-              <div key={r.title[lang]} className="reveal flex flex-col rounded-2xl border border-ink-100 bg-white p-7 shadow-sm transition hover:shadow-lg">
-                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 self-start">{r.tag[lang]}</span>
-                <h3 className="mt-4 flex-1 text-lg font-bold leading-7 text-ink-900">{r.title[lang]}</h3>
-                <Link to="/auth" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">{r.cta[lang]} <ArrowRight size={14} /></Link>
+              <div key={r.title[contentLang]} className="reveal flex flex-col rounded-2xl border border-ink-100 bg-white p-7 shadow-sm transition hover:shadow-lg">
+                <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-700 self-start">{r.tag[contentLang]}</span>
+                <h3 className="mt-4 flex-1 text-lg font-bold leading-7 text-ink-900">{r.title[contentLang]}</h3>
+                <Link to="/auth" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline">{r.cta[contentLang]} <ArrowRight size={14} /></Link>
               </div>
             ))}
           </div>
@@ -346,15 +349,15 @@ export function LandingPage() {
             <div className="mt-12 grid gap-6 lg:grid-cols-4">
               {plans.map((plan) => (
                 <div key={plan.name} className={`reveal relative flex flex-col rounded-2xl border p-7 transition ${plan.popular ? 'border-primary-600 bg-white shadow-2xl shadow-primary-600/10 lg:-translate-y-3' : 'border-ink-100 bg-white shadow-sm hover:shadow-lg hover:border-ink-200'}`}>
-                  {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow">{plan.tagline[lang]}</span>}
+                  {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow">{plan.tagline[contentLang]}</span>}
                   <h3 className="text-lg font-bold text-ink-900">{plan.name}</h3>
-                  {!plan.popular && <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary-600">{plan.tagline[lang]}</p>}
-                  <p className="mt-3 min-h-[2.5rem] text-sm leading-6 text-ink-600">{plan.desc[lang]}</p>
+                  {!plan.popular && <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary-600">{plan.tagline[contentLang]}</p>}
+                  <p className="mt-3 min-h-[2.5rem] text-sm leading-6 text-ink-600">{plan.desc[contentLang]}</p>
                   <div className="mt-5">
                     <p className="text-3xl font-bold text-ink-950">{price(plan.monthly)}</p>
                     {plan.monthly !== null && <p className="mt-1 text-xs text-ink-400">{annual ? (lang === 'fr' ? 'Facturé annuellement' : 'Billed annually') : (lang === 'fr' ? 'par utilisateur' : 'per user')}</p>}
                   </div>
-                  <Link to="/auth" className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition ${plan.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-ink-950 text-white hover:bg-ink-800'}`}>{plan.cta[lang]} <ArrowRight size={14} /></Link>
+                  <Link to="/auth" className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition ${plan.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-ink-950 text-white hover:bg-ink-800'}`}>{plan.cta[contentLang]} <ArrowRight size={14} /></Link>
                 </div>
               ))}
             </div>
@@ -377,13 +380,13 @@ export function LandingPage() {
                   </thead>
                   <tbody>
                     {matrixGroups.map((group) => (
-                      <Fragment key={group.group[lang]}>
+                      <Fragment key={group.group[contentLang]}>
                         <tr className="bg-primary-50/50">
-                          <td colSpan={5} className="px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-primary-700">{group.group[lang]}</td>
+                          <td colSpan={5} className="px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-primary-700">{group.group[contentLang]}</td>
                         </tr>
                         {group.rows.map((row) => (
-                          <tr key={row.label[lang]} className="border-t border-ink-100 hover:bg-ink-50/50">
-                            <td className="px-6 py-3.5 text-left text-ink-700">{row.label[lang]}</td>
+                          <tr key={row.label[contentLang]} className="border-t border-ink-100 hover:bg-ink-50/50">
+                            <td className="px-6 py-3.5 text-left text-ink-700">{row.label[contentLang]}</td>
                             {row.values.map((v, i) => (
                               <td key={i} className="px-6 py-3.5 text-center"><Check value={v} /></td>
                             ))}

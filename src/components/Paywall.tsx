@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Lock, CreditCard, CheckCircle2, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { Lock, CreditCard, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { checkSubscriptionAccess, initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutterwaveConfigured } from '@/lib/flutterwave';
 import { supabase } from '@/lib/supabase';

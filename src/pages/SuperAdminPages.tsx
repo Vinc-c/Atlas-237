@@ -3,19 +3,18 @@ import { useNavigate, Outlet } from 'react-router-dom';
 import {
   ShieldCheck, Users, Building2, CreditCard, BarChart3, UserCog,
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
-  AlertTriangle, TrendingUp, DollarSign, Activity, UserCheck, Search,
-  Settings, Briefcase, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight,
+  AlertTriangle, TrendingUp, DollarSign, Activity, Search, CalendarPlus,
+  Briefcase, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight,
   UserPlus, Phone, Mail, Pencil, X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { t } from '@/lib/i18n';
 import { formatMoney } from '@/lib/i18n-countries';
-import { MODULES, ACTIONS, fetchRoles, fetchPermissions, createRole, deleteRole, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
+import { MODULES, ACTIONS, fetchRoles, fetchPermissions, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
-
-const FOUNDER_EMAILS = ['vincentnogue@yahoo.com', 'vincentnogue2@gmail.com', 'webdxb1@gmail.com'];
+import type { Organization, Profile } from '@/types';
 
 /* ═══════════════════════════════════════════════════════════
    Super Admin Layout (separate from tenant AppLayout)
@@ -95,22 +94,45 @@ export function SuperAdminLayout() {
   );
 }
 
+interface PlatformStats {
+  total_orgs?: number;
+  total_users?: number;
+  active_subs?: number;
+  mrr_cents?: number;
+  active_trials?: number;
+  new_orgs_30d?: number;
+  starter_count?: number;
+  growth_count?: number;
+  pro_count?: number;
+  enterprise_count?: number;
+}
+
+interface PlatformFinanceSummary {
+  revenue_mtd: number;
+  expenses_mtd: number;
+  revenue_total: number;
+  expenses_total: number;
+  subscription_mrr: number;
+  expense_count_mtd: number;
+  revenue_count_mtd: number;
+}
+
 /* ═══════════════════════════════════════════════════════════
    Super Admin Dashboard
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminDashboard() {
-  const { language, user } = useAuth();
-  const [stats, setStats] = useState<any>(null);
-  const [finance, setFinance] = useState<any>(null);
+  const { language } = useAuth();
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [finance, setFinance] = useState<PlatformFinanceSummary | null>(null);
   const [staffCount, setStaffCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data: view } = await supabase.from('platform_stats').select('*').limit(1).maybeSingle();
-      setStats(view);
-      const { data: fin } = await supabase.from('platform_finance_summary').select('*').limit(1).maybeSingle();
-      setFinance(fin);
+      const { data: view } = await supabase.rpc('get_platform_stats');
+      setStats((view && view[0]) || null);
+      const { data: fin } = await supabase.rpc('get_platform_finance_summary');
+      setFinance((fin && fin[0]) || null);
       const { count } = await supabase.from('platform_staff').select('*', { count: 'exact', head: true }).eq('active', true);
       setStaffCount(count || 0);
       setLoading(false);
@@ -328,8 +350,8 @@ function SuperAdminsList() {
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminUsersPage() {
   const { user, language } = useAuth();
-  const [orgs, setOrgs] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
@@ -358,7 +380,39 @@ export function SuperAdminUsersPage() {
     if (!user) return;
     const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
     if (error) { alert(error.message); return; }
+    await supabase.from('subscriptions').update({ plan: newPlan }).eq('org_id', orgId).eq('status', 'active');
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'plan.change', p_target_type: 'organization', p_target_id: orgId, p_details: { new_plan: newPlan } });
+    await load();
+  }
+
+  async function extendAccess(org: Organization, days: number) {
+    if (!user) return;
+    const now = new Date();
+    if (!org.trial_ends_at || new Date(org.trial_ends_at) > now || org.status === 'trial') {
+      const base = org.trial_ends_at && new Date(org.trial_ends_at) > now ? new Date(org.trial_ends_at) : now;
+      base.setDate(base.getDate() + days);
+      const { error } = await supabase.from('organizations').update({ trial_ends_at: base.toISOString() }).eq('id', org.id);
+      if (error) { alert(error.message); return; }
+    }
+    const { data: sub } = await supabase.from('subscriptions').select('id,current_period_end').eq('org_id', org.id).eq('status', 'active').maybeSingle();
+    if (sub) {
+      const base = sub.current_period_end && new Date(sub.current_period_end) > now ? new Date(sub.current_period_end) : now;
+      base.setDate(base.getDate() + days);
+      await supabase.from('subscriptions').update({ current_period_end: base.toISOString() }).eq('id', sub.id);
+    }
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: org.id, p_details: { days } });
+    await load();
+  }
+
+  async function deleteTenant(org: Organization) {
+    if (!user) return;
+    const confirmText = language === 'fr'
+      ? `Supprimer définitivement "${org.name}" et toutes ses données (contacts, deals, factures, utilisateurs...) ? Cette action est irréversible.`
+      : `Permanently delete "${org.name}" and all of its data (contacts, deals, invoices, users...)? This cannot be undone.`;
+    if (!window.confirm(confirmText)) return;
+    const { error } = await supabase.from('organizations').delete().eq('id', org.id);
+    if (error) { alert(error.message); return; }
+    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'tenant.delete', p_target_type: 'organization', p_target_id: org.id, p_details: { name: org.name } });
     await load();
   }
 
@@ -386,6 +440,7 @@ export function SuperAdminUsersPage() {
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.country', language)}</th>
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.trialEnds', language)}</th>
               <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.created', language)}</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink-700">{t('superAdmin.status', language)}</th>
               <th className="px-4 py-3 text-right font-semibold text-ink-700">{t('superAdmin.actions', language)}</th>
             </tr>
           </thead>
@@ -398,20 +453,29 @@ export function SuperAdminUsersPage() {
                     value={o.plan}
                     onChange={(e) => changePlan(o.id, o.name, e.target.value)}
                     className="rounded-full border border-transparent bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 capitalize cursor-pointer hover:border-primary-300"
-                    title="Change plan"
+                    title={t('superAdmin.changePlan', language)}
                   >
-                    <option value="trial">trial</option>
-                    <option value="starter">starter</option>
-                    <option value="pro">pro</option>
-                    <option value="enterprise">enterprise</option>
+                    <option value="starter">Starter</option>
+                    <option value="growth">Growth</option>
+                    <option value="pro">Pro</option>
+                    <option value="enterprise">Enterprise</option>
                   </select>
                 </td>
                 <td className="px-4 py-3 text-ink-600">{o.currency}</td>
                 <td className="px-4 py-3 text-ink-600">{o.country || '—'}</td>
                 <td className="px-4 py-3 text-ink-600">{o.trial_ends_at ? new Date(o.trial_ends_at).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-3 text-ink-500">{new Date(o.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${o.status === 'suspended' ? 'bg-error-50 text-error-700' : 'bg-success-50 text-success-700'}`}>
+                    {o.status || 'active'}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title="Suspend/Reactivate"><Ban size={14} /></button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button onClick={() => extendAccess(o, 30)} className="btn-ghost btn-sm" title={t('superAdmin.extend30', language)}><CalendarPlus size={14} /></button>
+                    <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title={o.status === 'suspended' ? t('superAdmin.reactivate', language) : t('superAdmin.suspend', language)}><Ban size={14} /></button>
+                    <button onClick={() => deleteTenant(o)} className="btn-ghost btn-sm text-error-600 hover:bg-error-50" title={t('superAdmin.deleteTenant', language)}><Trash2 size={14} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -509,12 +573,12 @@ export function SuperAdminSubscriptionsPage() {
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminAnalyticsPage() {
   const { language } = useAuth();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('platform_stats').select('*').limit(1).maybeSingle().then(({ data }) => {
-      setStats(data);
+    supabase.rpc('get_platform_stats').then(({ data, error }) => {
+      if (!error) setStats((data && data[0]) || null);
       setLoading(false);
     });
   }, []);
@@ -831,9 +895,41 @@ export function SuperAdminPermissionsPage() {
 /* ═══════════════════════════════════════════════════════════
    Audit Log (immutable platform actions)
    ═══════════════════════════════════════════════════════════ */
+interface AuditLogRecord {
+  id: string;
+  created_at: string;
+  actor_email?: string;
+  action: string;
+  target_email?: string | null;
+  target_id?: string | null;
+}
+
+interface PlatformStaffRole {
+  id: string;
+  name: string;
+  description?: string | null;
+  permissions: Record<string, unknown>;
+  is_system: boolean;
+}
+
+interface PlatformStaffRecord {
+  id: string;
+  user_id?: string | null;
+  email: string;
+  full_name: string;
+  role_id?: string | null;
+  role_name: string;
+  department?: string | null;
+  phone?: string | null;
+  active: boolean;
+  exempt_from_billing: boolean;
+  hired_at?: string | null;
+  created_at?: string;
+}
+
 export function SuperAdminAuditPage() {
   const { language } = useAuth();
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLogRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -880,12 +976,12 @@ export function SuperAdminAuditPage() {
    ═══════════════════════════════════════════════════════════ */
 export function SuperAdminStaffPage() {
   const { user, language } = useAuth();
-  const [staff, setStaff] = useState<any[]>([]);
-  const [roles, setRoles] = useState<any[]>([]);
+  const [staff, setStaff] = useState<PlatformStaffRecord[]>([]);
+  const [roles, setRoles] = useState<PlatformStaffRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showRoleForm, setShowRoleForm] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [editingStaff, setEditingStaff] = useState<PlatformStaffRecord | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ email: '', full_name: '', role_id: '', department: '', phone: '' });
@@ -982,7 +1078,7 @@ export function SuperAdminStaffPage() {
     setBusy(false);
   }
 
-  function startEdit(s: any) {
+  function startEdit(s: PlatformStaffRecord) {
     setEditingStaff(s);
     setForm({ email: s.email, full_name: s.full_name, role_id: s.role_id || '', department: s.department || '', phone: s.phone || '' });
     setShowForm(true);
@@ -1104,11 +1200,35 @@ export function SuperAdminStaffPage() {
 /* ═══════════════════════════════════════════════════════════
    Accounting / Finance Dashboard (platform-level)
    ═══════════════════════════════════════════════════════════ */
+interface PlatformExpenseRecord {
+  id: string;
+  category: string;
+  description?: string | null;
+  amount_cents: number;
+  currency?: string;
+  expense_date: string;
+  vendor?: string | null;
+  status?: string;
+  created_at?: string;
+}
+
+interface PlatformRevenueRecord {
+  id: string;
+  source: string;
+  category?: string;
+  description?: string | null;
+  amount_cents: number;
+  currency?: string;
+  revenue_date: string;
+  org_id?: string | null;
+  created_at?: string;
+}
+
 export function SuperAdminAccountingPage() {
   const { user, language } = useAuth();
-  const [finance, setFinance] = useState<any>(null);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [revenue, setRevenue] = useState<any[]>([]);
+  const [finance, setFinance] = useState<PlatformFinanceSummary | null>(null);
+  const [expenses, setExpenses] = useState<PlatformExpenseRecord[]>([]);
+  const [revenue, setRevenue] = useState<PlatformRevenueRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showRevenueForm, setShowRevenueForm] = useState(false);
@@ -1120,11 +1240,11 @@ export function SuperAdminAccountingPage() {
 
   async function load() {
     const [{ data: fin }, { data: exp }, { data: rev }] = await Promise.all([
-      supabase.from('platform_finance_summary').select('*').limit(1).maybeSingle(),
+      supabase.rpc('get_platform_finance_summary'),
       supabase.from('platform_expenses').select('*').order('expense_date', { ascending: false }).limit(50),
       supabase.from('platform_revenue').select('*').order('revenue_date', { ascending: false }).limit(50),
     ]);
-    setFinance(fin);
+    setFinance((fin && fin[0]) || null);
     setExpenses(exp || []);
     setRevenue(rev || []);
     setLoading(false);

@@ -161,7 +161,7 @@ export function EmployeesPage() {
             <div>
               <label className="label">{lang === 'fr' ? 'Rôle' : 'Role'}</label>
               <select className="input" value={editRole} onChange={e => setEditRole(e.target.value as Role)}>
-                {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label[lang]}</option>)}
+                {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label[lang === 'fr' ? 'fr' : 'en']}</option>)}
               </select>
             </div>
             <div className="flex justify-end gap-2">
@@ -181,7 +181,7 @@ export function EmployeesPage() {
           <div>
             <label className="label">{lang === 'fr' ? 'Rôle' : 'Role'}</label>
             <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value as Role)}>
-              {ROLE_OPTIONS.filter(r => r.value !== 'owner').map(r => <option key={r.value} value={r.value}>{r.label[lang]}</option>)}
+              {ROLE_OPTIONS.filter(r => r.value !== 'owner').map(r => <option key={r.value} value={r.value}>{r.label[lang === 'fr' ? 'fr' : 'en']}</option>)}
             </select>
           </div>
           <div className="flex justify-end gap-2">

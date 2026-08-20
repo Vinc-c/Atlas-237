@@ -256,7 +256,7 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
   );
 }
 
-export function ListPage<T extends { id: string; [key: string]: unknown }>({
+export function ListPage<T extends { id: string }>({
   table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable,
 }: ListPageProps<T>) {
   const { language } = useAuth();
@@ -277,7 +277,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
     if (orderBy) query = query.order(orderBy, { ascending: false });
     else query = query.order('created_at', { ascending: false });
     const { data, error } = await query;
-    if (!error) setRows((data || []) as T[]);
+    if (!error) setRows((data || []) as unknown as T[]);
     setLoading(false);
   }, [table, select, relations, orderBy]);
 
@@ -294,7 +294,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
   function openEdit(row: T) {
     setEditing(row);
     const data: Record<string, unknown> = {};
-    formFields.forEach(f => { data[f.key] = row[f.key]; });
+    formFields.forEach(f => { data[f.key] = (row as Record<string, unknown>)[f.key]; });
     setFormData(data);
     setModalOpen(true);
   }
@@ -327,7 +327,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
 
   const filtered = search
     ? rows.filter(r => {
-        const searchable = columns.map(c => String(r[c.key] ?? '')).join(' ').toLowerCase();
+        const searchable = columns.map(c => String((r as Record<string, unknown>)[c.key] ?? '')).join(' ').toLowerCase();
         return searchable.includes(search.toLowerCase());
       })
     : rows;
@@ -391,7 +391,7 @@ export function ListPage<T extends { id: string; [key: string]: unknown }>({
                   <tr key={row.id} className="group border-b border-ink-50 last:border-0 table-row-hover">
                     {columns.map(col => (
                       <td key={col.key} className={`px-4 py-3 text-sm text-ink-700 ${col.className || ''}`}>
-                        {col.render ? col.render(row) : String(row[col.key] ?? '—')}
+                        {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '—')}
                       </td>
                     ))}
                     <td className="px-4 py-3">

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
+import { getErrorMessage } from '@/lib/errors';
 import { initiateFlutterwaveCheckout, recordSubscription, PLAN_PRICES, isFlutterwaveConfigured } from '@/lib/flutterwave';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
@@ -563,19 +564,20 @@ function SecurityTab({ language }: { language: any }) {
       if (error) { setError(error.message); setEnrolling(false); return; }
       setQrUrl(data.totp.qr_code || '');
       setFactorId(data.id);
-    } catch (e: any) { setError(e.message); setEnrolling(false); }
+    } catch (e) { setError(getErrorMessage(e)); setEnrolling(false); }
   }
 
   async function verifyEnroll() {
     setError('');
     try {
-      const { data: challenge } = await supabase.auth.mfa.challenge({ factorId });
-      if (challenge?.error) { setError(challenge.error.message); return; }
+      const { data: challenge, error: cerr } = await supabase.auth.mfa.challenge({ factorId });
+      if (cerr) { setError(cerr.message); return; }
+      if (!challenge) { setError('MFA challenge failed'); return; }
       const { error: verr } = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.id, code: verifyCode });
       if (verr) { setError(verr.message); return; }
       setEnrolling(false); setQrUrl(''); setFactorId(''); setVerifyCode('');
       await loadFactors();
-    } catch (e: any) { setError(e.message); }
+    } catch (e) { setError(getErrorMessage(e)); }
   }
 
   async function unenrollFactor(id: string) {
@@ -695,7 +697,7 @@ export function BillingPage() {
     { name: 'Growth', key: 'growth', price: 49, features: [lang === 'fr' ? '15 employés IA' : '15 AI employees', lang === 'fr' ? '10 utilisateurs' : '10 users', lang === 'fr' ? 'Analytique avancée' : 'Advanced analytics', lang === 'fr' ? 'Support prioritaire' : 'Priority support', lang === 'fr' ? 'Accès API & Webhooks' : 'API access & Webhooks'] },
     { name: 'Pro', key: 'pro', price: 119, features: [lang === 'fr' ? 'Employés IA illimités' : 'Unlimited AI employees', lang === 'fr' ? '25 utilisateurs' : '25 users', lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards', lang === 'fr' ? 'SSO & SAML' : 'SSO & SAML', lang === 'fr' ? 'Support 24/7 + SLA' : '24/7 support + SLA'] },
     { name: 'Enterprise', key: 'enterprise', price: -1, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
-  ];
+  ] as const;
 
   async function changePlan(plan: typeof plans[number]) {
     if (!organization || plan.key === currentPlan) return;
