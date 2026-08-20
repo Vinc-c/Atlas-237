@@ -104,7 +104,8 @@ export function DashboardsPage() {
   }
 
   async function deleteDashboard(id: string) {
-    await supabase.from('dashboards').delete().eq('id', id);
+    const { error } = await supabase.from('dashboards').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     setDashboards(prev => prev.filter(d => d.id !== id));
   }
 

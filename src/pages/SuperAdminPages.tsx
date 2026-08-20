@@ -389,7 +389,8 @@ export function SuperAdminUsersPage() {
     if (!user) return;
     const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
     if (error) { alert(error.message); return; }
-    await supabase.from('subscriptions').update({ plan: newPlan }).eq('org_id', orgId).eq('status', 'active');
+    const { error: subErr } = await supabase.from('subscriptions').update({ plan: newPlan }).eq('org_id', orgId).eq('status', 'active');
+    if (subErr) console.error('subscriptions.update failed:', subErr.message);
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'plan.change', p_target_type: 'organization', p_target_id: orgId, p_details: { new_plan: newPlan } });
     await load();
   }
@@ -407,7 +408,9 @@ export function SuperAdminUsersPage() {
     if (sub) {
       const base = sub.current_period_end && new Date(sub.current_period_end) > now ? new Date(sub.current_period_end) : now;
       base.setDate(base.getDate() + days);
-      await supabase.from('subscriptions').update({ current_period_end: base.toISOString() }).eq('id', sub.id);
+      await supabase.from('subscriptions').update({ current_period_end: base.toISOString() }).eq('id', sub.id).then(({ error }) => {
+        if (error) console.error('subscription period extend failed:', error.message);
+      });
     }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: org.id, p_details: { days } });
     await load();
@@ -671,13 +674,14 @@ export function SuperAdminEmployeesPage() {
 
   async function addKpi() {
     if (!form.employee_email || !form.period) return;
-    await supabase.from('employee_kpis').insert({
+    const { error } = await supabase.from('employee_kpis').insert({
       employee_email: form.employee_email,
       employee_name: form.employee_name,
       period: form.period,
       target_revenue_cents: parseInt(form.target_revenue) * 100 || 0,
       target_deals: parseInt(form.target_deals) || 0,
     });
+    if (error) { alert(error.message); return; }
     setForm({ employee_email: '', employee_name: '', period: '', target_revenue: '', target_deals: '' });
     setShowForm(false);
     await load();
@@ -768,12 +772,13 @@ export function SuperAdminSalesCodesPage() {
   async function addCode() {
     if (!form.salesperson_email || !form.salesperson_name || !user) return;
     const code = `ATLAS-${form.salesperson_name.substring(0, 3).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    await supabase.from('sales_codes').insert({
+    const { error } = await supabase.from('sales_codes').insert({
       code,
       salesperson_email: form.salesperson_email,
       salesperson_name: form.salesperson_name,
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
     });
+    if (error) { alert(error.message); return; }
     setForm({ salesperson_email: '', salesperson_name: '', max_uses: '' });
     setShowForm(false);
     await load();
@@ -1090,7 +1095,8 @@ export function SuperAdminStaffPage() {
 
   async function toggleStaffActive(id: string, email: string, currentActive: boolean) {
     if (!user) return;
-    await supabase.from('platform_staff').update({ active: !currentActive, updated_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('platform_staff').update({ active: !currentActive, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) { alert(error.message); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: currentActive ? 'staff.deactivate' : 'staff.activate', p_target_type: 'platform_staff', p_target_email: email });
     await load();
   }
@@ -1098,7 +1104,8 @@ export function SuperAdminStaffPage() {
   async function removeStaff(id: string, email: string) {
     if (!user) return;
     if (!confirm(language === 'fr' ? `Supprimer le membre du personnel ${email} ?` : `Remove staff member ${email}?`)) return;
-    await supabase.from('platform_staff').delete().eq('id', id);
+    const { error } = await supabase.from('platform_staff').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'staff.remove', p_target_type: 'platform_staff', p_target_email: email });
     await load();
   }
@@ -1296,7 +1303,7 @@ export function SuperAdminAccountingPage() {
   async function addExpense() {
     if (!expenseForm.amount || !expenseForm.category || !user) return;
     setBusy(true);
-    await supabase.from('platform_expenses').insert({
+    const { error } = await supabase.from('platform_expenses').insert({
       category: expenseForm.category,
       description: expenseForm.description || null,
       amount_cents: Math.round(parseFloat(expenseForm.amount) * 100),
@@ -1304,6 +1311,7 @@ export function SuperAdminAccountingPage() {
       expense_date: expenseForm.expense_date || new Date().toISOString().split('T')[0],
       created_by: user.id,
     });
+    if (error) { alert(error.message); setBusy(false); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'expense.add', p_target_type: 'platform_expense', p_details: { amount: expenseForm.amount, category: expenseForm.category } });
     setExpenseForm({ category: '', description: '', amount: '', vendor: '', expense_date: '' });
     setShowExpenseForm(false);
@@ -1314,13 +1322,14 @@ export function SuperAdminAccountingPage() {
   async function addRevenue() {
     if (!revenueForm.amount || !revenueForm.source || !user) return;
     setBusy(true);
-    await supabase.from('platform_revenue').insert({
+    const { error } = await supabase.from('platform_revenue').insert({
       source: revenueForm.source,
       category: revenueForm.category,
       description: revenueForm.description || null,
       amount_cents: Math.round(parseFloat(revenueForm.amount) * 100),
       revenue_date: revenueForm.revenue_date || new Date().toISOString().split('T')[0],
     });
+    if (error) { alert(error.message); setBusy(false); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'revenue.add', p_target_type: 'platform_revenue', p_details: { amount: revenueForm.amount, source: revenueForm.source } });
     setRevenueForm({ source: '', category: 'subscription', description: '', amount: '', revenue_date: '' });
     setShowRevenueForm(false);
@@ -1330,13 +1339,15 @@ export function SuperAdminAccountingPage() {
 
   async function deleteExpense(id: string) {
     if (!confirm(language === 'fr' ? 'Supprimer cette dépense ?' : 'Delete this expense?')) return;
-    await supabase.from('platform_expenses').delete().eq('id', id);
+    const { error } = await supabase.from('platform_expenses').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     await load();
   }
 
   async function deleteRevenue(id: string) {
     if (!confirm(language === 'fr' ? 'Supprimer ce revenu ?' : 'Delete this revenue entry?')) return;
-    await supabase.from('platform_revenue').delete().eq('id', id);
+    const { error } = await supabase.from('platform_revenue').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     await load();
   }
 

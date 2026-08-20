@@ -314,6 +314,8 @@ export const translations: Translation = {
   'superAdmin.salesCodes': { en: 'Sales Codes', fr: 'Codes commerciaux', es: 'Códigos de ventas', pt: 'Códigos de vendas', ar: 'أكواد المبيعات' },
   'superAdmin.permissions': { en: 'Permissions', fr: 'Permissions', es: 'Permisos', pt: 'Permissões', ar: 'الأذونات' },
   'superAdmin.auditLog': { en: 'Audit Log', fr: "Journal d'audit", es: 'Registro de auditoría', pt: 'Registro de auditoria', ar: 'سجل التدقيق' },
+  'superAdmin.staff': { en: 'Staff', fr: 'Personnel', es: 'Personal', pt: 'Equipe', ar: 'الموظفون' },
+  'superAdmin.accounting': { en: 'Accounting', fr: 'Comptabilité', es: 'Contabilidad', pt: 'Contabilidade', ar: 'المحاسبة' },
   'superAdmin.backToApp': { en: 'Back to App', fr: "Retour à l'app", es: 'Volver a la app', pt: 'Voltar ao app', ar: 'العودة للتطبيق' },
   'superAdmin.platformControl': { en: 'Platform Control Center', fr: 'Centre de contrôle plateforme', es: 'Centro de control de plataforma', pt: 'Centro de controle da plataforma', ar: 'مركز التحكم بالمنصة' },
   'superAdmin.accessDenied': { en: 'Access Denied', fr: 'Accès refusé', es: 'Acceso denegado', pt: 'Acesso negado', ar: 'تم رفض الوصول' },

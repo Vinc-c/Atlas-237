@@ -113,10 +113,19 @@ export function AuthPage() {
         setError(t('auth.notConfigured', lang));
         return;
       }
-      await supabase.auth.signInWithOAuth({
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: `${window.location.origin}/app` },
       });
+      if (oauthErr) {
+        if (oauthErr.message?.toLowerCase().includes('provider is not enabled') || (oauthErr as { code?: number }).code === 400) {
+          setError(lang === 'fr'
+            ? "La connexion Google n'est pas encore activée pour ce compte. Un administrateur doit l'activer dans Supabase (Authentication → Providers → Google)."
+            : 'Google sign-in is not yet enabled for this account. An admin needs to enable it in Supabase (Authentication → Providers → Google).');
+        } else {
+          setError(oauthErr.message);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : (lang === 'fr' ? 'OAuth Google indisponible' : 'Google OAuth unavailable'));
     } finally {

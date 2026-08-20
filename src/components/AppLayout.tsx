@@ -7,6 +7,7 @@ import {
   Brain, BookOpen, CheckSquare, BarChart3, LayoutGrid, Lightbulb,
   UserCog, UsersRound, ShieldCheck, Store, Plug, Webhook, Bell,
   ScrollText, Settings, CreditCard as Billing, Gauge, Sparkles,
+  Briefcase, Wallet,
   ChevronDown, ChevronRight, LogOut, Search
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -232,6 +233,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <NavLink to="/super-admin/audit" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.auditLog', language) : undefined}>
                 <ScrollText size={18} />
                 {!collapsed && <span>{t('superAdmin.auditLog', language)}</span>}
+              </NavLink>
+              <NavLink to="/super-admin/staff" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.staff', language) : undefined}>
+                <Briefcase size={18} />
+                {!collapsed && <span>{t('superAdmin.staff', language)}</span>}
+              </NavLink>
+              <NavLink to="/super-admin/accounting" onClick={() => setMobileOpen(false)} className={({ isActive }) => `sidebar-item ${isActive ? 'sidebar-item-active' : ''} ${collapsed ? 'justify-center px-2' : ''}`} title={collapsed ? t('superAdmin.accounting', language) : undefined}>
+                <Wallet size={18} />
+                {!collapsed && <span>{t('superAdmin.accounting', language)}</span>}
               </NavLink>
             </div>
           )}

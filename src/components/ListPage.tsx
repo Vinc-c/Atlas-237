@@ -320,7 +320,8 @@ export function ListPage<T extends { id: string }>({
 
   async function handleDelete(row: T) {
     if (!confirm(t('list.deleteConfirm', language))) return;
-    await supabase.from(table).delete().eq('id', row.id);
+    const { error } = await supabase.from(table).delete().eq('id', row.id);
+    if (error) { alert(error.message); return; }
     load();
   }
 

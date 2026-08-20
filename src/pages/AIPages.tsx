@@ -100,7 +100,8 @@ export function ApprovalsPage() {
   }
 
   async function decide(id: string, decision: string) {
-    await supabase.from('approvals').update({ status: decision === 'approved' ? 'approved' : 'rejected', decided_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase.from('approvals').update({ status: decision === 'approved' ? 'approved' : 'rejected', decided_at: new Date().toISOString() }).eq('id', id);
+    if (error) { alert(error.message); return; }
     load();
   }
 

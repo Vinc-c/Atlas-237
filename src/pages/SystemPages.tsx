@@ -36,14 +36,16 @@ export function NotificationsPage() {
   }
 
   async function markRead(id: string) {
-    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+    if (error) { console.error('markRead failed:', error.message); return; }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   }
 
   async function markAllRead() {
     const unread = notifications.filter(n => !n.read);
     if (unread.length === 0) return;
-    await supabase.from('notifications').update({ read: true }).in('id', unread.map(n => n.id));
+    const { error } = await supabase.from('notifications').update({ read: true }).in('id', unread.map(n => n.id));
+    if (error) { console.error('markAllRead failed:', error.message); return; }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   }
 

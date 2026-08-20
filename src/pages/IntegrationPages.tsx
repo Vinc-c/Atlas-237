@@ -70,7 +70,8 @@ export function MarketplacePage() {
   async function toggleConnect(app: AppDef) {
     if (connected.includes(app.provider)) {
       setBusy(app.provider);
-      await supabase.from('integrations').delete().eq('provider', app.provider);
+      const { error } = await supabase.from('integrations').delete().eq('provider', app.provider);
+      if (error) { alert(error.message); setBusy(null); return; }
       setConnected(prev => prev.filter(p => p !== app.provider));
       setBusy(null);
     } else if (app.authType === 'oauth') {
@@ -233,14 +234,16 @@ export function ConnectedAppsPage() {
 
   async function disconnect(id: string) {
     setBusy(id);
-    await supabase.from('integrations').delete().eq('id', id);
+    const { error } = await supabase.from('integrations').delete().eq('id', id);
+    if (error) alert(error.message);
     setBusy(null);
     load();
   }
 
   async function syncApp(intg: Integration) {
     setBusy(intg.id);
-    await supabase.from('integrations').update({ last_sync_at: new Date().toISOString() }).eq('id', intg.id);
+    const { error } = await supabase.from('integrations').update({ last_sync_at: new Date().toISOString() }).eq('id', intg.id);
+    if (error) alert(error.message);
     setBusy(null);
     load();
   }
@@ -385,7 +388,8 @@ export function APIWebhooksPage() {
 
   async function revokeKey(id: string) {
     if (!confirm(lang === 'fr' ? 'Révoquer cette clé ? Elle ne pourra plus être utilisée.' : 'Revoke this key? It cannot be used anymore.')) return;
-    await supabase.from('api_keys').update({ active: false }).eq('id', id);
+    const { error } = await supabase.from('api_keys').update({ active: false }).eq('id', id);
+    if (error) { alert(error.message); return; }
     setApiKeys(prev => prev.map(k => k.id === id ? { ...k, active: false } : k));
   }
 
@@ -408,13 +412,15 @@ export function APIWebhooksPage() {
 
   async function toggleWebhook(wh: WebhookType) {
     const next = !wh.active;
-    await supabase.from('webhooks').update({ active: next }).eq('id', wh.id);
+    const { error } = await supabase.from('webhooks').update({ active: next }).eq('id', wh.id);
+    if (error) { alert(error.message); return; }
     setWebhooks(prev => prev.map(w => w.id === wh.id ? { ...w, active: next } : w));
   }
 
   async function deleteWebhook(id: string) {
     if (!confirm(lang === 'fr' ? 'Supprimer ce webhook ?' : 'Delete this webhook?')) return;
-    await supabase.from('webhooks').delete().eq('id', id);
+    const { error } = await supabase.from('webhooks').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     setWebhooks(prev => prev.filter(w => w.id !== id));
   }
 

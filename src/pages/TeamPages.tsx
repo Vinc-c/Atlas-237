@@ -56,7 +56,8 @@ export function EmployeesPage() {
   async function saveRole() {
     if (!editEmp) return;
     setSaving(true);
-    await supabase.from('profiles').update({ role: editRole }).eq('id', editEmp.id);
+    const { error } = await supabase.from('profiles').update({ role: editRole }).eq('id', editEmp.id);
+    if (error) { alert(error.message); setSaving(false); return; }
     setEmployees(prev => prev.map(e => e.id === editEmp.id ? { ...e, role: editRole } : e));
     setSaving(false);
     setEditEmp(null);
@@ -64,7 +65,8 @@ export function EmployeesPage() {
 
   async function toggleActive(emp: Profile) {
     const next = !emp.active;
-    await supabase.from('profiles').update({ active: next }).eq('id', emp.id);
+    const { error } = await supabase.from('profiles').update({ active: next }).eq('id', emp.id);
+    if (error) { alert(error.message); return; }
     setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, active: next } : e));
   }
 
@@ -255,7 +257,8 @@ export function TeamsPage() {
 
   async function deleteTeam(id: string) {
     if (!confirm(lang === 'fr' ? 'Supprimer cette équipe ?' : 'Delete this team?')) return;
-    await supabase.from('teams').delete().eq('id', id);
+    const { error } = await supabase.from('teams').delete().eq('id', id);
+    if (error) { alert(error.message); return; }
     await load();
   }
 
@@ -268,14 +271,16 @@ export function TeamsPage() {
 
   async function addMember() {
     if (!manageTeam || !addMemberId) return;
-    await supabase.from('team_members').insert({ team_id: manageTeam.id, profile_id: addMemberId });
+    const { error } = await supabase.from('team_members').insert({ team_id: manageTeam.id, profile_id: addMemberId });
+    if (error) { alert(error.message); return; }
     setTeamMembers(prev => [...prev, employees.find(e => e.id === addMemberId)!].filter(Boolean));
     setAddMemberId('');
   }
 
   async function removeMember(profileId: string) {
     if (!manageTeam) return;
-    await supabase.from('team_members').delete().eq('team_id', manageTeam.id).eq('profile_id', profileId);
+    const { error } = await supabase.from('team_members').delete().eq('team_id', manageTeam.id).eq('profile_id', profileId);
+    if (error) { alert(error.message); return; }
     setTeamMembers(prev => prev.filter(m => m.id !== profileId));
   }
 
