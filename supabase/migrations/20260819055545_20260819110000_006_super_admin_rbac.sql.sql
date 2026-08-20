@@ -159,7 +159,7 @@ $$;
 CREATE TABLE IF NOT EXISTS public.sales_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   code text NOT NULL UNIQUE,
-  salesperson_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  salesperson_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   salesperson_email text NOT NULL,
   salesperson_name text NOT NULL,
   active boolean NOT NULL DEFAULT true,
