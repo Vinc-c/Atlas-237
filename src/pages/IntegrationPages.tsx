@@ -439,7 +439,8 @@ export function APIWebhooksPage() {
       const result = await res.json();
       setTestResult(prev => ({ ...prev, [wh.id]: { ok: result.ok, msg: result.msg } }));
       if (result.ok) {
-        await supabase.from('webhooks').update({ last_response_code: 200, last_triggered_at: new Date().toISOString() }).eq('id', wh.id);
+        const { error: persistErr } = await supabase.from('webhooks').update({ last_response_code: 200, last_triggered_at: new Date().toISOString() }).eq('id', wh.id);
+        if (persistErr) console.error('failed to persist webhook test result:', persistErr.message);
       }
     } catch (e) {
       setTestResult(prev => ({ ...prev, [wh.id]: { ok: false, msg: getErrorMessage(e) } }));

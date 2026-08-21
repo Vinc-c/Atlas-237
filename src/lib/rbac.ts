@@ -121,7 +121,8 @@ export async function deleteRole(roleId: string): Promise<boolean> {
  */
 export async function setRolePermissions(roleId: string, perms: { module: PermissionModule; action: PermissionAction }[]): Promise<boolean> {
   // Delete existing
-  await supabase.from('rbac_permissions').delete().eq('role_id', roleId);
+  const { error: delErr } = await supabase.from('rbac_permissions').delete().eq('role_id', roleId);
+  if (delErr) return false;
   // Insert new
   if (perms.length === 0) return true;
   const rows = perms.map((p) => ({ role_id: roleId, module: p.module, action: p.action }));

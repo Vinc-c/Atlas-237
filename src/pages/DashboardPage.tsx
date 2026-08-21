@@ -93,11 +93,12 @@ export function DashboardPage() {
 
   async function decideApproval(id: string, decision: 'approved' | 'rejected') {
     setBusyApproval(id);
-    await supabase.from('approvals').update({
+    const { error } = await supabase.from('approvals').update({
       status: decision,
       decided_at: new Date().toISOString(),
       decided_by: profile?.id || null,
     }).eq('id', id);
+    if (error) { alert(error.message); setBusyApproval(null); return; }
     setPendingApprovals(prev => prev.filter(a => a.id !== id));
     setBusyApproval(null);
   }
