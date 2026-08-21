@@ -95,25 +95,44 @@ export function MarketplacePage() {
       connected_at: new Date().toISOString(),
       config: { ...configData, key_prefix: keyPrefix, auth_type: configApp.authType },
     });
-    if (!error) {
-      setConnected(prev => [...prev, configApp.provider]);
-      setConfigApp(null);
-      setConfigData({});
-    }
+    if (error) { alert(error.message); setConnecting(false); return; }
+    setConnected(prev => [...prev, configApp.provider]);
+    setConfigApp(null);
+    setConfigData({});
     setConnecting(false);
   }
 
+  // OAuth client IDs are public (safe to expose to the frontend) but each provider
+  // requires a real app registered in its developer console before it can work.
+  // Set these as VITE_<PROVIDER>_CLIENT_ID environment variables once registered;
+  // until then, we show an honest "setup required" state instead of a doomed popup.
+  const OAUTH_CLIENT_IDS: Record<string, string | undefined> = {
+    gmail: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    google_meet: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    slack: import.meta.env.VITE_SLACK_CLIENT_ID,
+    zoom: import.meta.env.VITE_ZOOM_CLIENT_ID,
+    outlook: import.meta.env.VITE_MICROSOFT_CLIENT_ID,
+    quickbooks: import.meta.env.VITE_QUICKBOOKS_CLIENT_ID,
+  };
+
+  function isOAuthReady(provider: string) {
+    return Boolean(OAUTH_CLIENT_IDS[provider]);
+  }
+
   function oauthConnect(app: AppDef) {
+    const clientId = OAUTH_CLIENT_IDS[app.provider];
+    if (!clientId) return; // guarded in UI; no-op safeguard
     const state = crypto.randomUUID();
     sessionStorage.setItem('oauth_state_' + app.provider, state);
+    sessionStorage.setItem('oauth_provider', app.provider);
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     const authUrls: Record<string, string> = {
-      gmail: `https://accounts.google.com/o/oauth2/v2/auth?scope=https://mail.google.com/&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
-      google_meet: `https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/meetings&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
-      slack: `https://slack.com/oauth/v2/authorize?scope=chat:write,channels:read&redirect_uri=${redirectUri}&state=${state}`,
-      zoom: `https://zoom.us/oauth/authorize?response_type=code&redirect_uri=${redirectUri}&state=${state}`,
-      outlook: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?scope=https://graph.microsoft.com/.default&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
-      quickbooks: `https://appcenter.intuit.com/connect/oauth2?scope=com.intuit.quickbooks.accounting&redirect_uri=${redirectUri}&state=${state}`,
+      gmail: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&scope=https://mail.google.com/&response_type=code&access_type=offline&prompt=consent&redirect_uri=${redirectUri}&state=${state}`,
+      google_meet: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&scope=https://www.googleapis.com/auth/meetings&response_type=code&access_type=offline&prompt=consent&redirect_uri=${redirectUri}&state=${state}`,
+      slack: `https://slack.com/oauth/v2/authorize?client_id=${clientId}&scope=chat:write,channels:read&redirect_uri=${redirectUri}&state=${state}`,
+      zoom: `https://zoom.us/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
+      outlook: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=https://graph.microsoft.com/.default offline_access&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
+      quickbooks: `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&scope=com.intuit.quickbooks.accounting&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
     };
     const authUrl = authUrls[app.provider];
     if (authUrl) {
@@ -170,18 +189,32 @@ export function MarketplacePage() {
       <Modal open={!!configApp} onClose={() => setConfigApp(null)} title={lang === 'fr' ? `Connecter ${configApp?.name}` : `Connect ${configApp?.name}`} size="md">
         <div className="space-y-4">
           {configApp?.authType === 'oauth' ? (
-            <div className="rounded-lg bg-primary-50 border border-primary-200 p-4 text-sm text-primary-800">
-              <p className="font-medium mb-2">{lang === 'fr' ? 'Authentification OAuth' : 'OAuth Authentication'}</p>
-              <p className="text-primary-700 mb-3">
-                {lang === 'fr' ? 'Vous serez redirigé vers le site de ' : 'You will be redirected to '}
-                <span className="font-semibold">{configApp?.name}</span>
-                {lang === 'fr' ? ' pour autoriser l\'accès. Après autorisation, l\'app sera connectée à votre compte.' : ' to authorize access. After authorization, the app will be connected to your account.'}
-              </p>
-              <button onClick={() => oauthConnect(configApp)} disabled={connecting} className="btn-primary btn-sm w-full">
-                <ExternalLink size={14} />
-                {lang === 'fr' ? 'Continuer vers ' : 'Continue to '}{configApp?.name}
-              </button>
-            </div>
+            isOAuthReady(configApp.provider) ? (
+              <div className="rounded-lg bg-primary-50 border border-primary-200 p-4 text-sm text-primary-800">
+                <p className="font-medium mb-2">{lang === 'fr' ? 'Authentification OAuth' : 'OAuth Authentication'}</p>
+                <p className="text-primary-700 mb-3">
+                  {lang === 'fr' ? 'Vous serez redirigé vers le site de ' : 'You will be redirected to '}
+                  <span className="font-semibold">{configApp?.name}</span>
+                  {lang === 'fr' ? ' pour autoriser l\'accès. Après autorisation, l\'app sera connectée à votre compte.' : ' to authorize access. After authorization, the app will be connected to your account.'}
+                </p>
+                <button onClick={() => oauthConnect(configApp)} disabled={connecting} className="btn-primary btn-sm w-full">
+                  <ExternalLink size={14} />
+                  {lang === 'fr' ? 'Continuer vers ' : 'Continue to '}{configApp?.name}
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-lg bg-warning-50 border border-warning-200 p-4 text-sm text-warning-800">
+                <p className="font-medium mb-2">{lang === 'fr' ? 'Configuration requise' : 'Setup required'}</p>
+                <p className="text-warning-700">
+                  {lang === 'fr'
+                    ? `La connexion ${configApp?.name} n'est pas encore activée sur cette plateforme. Un administrateur doit d'abord enregistrer une application OAuth auprès de ${configApp?.name}.`
+                    : `${configApp?.name} sign-in isn't enabled on this platform yet. An admin needs to register an OAuth app with ${configApp?.name} first.`}
+                </p>
+                <a href={configApp?.docsUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline text-xs mt-2 inline-block">
+                  {configApp?.name} {lang === 'fr' ? 'documentation développeur' : 'developer docs'} →
+                </a>
+              </div>
+            )
           ) : (
             <>
               <p className="text-sm text-ink-500">
