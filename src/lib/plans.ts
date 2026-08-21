@@ -2,6 +2,49 @@
 // Coherent with the pricing grid advertised on the landing page.
 
 import type { Plan } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+
+/**
+ * Central hook for plan-based feature gating. Super admins (and platform
+ * staff exempted from billing) always pass every check — they should never
+ * be blocked from any module regardless of which organization's plan they're
+ * viewing. Every page that gates a feature by plan should use this instead
+ * of calling hasFeature()/getPlanFeatures() directly, so the bypass logic
+ * lives in exactly one place.
+ */
+export function usePlanAccess() {
+  const { organization, isSuperAdmin } = useAuth();
+  const plan = organization?.plan || 'starter';
+  const features = isSuperAdmin ? UNLIMITED_FEATURES : getPlanFeatures(plan);
+  return {
+    plan,
+    isSuperAdmin,
+    features,
+    hasFeature: (feature: keyof Omit<PlanFeatures, 'maxContacts' | 'maxAIEmployees' | 'maxUsers'>) =>
+      isSuperAdmin ? true : hasFeature(plan, feature),
+  };
+}
+
+const UNLIMITED_FEATURES: PlanFeatures = {
+  maxContacts: 'unlimited',
+  maxAIEmployees: 'unlimited',
+  maxUsers: 'unlimited',
+  advancedAnalytics: true,
+  apiAccess: true,
+  webhooks: true,
+  customDashboards: true,
+  customBranding: true,
+  ssoSaml: true,
+  customAITraining: true,
+  prioritySupport: true,
+  dedicatedManager: true,
+  sla: true,
+  exportData: true,
+  customRoles: true,
+  salesCodeTracking: true,
+};
+
+
 
 export interface PlanFeatures {
   maxContacts: number | 'unlimited';

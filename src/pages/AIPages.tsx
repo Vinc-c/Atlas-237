@@ -8,9 +8,12 @@ import { PageHeader, Badge } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import type { AIAgent, AITask, Approval, AIMemory, KnowledgeDocument, Workflow as WorkflowType } from '@/types';
+import { usePlanAccess } from '@/lib/plans';
 
 export function AIEmployeesPage() {
   const { language } = useAuth();
+  const { features } = usePlanAccess();
+  const maxRows = features.maxAIEmployees === 'unlimited' ? null : features.maxAIEmployees;
   const fields: FormField[] = [
     { key: 'name', label: t('common.name', language), type: 'text', required: true },
     { key: 'role', label: t('list.role', language), type: 'text', required: true },
@@ -43,6 +46,10 @@ export function AIEmployeesPage() {
       emptyTitle={t('empty.noAiEmployees', language)}
       emptyDescription={t('empty.noAiEmployeesDesc', language)}
       orderBy="created_at"
+      maxRows={maxRows}
+      maxRowsMessage={maxRows != null ? (language === 'fr'
+        ? `Limite de ${maxRows} employés IA atteinte pour votre plan. Passez à un plan supérieur pour en ajouter davantage.`
+        : `You've reached the ${maxRows}-AI-employee limit for your plan. Upgrade to add more.`) : undefined}
     />
   );
 }

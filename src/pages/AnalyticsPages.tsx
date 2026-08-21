@@ -7,7 +7,7 @@ import { t } from '@/lib/i18n';
 import { PageHeader, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { UpgradeGate } from '@/components/UpgradeGate';
-import { hasFeature } from '@/lib/plans';
+import { usePlanAccess } from '@/lib/plans';
 
 export function ReportsPage() {
   const { language } = useAuth();
@@ -62,8 +62,8 @@ export function DashboardsPage() {
   const { language, organization } = useAuth();
   const lang = language;
   const navigate = useNavigate();
-  const plan = organization?.plan || 'starter';
-  const customDashboardsAllowed = hasFeature(plan, 'customDashboards');
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const customDashboardsAllowed = hasPlanFeature('customDashboards');
   const [stats, setStats] = useState({ revenue: 0, openDeals: 0, newLeads: 0 });
   const [dashboards, setDashboards] = useState<DashboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,10 +190,10 @@ export function DashboardsPage() {
 }
 
 export function AIInsightsPage() {
-  const { language, organization } = useAuth();
+  const { language } = useAuth();
   const lang = language;
-  const plan = organization?.plan || 'starter';
-  const allowed = hasFeature(plan, 'advancedAnalytics');
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('advancedAnalytics');
   const [insights, setInsights] = useState<{ title: string; desc: string; severity: 'error' | 'warning' | 'success' }[]>([]);
   const [loading, setLoading] = useState(true);
 

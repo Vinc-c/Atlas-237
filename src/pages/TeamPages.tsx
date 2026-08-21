@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
+import { usePlanAccess } from '@/lib/plans';
 import type { Profile, Role } from '@/types';
 
 const ROLE_OPTIONS: { value: Role; label: { fr: string; en: string } }[] = [
@@ -410,6 +411,8 @@ export function TeamsPage() {
 
 export function PermissionsPage() {
   const { language, organization } = useAuth();
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const customRolesAllowed = hasPlanFeature('customRoles');
   const [roles, setRoles] = useState<RbacRole[]>([]);
   const [selectedRole, setSelectedRole] = useState<RbacRole | null>(null);
   const [perms, setPerms] = useState<Record<string, boolean>>({});
@@ -477,9 +480,18 @@ export function PermissionsPage() {
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Rôles' : 'Roles'}</h3>
-            <button onClick={() => setShowNewRole(!showNewRole)} className="btn-ghost btn-sm">+</button>
+            {customRolesAllowed && (
+              <button onClick={() => setShowNewRole(!showNewRole)} className="btn-ghost btn-sm">+</button>
+            )}
           </div>
-          {showNewRole && (
+          {!customRolesAllowed && (
+            <p className="mb-3 text-xs text-ink-400 rounded-lg bg-ink-50 p-3">
+              {language === 'fr'
+                ? 'La création de rôles personnalisés est disponible à partir du plan Growth.'
+                : 'Creating custom roles is available starting on the Growth plan.'}
+            </p>
+          )}
+          {showNewRole && customRolesAllowed && (
             <div className="mb-3 space-y-2 p-3 rounded-lg bg-ink-50">
               <input className="input" placeholder={language === 'fr' ? 'Nom du rôle' : 'Role name'} value={newRoleName} onChange={e => setNewRoleName(e.target.value)} />
               <input className="input" placeholder={language === 'fr' ? 'Description' : 'Description'} value={newRoleDesc} onChange={e => setNewRoleDesc(e.target.value)} />

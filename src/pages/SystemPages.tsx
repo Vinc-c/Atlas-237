@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { COUNTRIES, CURRENCIES, TIMEZONES } from '@/lib/i18n-countries';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
-import { getPlanFeatures, hasFeature } from '@/lib/plans';
+import { usePlanAccess } from '@/lib/plans';
 import type { Notification, AuditLog, Organization, Plan, Profile } from '@/types';
 import type { Language } from '@/lib/i18n';
 
@@ -309,8 +309,8 @@ function BrandingTab({ language, organization, onSave }: { language: Language; o
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const plan = organization?.plan || 'starter';
-  const brandingAllowed = hasFeature(plan as Plan, 'customBranding');
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const brandingAllowed = hasPlanFeature('customBranding');
 
   useEffect(() => {
     setLogoUrl(organization?.logo_url || '');
@@ -786,10 +786,9 @@ export function BillingPage() {
 }
 
 export function UsagePage() {
-  const { language, organization } = useAuth();
+  const { language } = useAuth();
   const lang = language;
-  const plan = organization?.plan || 'starter';
-  const features = getPlanFeatures(plan);
+  const { plan, features } = usePlanAccess();
   const [usage, setUsage] = useState({
     aiTasks: 0, apiCalls: 0, storage: 0, activeUsers: 1,
     contacts: 0, emailsSent: 0,

@@ -10,7 +10,7 @@ import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { BrandLogo } from '@/components/BrandLogos';
 import { UpgradeGate } from '@/components/UpgradeGate';
-import { hasFeature } from '@/lib/plans';
+import { usePlanAccess } from '@/lib/plans';
 import type { Integration, ApiKey, Webhook as WebhookType } from '@/types';
 
 interface AppDef {
@@ -372,10 +372,10 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 }
 
 export function APIWebhooksPage() {
-  const { language, organization } = useAuth();
+  const { language } = useAuth();
   const lang = language;
-  const plan = organization?.plan || 'starter';
-  const allowed = hasFeature(plan, 'apiAccess') || hasFeature(plan, 'webhooks');
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('apiAccess') || hasPlanFeature('webhooks');
   const [tab, setTab] = useState<'keys' | 'webhooks'>('keys');
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<WebhookType[]>([]);
