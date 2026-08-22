@@ -8,7 +8,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
-import { usePlanAccess } from '@/lib/plans';
+import { usePlanAccess, getPlanFeatures } from '@/lib/plans';
+import { getErrorMessage } from '@/lib/errors';
 import type { Profile, Role } from '@/types';
 
 const ROLE_OPTIONS: { value: Role; label: { fr: string; en: string } }[] = [
@@ -34,6 +35,7 @@ export function EmployeesPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<Role>('member');
+  const [inviteError, setInviteError] = useState('');
 
   useEffect(() => {
     if (organization) load();
@@ -73,21 +75,42 @@ export function EmployeesPage() {
 
   async function sendInvite() {
     if (!inviteEmail.trim() || !organization) return;
+    const maxUsers = getPlanFeatures(organization.plan).maxUsers;
+    if (maxUsers !== 'unlimited' && employees.length >= maxUsers) {
+      setInviteError(lang === 'fr'
+        ? `Limite de ${maxUsers} utilisateurs atteinte pour le plan ${organization.plan}. Passez à un plan supérieur pour inviter plus de monde.`
+        : `You've reached the ${maxUsers}-user limit for the ${organization.plan} plan. Upgrade to invite more people.`);
+      return;
+    }
+    setInviteError('');
     setSaving(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: inviteEmail.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth?invite=${organization.id}&role=${inviteRole}`,
-        data: { invite_org_id: organization.id, invite_role: inviteRole },
-      },
-    });
-    if (!error) {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-team-member`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          org_id: organization.id,
+          role: inviteRole,
+          redirect_to: `${window.location.origin}/auth/set-password`,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.ok) {
+        setInviteError(result.msg || (lang === 'fr' ? "Échec de l'envoi de l'invitation." : 'Failed to send invitation.'));
+        setSaving(false);
+        return;
+      }
       setInviteEmail('');
       setInviteRole('member');
       setInviteOpen(false);
-      alert(lang === 'fr' ? 'Invitation envoyée !' : 'Invitation sent!');
-    } else {
-      alert(error.message);
+      alert(lang === 'fr' ? 'Invitation envoyée ! La personne définira elle-même son mot de passe.' : 'Invitation sent! They will set their own password.');
+    } catch (err) {
+      setInviteError(getErrorMessage(err));
     }
     setSaving(false);
   }
@@ -197,6 +220,7 @@ export function EmployeesPage() {
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />} {lang === 'fr' ? 'Envoyer' : 'Send'}
             </button>
           </div>
+          {inviteError && <p className="text-xs text-error-600">{inviteError}</p>}
         </div>
       </Modal>
     </div>

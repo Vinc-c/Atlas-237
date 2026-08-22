@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthPage } from '@/pages/AuthPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
+import { SetPasswordPage } from '@/pages/SetPasswordPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { LegalPage, type LegalPage as LegalPageKey } from '@/pages/LegalPage';
 import { AppLayout } from '@/components/AppLayout';
@@ -143,6 +144,7 @@ export default function App() {
           <Route path="/" element={<LandingRoutes />} />
           <Route path="/auth" element={<AuthRoutes />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/auth/set-password" element={<SetPasswordPage />} />
           <Route path="/app/*" element={<ProtectedRoutes />} />
           <Route path="/super-admin" element={<SuperAdminRoute />}>
             <Route index element={<Suspense fallback={<PageFallback />}><SuperAdminDashboard /></Suspense>} />
