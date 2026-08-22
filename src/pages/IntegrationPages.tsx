@@ -39,6 +39,9 @@ const AVAILABLE_APPS: AppDef[] = [
   { provider: 'mailchimp', name: 'Mailchimp', category: 'Marketing', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxxx-us1', type: 'password' }], docsUrl: 'https://mailchimp.com/developer' },
   { provider: 'twilio', name: 'Twilio', category: 'SMS / Voice', authType: 'api_key', configFields: [{ key: 'account_sid', label: 'Account SID', placeholder: 'ACxxx' }, { key: 'auth_token', label: 'Auth Token', placeholder: 'xxx', type: 'password' }, { key: 'from_number', label: 'From Number', placeholder: '+1234567890' }], docsUrl: 'https://www.twilio.com/docs' },
   { provider: 'shopify', name: 'Shopify', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_domain', label: 'Shop Domain', placeholder: 'mystore.myshopify.com' }, { key: 'access_token', label: 'Access Token', placeholder: 'shpat_xxx', type: 'password' }], docsUrl: 'https://shopify.dev/docs/api' },
+  { provider: 'os', name: 'Os', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'os_live_xxx', type: 'password' }, { key: 'store_id', label: 'Store ID', placeholder: 'e.g. your Os store slug' }], docsUrl: 'https://os.liafrik.com' },
+  { provider: 'woocommerce', name: 'WooCommerce', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_url', label: 'Store URL', placeholder: 'https://mystore.com' }, { key: 'consumer_key', label: 'Consumer Key', placeholder: 'ck_xxx' }, { key: 'consumer_secret', label: 'Consumer Secret', placeholder: 'cs_xxx', type: 'password' }], docsUrl: 'https://woocommerce.github.io/woocommerce-rest-api-docs' },
+  { provider: 'prestashop', name: 'PrestaShop', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_url', label: 'Store URL', placeholder: 'https://mystore.com' }, { key: 'api_key', label: 'Webservice Key', placeholder: 'PSWS_xxx', type: 'password' }], docsUrl: 'https://devdocs.prestashop-project.org/8/webservice' },
 ];
 
 const WEBHOOK_EVENTS = [
@@ -58,6 +61,47 @@ export function MarketplacePage() {
   const [configData, setConfigData] = useState<Record<string, string>>({});
   const [connecting, setConnecting] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [customAppOpen, setCustomAppOpen] = useState(false);
+  const [customApp, setCustomApp] = useState({
+    name: '', baseUrl: '', authType: 'bearer' as 'none' | 'bearer' | 'api_key_header' | 'basic',
+    headerName: 'X-API-Key', credential: '', username: '',
+  });
+  const [customConnecting, setCustomConnecting] = useState(false);
+  const [customError, setCustomError] = useState('');
+
+  async function confirmCustomConnect() {
+    if (!customApp.name.trim() || !customApp.baseUrl.trim()) return;
+    setCustomError('');
+    try {
+      new URL(customApp.baseUrl);
+    } catch {
+      setCustomError(lang === 'fr' ? 'URL de base invalide.' : 'Invalid base URL.');
+      return;
+    }
+    setCustomConnecting(true);
+    const slug = customApp.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'app';
+    const provider = `custom_${slug}_${Math.random().toString(36).slice(2, 6)}`;
+    const { error } = await supabase.from('integrations').insert({
+      provider,
+      category: 'Custom',
+      status: 'connected',
+      connected_at: new Date().toISOString(),
+      config: {
+        display_name: customApp.name.trim(),
+        base_url: customApp.baseUrl.trim(),
+        auth_type: customApp.authType,
+        header_name: customApp.authType === 'api_key_header' ? customApp.headerName : undefined,
+        credential: customApp.authType !== 'none' ? customApp.credential : undefined,
+        username: customApp.authType === 'basic' ? customApp.username : undefined,
+        is_custom: true,
+      },
+    });
+    if (error) { setCustomError(error.message); setCustomConnecting(false); return; }
+    setConnected(prev => [...prev, provider]);
+    setCustomAppOpen(false);
+    setCustomApp({ name: '', baseUrl: '', authType: 'bearer', headerName: 'X-API-Key', credential: '', username: '' });
+    setCustomConnecting(false);
+  }
 
   useEffect(() => {
     supabase.from('integrations').select('provider,status')
@@ -146,7 +190,15 @@ export function MarketplacePage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t('nav.appMarketplace', lang)} subtitle="" />
+      <PageHeader
+        title={t('nav.appMarketplace', lang)}
+        subtitle=""
+        actions={
+          <button onClick={() => setCustomAppOpen(true)} className="btn-secondary btn-sm">
+            <Plug size={16} /> {lang === 'fr' ? 'Connecter une app personnalisée' : 'Connect a custom app'}
+          </button>
+        }
+      />
       <div className="flex flex-wrap gap-2 mb-4">
         {categories.map(c => (
           <button key={c} onClick={() => setFilter(c)} className={`btn-sm px-3 py-1.5 rounded-lg font-medium capitalize ${filter === c ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
@@ -245,6 +297,58 @@ export function MarketplacePage() {
           )}
         </div>
       </Modal>
+
+      <Modal open={customAppOpen} onClose={() => setCustomAppOpen(false)} title={lang === 'fr' ? 'Connecter une app personnalisée' : 'Connect a custom app'} size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-ink-500">
+            {lang === 'fr'
+              ? 'Connectez n\'importe quel service ayant une API REST : donnez son URL de base et la méthode d\'authentification qu\'il attend.'
+              : 'Connect any service with a REST API: give its base URL and the authentication method it expects.'}
+          </p>
+          <div>
+            <label className="label">{lang === 'fr' ? "Nom de l'app" : 'App name'}</label>
+            <input className="input" value={customApp.name} onChange={e => setCustomApp({ ...customApp, name: e.target.value })} placeholder={lang === 'fr' ? 'ex: Mon ERP interne' : 'e.g. My internal ERP'} />
+          </div>
+          <div>
+            <label className="label">{lang === 'fr' ? 'URL de base de l\'API' : 'API base URL'}</label>
+            <input className="input" value={customApp.baseUrl} onChange={e => setCustomApp({ ...customApp, baseUrl: e.target.value })} placeholder="https://api.example.com" />
+          </div>
+          <div>
+            <label className="label">{lang === 'fr' ? "Type d'authentification" : 'Authentication type'}</label>
+            <select className="input" value={customApp.authType} onChange={e => setCustomApp({ ...customApp, authType: e.target.value as typeof customApp.authType })}>
+              <option value="bearer">{lang === 'fr' ? 'Jeton Bearer (Authorization: Bearer ...)' : 'Bearer token (Authorization: Bearer ...)'}</option>
+              <option value="api_key_header">{lang === 'fr' ? 'Clé API dans un en-tête personnalisé' : 'API key in a custom header'}</option>
+              <option value="basic">{lang === 'fr' ? 'Authentification basique (utilisateur/mot de passe)' : 'Basic auth (username/password)'}</option>
+              <option value="none">{lang === 'fr' ? 'Aucune (API publique)' : 'None (public API)'}</option>
+            </select>
+          </div>
+          {customApp.authType === 'api_key_header' && (
+            <div>
+              <label className="label">{lang === 'fr' ? "Nom de l'en-tête" : 'Header name'}</label>
+              <input className="input" value={customApp.headerName} onChange={e => setCustomApp({ ...customApp, headerName: e.target.value })} placeholder="X-API-Key" />
+            </div>
+          )}
+          {customApp.authType === 'basic' && (
+            <div>
+              <label className="label">{lang === 'fr' ? "Nom d'utilisateur" : 'Username'}</label>
+              <input className="input" value={customApp.username} onChange={e => setCustomApp({ ...customApp, username: e.target.value })} />
+            </div>
+          )}
+          {customApp.authType !== 'none' && (
+            <div>
+              <label className="label">{customApp.authType === 'basic' ? (lang === 'fr' ? 'Mot de passe' : 'Password') : (lang === 'fr' ? 'Jeton / Clé' : 'Token / Key')}</label>
+              <input type="password" className="input" value={customApp.credential} onChange={e => setCustomApp({ ...customApp, credential: e.target.value })} />
+            </div>
+          )}
+          {customError && <p className="text-xs text-error-600">{customError}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setCustomAppOpen(false)} className="btn-secondary btn-sm">{t('common.cancel', lang)}</button>
+            <button onClick={confirmCustomConnect} disabled={customConnecting || !customApp.name.trim() || !customApp.baseUrl.trim()} className="btn-primary btn-sm">
+              {customConnecting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} {lang === 'fr' ? 'Connecter' : 'Connect'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -292,6 +396,8 @@ export function ConnectedAppsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {integrations.map(intg => {
             const appDef = AVAILABLE_APPS.find(a => a.provider === intg.provider);
+            const isCustom = intg.provider.startsWith('custom_');
+            const displayName = appDef?.name || (intg.config as { display_name?: string } | null)?.display_name || intg.provider;
             return (
               <div key={intg.id} className="card p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -300,7 +406,7 @@ export function ConnectedAppsPage() {
                       <BrandLogo provider={intg.provider} size={28} />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-ink-800 capitalize truncate">{appDef?.name || intg.provider}</p>
+                      <p className="font-bold text-ink-800 truncate">{displayName}</p>
                       <p className="text-xs text-ink-500">{intg.category}</p>
                     </div>
                   </div>
@@ -310,7 +416,7 @@ export function ConnectedAppsPage() {
                   <p className="text-xs text-ink-400 mb-3">{lang === 'fr' ? 'Dernière sync: ' : 'Last sync: '}{new Date(intg.last_sync_at).toLocaleString(lang)}</p>
                 )}
                 <div className="flex items-center gap-2">
-                  {appDef?.authType === 'api_key' && (
+                  {(appDef?.authType === 'api_key' || isCustom) && (
                     <button onClick={() => setEditApp(intg)} className="btn-ghost btn-sm flex-1" title={lang === 'fr' ? 'Configurer' : 'Configure'}>
                       <SettingsIcon size={14} /> {lang === 'fr' ? 'Config' : 'Config'}
                     </button>

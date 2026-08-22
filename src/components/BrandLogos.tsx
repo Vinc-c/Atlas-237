@@ -153,6 +153,32 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
           <circle cx="13.5" cy="15" r="1.1" fill="#0F766E" />
         </svg>
       );
+    case 'os':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Os">
+          <rect width="24" height="24" rx="5" fill="#EA580C" />
+          <path d="M7 15.5a3.5 3.5 0 1 1 3.5-3.5H9a2 2 0 1 0-2 2v1.5Z" fill="#fff" />
+          <circle cx="7" cy="12" r="3.5" fill="none" stroke="#fff" strokeWidth="1.6" />
+          <path d="M13 8h3.2a2.8 2.8 0 0 1 0 5.6H14v2.4h-1V8Zm1 1v3.6h2.2a1.8 1.8 0 0 0 0-3.6H14Z" fill="#fff" />
+        </svg>
+      );
+    case 'woocommerce':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="WooCommerce">
+          <rect width="24" height="24" rx="5" fill="#7F54B3" />
+          <rect x="4" y="9" width="16" height="8" rx="2" fill="#fff" />
+          <path d="M7 12.5l1 2.2 1.3-3.4 1.3 3.4 1-2.2" stroke="#7F54B3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          <path d="M14.5 12.5l1 2.2 1.3-3.4" stroke="#7F54B3" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      );
+    case 'prestashop':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="PrestaShop">
+          <rect width="24" height="24" rx="5" fill="#DF0067" />
+          <path d="M12 5.5l5 2.9v7.2l-5 2.9-5-2.9V8.4l5-2.9Z" fill="#fff" opacity="0.95" />
+          <path d="M12 9l2.2 1.3v2.6L12 14.2l-2.2-1.3v-2.6L12 9Z" fill="#DF0067" />
+        </svg>
+      );
     default:
       return (
         <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label={provider}>
