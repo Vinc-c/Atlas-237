@@ -308,11 +308,16 @@ export function ListPage<T extends { id: string }>({
     setSaving(true);
     setError('');
     try {
+      // Strip UI-only companion keys (e.g. "country__mode") added by
+      // special field renderers (country/phone) — never real columns.
+      const payload = Object.fromEntries(
+        Object.entries(formData).filter(([k]) => !k.includes('__mode') && !k.endsWith('__other'))
+      );
       if (editing) {
-        const { error } = await supabase.from(table).update(formData).eq('id', editing.id);
+        const { error } = await supabase.from(table).update(payload).eq('id', editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(table).insert(formData);
+        const { error } = await supabase.from(table).insert(payload);
         if (error) throw error;
       }
       setModalOpen(false);
@@ -447,16 +452,41 @@ export function ListPage<T extends { id: string }>({
                   <option value="">—</option>
                   {field.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
-              ) : field.type === 'country' ? (
-                <select
-                  className="input"
-                  value={String(formData[field.key] ?? '')}
-                  onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                >
-                  <option value="">—</option>
-                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{language === 'fr' ? c.nameFr : c.name}</option>)}
-                </select>
-              ) : field.type === 'phone' ? (() => {
+              ) : field.type === 'country' ? (() => {
+                const val = String(formData[field.key] ?? '');
+                const explicitOther = formData[`${field.key}__mode`] === 'other';
+                const isKnown = !explicitOther && (!val || COUNTRIES.some(c => c.code === val));
+                const showOther = !isKnown;
+                return (
+                  <div className="space-y-2">
+                    <select
+                      className="input"
+                      value={showOther ? '__other__' : val}
+                      onChange={e => {
+                        if (e.target.value === '__other__') {
+                          setFormData({ ...formData, [field.key]: '', [`${field.key}__mode`]: 'other' });
+                        } else {
+                          setFormData({ ...formData, [field.key]: e.target.value, [`${field.key}__mode`]: 'known' });
+                        }
+                      }}
+                    >
+                      <option value="">—</option>
+                      {COUNTRIES.map(c => <option key={c.code} value={c.code}>{language === 'fr' ? c.nameFr : c.name}</option>)}
+                      <option value="__other__">{language === 'fr' ? 'Autre (préciser)…' : 'Other (specify)…'}</option>
+                    </select>
+                    {showOther && (
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder={language === 'fr' ? 'Nom du pays' : 'Country name'}
+                        value={val}
+                        onChange={e => setFormData({ ...formData, [field.key]: e.target.value, [`${field.key}__mode`]: 'other' })}
+                        autoFocus
+                      />
+                    )}
+                  </div>
+                );
+              })() : field.type === 'phone' ? (() => {
                 const raw = String(formData[field.key] ?? '');
                 const sortedByDialLength = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
                 const matched = sortedByDialLength.find(c => raw === c.dialCode || raw.startsWith(c.dialCode + ' '));

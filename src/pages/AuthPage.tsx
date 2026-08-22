@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
-import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency, getCountry } from '@/lib/i18n-countries';
+import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency } from '@/lib/i18n-countries';
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
@@ -26,6 +26,7 @@ export function AuthPage() {
   const [lastName, setLastName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [country, setCountry] = useState('');
+  const [countryOther, setCountryOther] = useState(false);
   const [currency, setCurrency] = useState('USD');
   const [timezone, setTimezone] = useState('UTC');
   const [salesCode, setSalesCode] = useState('');
@@ -265,12 +266,35 @@ export function AuthPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="block">
                       <span className="label">{lang === 'fr' ? 'Pays' : 'Country'}</span>
-                      <select className="input" value={country} onChange={(e) => { setCountry(e.target.value); setCurrency(suggestCurrency(e.target.value)); const tz = getCountry(e.target.value); if (tz) { /* could map country to TZ, keep UTC default */ } }}>
+                      <select
+                        className="input"
+                        value={COUNTRIES.some(c => c.code === country) || !country ? country : '__other__'}
+                        onChange={(e) => {
+                          if (e.target.value === '__other__') {
+                            setCountry('');
+                            setCountryOther(true);
+                          } else {
+                            setCountryOther(false);
+                            setCountry(e.target.value);
+                            setCurrency(suggestCurrency(e.target.value));
+                          }
+                        }}
+                      >
                         <option value="">{lang === 'fr' ? 'Sélectionner...' : 'Select...'}</option>
                         {COUNTRIES.map((c) => (
                           <option key={c.code} value={c.code}>{lang === 'fr' ? c.nameFr : c.name}</option>
                         ))}
+                        <option value="__other__">{lang === 'fr' ? 'Autre (préciser)…' : 'Other (specify)…'}</option>
                       </select>
+                      {countryOther && (
+                        <input
+                          type="text"
+                          className="input mt-2"
+                          placeholder={lang === 'fr' ? 'Nom du pays' : 'Country name'}
+                          value={country}
+                          onChange={(e) => setCountry(e.target.value)}
+                        />
+                      )}
                     </label>
                     <label className="block">
                       <span className="label">{lang === 'fr' ? 'Devise' : 'Currency'}</span>

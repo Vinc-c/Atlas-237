@@ -90,7 +90,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
       return (
         <>
           {h2(fr ? 'Nous contacter' : 'Contact Us', '')}
-          <ul><li>Email: hello@liafrik.com</li><li>{fr ? 'Ventes : sales@liafrik.com' : 'Sales: sales@liafrik.com'}</li><li>{fr ? 'Support : support@liafrik.com' : 'Support: support@liafrik.com'}</li><li>{fr ? 'Sécurité : security@liafrik.com' : 'Security: security@liafrik.com'}</li></ul>
+          <ul><li>Email: hello@liafrik.com</li><li>{fr ? 'Ventes : sales@liafrik.com' : 'Sales: sales@liafrik.com'}</li><li>{fr ? 'Support : support@liafrik.com' : 'Support: support@liafrik.com'}</li><li>{fr ? 'Service client : cs@liafrik.com / help@liafrik.com' : 'Customer service: cs@liafrik.com / help@liafrik.com'}</li><li>{fr ? 'Sécurité : security@liafrik.com' : 'Security: security@liafrik.com'}</li></ul>
           <p>{fr ? 'Dubai · Afrique · Monde' : 'Dubai · Africa · Worldwide'}</p>
         </>
       );

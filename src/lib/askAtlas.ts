@@ -5,7 +5,38 @@ type Answer = { text: string; route?: string };
 const norm = (s: string) => s.toLowerCase().trim();
 const has = (q: string, ...keys: string[]) => keys.some((k) => q.includes(k));
 
+/**
+ * Tries the real AI assistant (Claude, via the ai-assistant edge function)
+ * first. Returns null if it's not configured or fails, so the caller can
+ * fall back to the deterministic keyword-matched answers below — the
+ * feature stays fully functional even before an ANTHROPIC_API_KEY is set,
+ * it just answers with real generative AI once one is.
+ */
+async function tryRealAI(question: string, lang: string): Promise<Answer | null> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return null;
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionData.session.access_token}`,
+      },
+      body: JSON.stringify({ question, language: lang }),
+    });
+    if (!res.ok) return null;
+    const result = await res.json();
+    if (!result.ok || !result.text) return null;
+    return { text: result.text };
+  } catch {
+    return null;
+  }
+}
+
 export async function askAtlas(question: string, lang: 'en' | 'fr' | 'es' | 'pt' | 'ar' = 'fr'): Promise<Answer> {
+  const aiAnswer = await tryRealAI(question, lang);
+  if (aiAnswer) return aiAnswer;
+
   const q = norm(question);
   const fr = lang === 'fr';
 
