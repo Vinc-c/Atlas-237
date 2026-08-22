@@ -43,7 +43,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
           <ul><li>{fr ? 'Informations de compte (nom, e-mail, entreprise)' : 'Account information (name, email, company)'}</li><li>{fr ? 'Données d\'utilisation et journaux techniques' : 'Usage data and technical logs'}</li><li>{fr ? 'Cookies (voir Politique des Cookies)' : 'Cookies (see Cookie Policy)'}</li></ul>
           {h2(fr ? 'Vos droits (RGPD)' : 'Your Rights (GDPR)', '')}
           <ul><li>{fr ? 'Accès, rectification, effacement de vos données' : 'Access, rectification, erasure of your data'}</li><li>{fr ? 'Portabilité des données' : 'Data portability'}</li><li>{fr ? 'Opposition au traitement' : 'Right to object to processing'}</li><li>{fr ? 'Réclamation auprès de l\'autorité de protection' : 'Lodge a complaint with a supervisory authority'}</li></ul>
-          <p>{fr ? 'Pour exercer vos droits : privacy@atlascrm.com' : 'To exercise your rights: privacy@atlascrm.com'}</p>
+          <p>{fr ? 'Pour exercer vos droits : privacy@liafrik.com' : 'To exercise your rights: privacy@liafrik.com'}</p>
         </>
       );
     case 'terms':
@@ -83,14 +83,14 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
           {h2(fr ? 'Sécurité de la plateforme' : 'Platform Security', '')}
           <ul><li>{fr ? 'Chiffrement TLS 1.3 en transit, AES-256 au repos' : 'TLS 1.3 encryption in transit, AES-256 at rest'}</li><li>{fr ? 'Authentification SSO/SAML et OAuth2' : 'SSO/SAML and OAuth2 authentication'}</li><li>{fr ? 'Row-Level Security (RLS) sur toutes les données' : 'Row-Level Security (RLS) on all data'}</li><li>{fr ? 'Audit logs complets et traçabilité' : 'Comprehensive audit logs and traceability'}</li><li>{fr ? 'Conformité RGPD/GDPR, SOC 2 Type II' : 'GDPR compliance, SOC 2 Type II'}</li></ul>
           {h2(fr ? 'Signaler une vulnérabilité' : 'Report a Vulnerability', '')}
-          <p>{fr ? 'Contactez security@atlascrm.com pour signaler une faille de sécurité.' : 'Contact security@atlascrm.com to report a security vulnerability.'}</p>
+          <p>{fr ? 'Contactez security@liafrik.com pour signaler une faille de sécurité.' : 'Contact security@liafrik.com to report a security vulnerability.'}</p>
         </>
       );
     case 'contact':
       return (
         <>
           {h2(fr ? 'Nous contacter' : 'Contact Us', '')}
-          <ul><li>Email: hello@atlascrm.com</li><li>{fr ? 'Ventes : sales@atlascrm.com' : 'Sales: sales@atlascrm.com'}</li><li>{fr ? 'Support : support@atlascrm.com' : 'Support: support@atlascrm.com'}</li><li>{fr ? 'Sécurité : security@atlascrm.com' : 'Security: security@atlascrm.com'}</li></ul>
+          <ul><li>Email: hello@liafrik.com</li><li>{fr ? 'Ventes : sales@liafrik.com' : 'Sales: sales@liafrik.com'}</li><li>{fr ? 'Support : support@liafrik.com' : 'Support: support@liafrik.com'}</li><li>{fr ? 'Sécurité : security@liafrik.com' : 'Security: security@liafrik.com'}</li></ul>
           <p>{fr ? 'Dubai · Afrique · Monde' : 'Dubai · Africa · Worldwide'}</p>
         </>
       );
@@ -99,7 +99,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
         <>
           {h2(fr ? 'Rejoignez l\'équipe' : 'Join the Team', '')}
           <p>{fr ? 'Nous recrutons des talents passionnés par l\'IA, le CRM et l\'expérience client. Postes ouverts : Ingénieur Full-Stack, Designer UX/UI, Data Scientist, Customer Success Manager.' : 'We hire passionate talent in AI, CRM, and customer experience. Open roles: Full-Stack Engineer, UX/UI Designer, Data Scientist, Customer Success Manager.'}</p>
-          <p>{fr ? 'Candidatures : careers@atlascrm.com' : 'Applications: careers@atlascrm.com'}</p>
+          <p>{fr ? 'Candidatures : careers@liafrik.com' : 'Applications: careers@liafrik.com'}</p>
         </>
       );
     case 'pricing':
@@ -116,7 +116,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
         <>
           {h2(fr ? 'Documentation API' : 'API Documentation', '')}
           <p>{fr ? 'Atlas CRM fournit une API REST complète avec webhooks en temps réel. Authentification par clé API (Bearer token).' : 'Atlas CRM provides a complete REST API with real-time webhooks. Authentication via API key (Bearer token).'}</p>
-          <ul><li>Base URL: https://api.atlascrm.com/v1</li><li>{fr ? 'Endpoints : Contacts, Deals, Pipelines, Invoices, Webhooks' : 'Endpoints: Contacts, Deals, Pipelines, Invoices, Webhooks'}</li><li>{fr ? 'Rate limit : 1000 req/min' : 'Rate limit: 1000 req/min'}</li></ul>
+          <ul><li>Base URL: https://api.liafrik.com/v1</li><li>{fr ? 'Endpoints : Contacts, Deals, Pipelines, Invoices, Webhooks' : 'Endpoints: Contacts, Deals, Pipelines, Invoices, Webhooks'}</li><li>{fr ? 'Rate limit : 1000 req/min' : 'Rate limit: 1000 req/min'}</li></ul>
         </>
       );
     case 'status':
@@ -146,7 +146,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
         <>
           {h2(fr ? 'Conformité RGPD' : 'GDPR Compliance', '')}
           <p>{fr ? 'Atlas CRM est pleinement conforme au Règlement Général sur la Protection des Données (RGPD/GDPR).' : 'Atlas CRM is fully compliant with the General Data Protection Regulation (GDPR).'}</p>
-          <ul><li>{fr ? 'Base légale du traitement' : 'Legal basis for processing'}</li><li>{fr ? 'Droits des personnes concernées' : 'Rights of data subjects'}</li><li>{fr ? 'Notification de violation (72h)' : 'Breach notification (72h)'}</li><li>{fr ? 'Transferts internationaux de données' : 'International data transfers'}</li><li>{fr ? 'DPO : dpo@atlascrm.com' : 'DPO: dpo@atlascrm.com'}</li></ul>
+          <ul><li>{fr ? 'Base légale du traitement' : 'Legal basis for processing'}</li><li>{fr ? 'Droits des personnes concernées' : 'Rights of data subjects'}</li><li>{fr ? 'Notification de violation (72h)' : 'Breach notification (72h)'}</li><li>{fr ? 'Transferts internationaux de données' : 'International data transfers'}</li><li>{fr ? 'DPO : dpo@liafrik.com' : 'DPO: dpo@liafrik.com'}</li></ul>
         </>
       );
     case 'pledge':

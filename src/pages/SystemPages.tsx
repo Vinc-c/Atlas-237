@@ -709,7 +709,7 @@ export function BillingPage() {
   async function changePlan(plan: typeof plans[number]) {
     if (!organization || plan.key === currentPlan) return;
     if (plan.key === 'enterprise') {
-      window.location.href = 'mailto:sales@atlascrm.com?subject=Atlas%20CRM%20Enterprise%20Plan';
+      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
       return;
     }
     setBusy(plan.key);

@@ -27,11 +27,11 @@ export function ContactsPage() {
     { key: 'first_name', label: t('auth.firstName', language), type: 'text', required: true },
     { key: 'last_name', label: t('auth.lastName', language), type: 'text', required: true },
     { key: 'email', label: t('common.email', language), type: 'email' },
-    { key: 'phone', label: t('common.phone', language), type: 'tel' },
+    { key: 'country', label: t('list.country', language), type: 'country' },
+    { key: 'phone', label: t('common.phone', language), type: 'phone', countryFieldKey: 'country' },
     { key: 'job_title', label: t('list.title', language), type: 'text' },
     { key: 'company', label: t('common.company', language), type: 'text' },
     { key: 'city', label: t('list.city', language), type: 'text' },
-    { key: 'country', label: t('list.country', language), type: 'text' },
     { key: 'status', label: t('common.status', language), type: 'select', options: [
       { value: 'active', label: t('status.active', language) }, { value: 'inactive', label: t('status.inactive', language) }, { value: 'lead', label: t('status.lead', language) },
     ], defaultValue: 'active' },
@@ -74,7 +74,7 @@ export function CompaniesPage() {
       { value: '1-10', label: '1-10' }, { value: '11-50', label: '11-50' }, { value: '51-200', label: '51-200' }, { value: '201-500', label: '201-500' }, { value: '500+', label: '500+' },
     ]},
     { key: 'city', label: t('list.city', language), type: 'text' },
-    { key: 'country', label: t('list.country', language), type: 'text' },
+    { key: 'country', label: t('list.country', language), type: 'country' },
     { key: 'revenue', label: t('list.revenue', language), type: 'number' },
     currencyField(language, orgCurrency),
     { key: 'status', label: t('common.status', language), type: 'select', options: [
@@ -110,7 +110,7 @@ export function LeadsPage() {
     { key: 'first_name', label: t('auth.firstName', language), type: 'text', required: true },
     { key: 'last_name', label: t('auth.lastName', language), type: 'text', required: true },
     { key: 'email', label: t('common.email', language), type: 'email' },
-    { key: 'phone', label: t('common.phone', language), type: 'tel' },
+    { key: 'phone', label: t('common.phone', language), type: 'phone' },
     { key: 'company_name', label: t('common.company', language), type: 'text' },
     { key: 'title', label: t('list.title', language), type: 'text' },
     { key: 'source', label: t('list.source', language), type: 'select', options: [

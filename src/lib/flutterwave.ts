@@ -87,7 +87,7 @@ export function initiateFlutterwaveCheckout(params: {
   const price = PLAN_PRICES[plan];
   if (!price || price.cents === 0) {
     // Enterprise → contact sales
-    window.location.href = `mailto:sales@atlascrm.com?subject=Atlas%20CRM%20Enterprise%20Plan`;
+    window.location.href = `mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan`;
     return;
   }
 

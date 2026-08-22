@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
+import { COUNTRIES } from '@/lib/i18n-countries';
 
 interface Column<T> {
   key: string;
@@ -39,10 +40,12 @@ interface ListPageProps<T extends { id: string }> {
 export interface FormField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'tel' | 'number' | 'select' | 'textarea' | 'date';
+  type: 'text' | 'email' | 'tel' | 'number' | 'select' | 'textarea' | 'date' | 'country' | 'phone';
   required?: boolean;
   options?: { value: string; label: string }[];
   defaultValue?: string | number;
+  /** For type 'phone': the key of a 'country' field in the same form, used to auto-select the dial code. */
+  countryFieldKey?: string;
 }
 
 function ImportModal({ table, fields, onClose, onDone, language }: {
@@ -444,7 +447,46 @@ export function ListPage<T extends { id: string }>({
                   <option value="">—</option>
                   {field.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
-              ) : field.type === 'textarea' ? (
+              ) : field.type === 'country' ? (
+                <select
+                  className="input"
+                  value={String(formData[field.key] ?? '')}
+                  onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                >
+                  <option value="">—</option>
+                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{language === 'fr' ? c.nameFr : c.name}</option>)}
+                </select>
+              ) : field.type === 'phone' ? (() => {
+                const raw = String(formData[field.key] ?? '');
+                const sortedByDialLength = [...COUNTRIES].sort((a, b) => b.dialCode.length - a.dialCode.length);
+                const matched = sortedByDialLength.find(c => raw === c.dialCode || raw.startsWith(c.dialCode + ' '));
+                let dial = matched?.dialCode || '';
+                const rest = matched ? raw.slice(matched.dialCode.length).trim() : raw;
+                if (!dial && field.countryFieldKey) {
+                  const countryCode = String(formData[field.countryFieldKey] ?? '');
+                  const c = COUNTRIES.find(c => c.code === countryCode);
+                  if (c) dial = c.dialCode;
+                }
+                return (
+                  <div className="flex gap-2">
+                    <select
+                      className="input w-28 flex-shrink-0"
+                      value={dial}
+                      onChange={e => setFormData({ ...formData, [field.key]: `${e.target.value} ${rest}`.trim() })}
+                    >
+                      <option value="">—</option>
+                      {COUNTRIES.map(c => <option key={c.code} value={c.dialCode}>{c.code} {c.dialCode}</option>)}
+                    </select>
+                    <input
+                      type="tel"
+                      className="input flex-1"
+                      value={rest}
+                      onChange={e => setFormData({ ...formData, [field.key]: dial ? `${dial} ${e.target.value}`.trim() : e.target.value })}
+                      required={field.required}
+                    />
+                  </div>
+                );
+              })() : field.type === 'textarea' ? (
                 <textarea
                   className="input min-h-[80px]"
                   value={String(formData[field.key] ?? '')}
