@@ -14,7 +14,7 @@ import { Loading } from '@/components/Loading';
 import { COUNTRIES, CURRENCIES, TIMEZONES } from '@/lib/i18n-countries';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { usePlanAccess } from '@/lib/plans';
-import type { Notification, AuditLog, Organization, Plan, Profile } from '@/types';
+import type { Notification, AuditLog, Organization, Profile } from '@/types';
 import type { Language } from '@/lib/i18n';
 
 export function NotificationsPage() {

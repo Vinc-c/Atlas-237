@@ -80,6 +80,7 @@ export interface Company {
   address: string | null;
   city: string | null;
   revenue: number | null;
+  currency: string;
   status: string;
   owner_id: string | null;
   tags: string[] | null;
@@ -295,6 +296,7 @@ export interface Campaign {
   start_date: string | null;
   end_date: string | null;
   budget: number;
+  currency: string;
   spent: number;
   metrics: Record<string, unknown>;
   owner_id: string | null;

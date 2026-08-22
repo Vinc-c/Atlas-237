@@ -8,6 +8,18 @@ import { Badge, PageHeader } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import type { Contact, Company, Lead, Deal } from '@/types';
+import { CURRENCIES, formatMoney } from '@/lib/i18n-countries';
+
+function currencyField(language: string, orgCurrency: string): FormField {
+  return {
+    key: 'currency',
+    label: language === 'fr' ? 'Devise' : 'Currency',
+    type: 'select',
+    required: true,
+    defaultValue: orgCurrency,
+    options: CURRENCIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.name} (${c.symbol})` })),
+  };
+}
 
 export function ContactsPage() {
   const { language } = useAuth();
@@ -52,7 +64,8 @@ export function ContactsPage() {
 }
 
 export function CompaniesPage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
+  const orgCurrency = organization?.currency || 'USD';
   const fields: FormField[] = [
     { key: 'name', label: t('common.name', language), type: 'text', required: true },
     { key: 'industry', label: t('list.industry', language), type: 'text' },
@@ -63,6 +76,7 @@ export function CompaniesPage() {
     { key: 'city', label: t('list.city', language), type: 'text' },
     { key: 'country', label: t('list.country', language), type: 'text' },
     { key: 'revenue', label: t('list.revenue', language), type: 'number' },
+    currencyField(language, orgCurrency),
     { key: 'status', label: t('common.status', language), type: 'select', options: [
       { value: 'active', label: t('status.active', language) }, { value: 'inactive', label: t('status.inactive', language) },
     ], defaultValue: 'active' },
@@ -78,6 +92,7 @@ export function CompaniesPage() {
         { key: 'industry', label: t('list.industry', language), render: (r) => r.industry || '—' },
         { key: 'website', label: t('list.website', language), render: (r) => r.website ? <a href={r.website} target="_blank" rel="noopener" className="text-primary-600 hover:underline">{r.website}</a> : '—' },
         { key: 'size', label: t('list.size', language), render: (r) => r.size || '—' },
+        { key: 'revenue', label: t('list.revenue', language), render: (r) => r.revenue ? formatMoney(r.revenue * 100, r.currency || orgCurrency, language) : '—' },
         { key: 'status', label: t('common.status', language), render: (r) => <Badge variant={r.status === 'active' ? 'success' : 'neutral'}>{r.status}</Badge> },
       ]}
       formFields={fields}
@@ -134,10 +149,12 @@ export function LeadsPage() {
 }
 
 export function DealsPage() {
-  const { language } = useAuth();
+  const { language, organization } = useAuth();
+  const orgCurrency = organization?.currency || 'USD';
   const fields: FormField[] = [
     { key: 'name', label: t('list.dealName', language), type: 'text', required: true },
     { key: 'value', label: t('common.value', language), type: 'number', required: true, defaultValue: 0 },
+    currencyField(language, orgCurrency),
     { key: 'closing_date', label: t('list.closingDate', language), type: 'date' },
     { key: 'status', label: t('common.status', language), type: 'select', options: [
       { value: 'open', label: t('status.open', language) }, { value: 'won', label: t('status.won', language) }, { value: 'lost', label: t('status.lost', language) },
@@ -152,7 +169,7 @@ export function DealsPage() {
       title={t('nav.deals', language)}
       columns={[
         { key: 'name', label: t('nav.deals', language), render: (r) => <span className="font-medium text-ink-800">{r.name}</span> },
-        { key: 'value', label: t('common.value', language), render: (r) => <span className="font-semibold">$ {(r.value || 0).toLocaleString()}</span> },
+        { key: 'value', label: t('common.value', language), render: (r) => <span className="font-semibold">{formatMoney((r.value || 0) * 100, r.currency || orgCurrency, language)}</span> },
         { key: 'probability', label: t('list.probability', language), render: (r) => `${r.probability}%` },
         { key: 'closing_date', label: t('list.closeDate', language), render: (r) => r.closing_date ? new Date(r.closing_date).toLocaleDateString(language) : '—' },
         { key: 'status', label: t('common.status', language), render: (r) => <Badge variant={r.status === 'won' ? 'success' : r.status === 'lost' ? 'error' : 'primary'}>{r.status}</Badge> },
