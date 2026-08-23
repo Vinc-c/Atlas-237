@@ -206,15 +206,32 @@ export function AuthPage() {
         {/* ───────── Form panel ───────── */}
         <div className="flex flex-col px-5 py-8 sm:px-10 lg:px-16 lg:py-10">
           {/* Mobile/tablet brand banner */}
-          <div className="-mx-5 -mt-8 mb-2 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-5 sm:-mx-10 sm:px-10 lg:hidden">
-            <Link to="/" className="flex items-center gap-2.5">
-              <Logo size={36} />
-              <span className="text-lg font-bold tracking-tight text-white">Atlas CRM</span>
-            </Link>
+          <div className="-mx-5 -mt-8 mb-6 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-5 sm:-mx-10 sm:px-10 lg:hidden">
+            <div className="flex items-start justify-between gap-3">
+              <Link to="/" className="flex items-center gap-2.5">
+                <Logo size={36} />
+                <span className="text-lg font-bold tracking-tight text-white">Atlas CRM</span>
+              </Link>
+              <div className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-sm text-white">
+                <Globe size={14} />
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  className="bg-transparent text-white focus:outline-none [&>option]:text-ink-900"
+                  aria-label="Language"
+                >
+                  <option value="en">EN</option>
+                  <option value="fr">FR</option>
+                  <option value="es">ES</option>
+                  <option value="pt">PT</option>
+                  <option value="ar">AR</option>
+                </select>
+              </div>
+            </div>
             <p className="mt-2 text-sm text-primary-100">{t('auth.brandTagline', lang)}</p>
           </div>
 
-          <div className="flex items-center justify-end">
+          <div className="hidden items-center justify-end lg:flex">
             <div className="flex items-center gap-2 rounded-lg border border-ink-200 px-3 py-1.5 text-sm text-ink-500">
               <Globe size={15} />
               <select
