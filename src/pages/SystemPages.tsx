@@ -178,7 +178,7 @@ export function SettingsPage() {
         {activeTab === 'profile' && <ProfileTab language={language} profile={profile} />}
         {activeTab === 'branding' && <BrandingTab language={language} organization={organization} onSave={refreshOrg} />}
         {activeTab === 'roles' && <RolesPermissionsTab language={language} organization={organization} />}
-        {activeTab === 'security' && <SecurityTab language={language} />}
+        {activeTab === 'security' && <SecurityTab language={language} organization={organization} onSave={refreshOrg} />}
         {activeTab === 'ai' && <AIProviderTab language={language} organization={organization} onSave={refreshOrg} />}
       </div>
     </div>
@@ -627,7 +627,8 @@ function RolesPermissionsTab({ language, organization }: { language: Language; o
 }
 
 /* ── Security Tab ── */
-function SecurityTab({ language }: { language: Language }) {
+function SecurityTab({ language, organization, onSave }: { language: Language; organization: Organization | null; onSave: () => Promise<void> }) {
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
   const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
@@ -770,6 +771,91 @@ function SecurityTab({ language }: { language: Language }) {
           {language === 'fr' ? 'Déconnecter toutes les sessions' : 'Sign out all sessions'}
         </button>
       </div>
+
+      <SsoSection language={language} organization={organization} allowed={hasPlanFeature('ssoSaml')} onSave={onSave} />
+    </div>
+  );
+}
+
+/* ── SSO / SAML Section (Pro & Enterprise) ── */
+function SsoSection({ language, organization, allowed, onSave }: { language: Language; organization: Organization | null; allowed: boolean; onSave: () => Promise<void> }) {
+  const [entityId, setEntityId] = useState('');
+  const [ssoUrl, setSsoUrl] = useState('');
+  const [certificate, setCertificate] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const cfg = organization?.sso_config as { entity_id?: string; sso_url?: string; certificate?: string } | null;
+    setEntityId(cfg?.entity_id || '');
+    setSsoUrl(cfg?.sso_url || '');
+    setCertificate(cfg?.certificate || '');
+  }, [organization?.sso_config]);
+
+  async function save() {
+    if (!organization) return;
+    setSaving(true); setSaved(false);
+    const { error } = await supabase.from('organizations').update({
+      sso_config: { entity_id: entityId, sso_url: ssoUrl, certificate },
+    }).eq('id', organization.id);
+    if (error) { alert(error.message); setSaving(false); return; }
+    setSaved(true);
+    await onSave();
+    setSaving(false);
+  }
+
+  if (!allowed) {
+    return (
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-2">
+          <ShieldCheck className="text-ink-400" size={20} />
+          <h3 className="font-bold text-ink-800">SSO & SAML</h3>
+        </div>
+        <p className="text-sm text-ink-500">
+          {language === 'fr'
+            ? "L'authentification unique (SSO/SAML) est disponible à partir du plan Pro. Passez à un plan supérieur pour connecter votre fournisseur d'identité (Okta, Azure AD, Google Workspace...)."
+            : 'Single sign-on (SSO/SAML) is available starting on the Pro plan. Upgrade to connect your identity provider (Okta, Azure AD, Google Workspace...).'}
+        </p>
+        <Link to="/app/billing" className="mt-3 inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
+          {language === 'fr' ? 'Voir les plans' : 'View plans'} →
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-2">
+        <ShieldCheck className="text-primary-500" size={20} />
+        <h3 className="font-bold text-ink-800">SSO & SAML</h3>
+        <Badge variant={organization?.sso_enabled ? 'success' : 'neutral'}>
+          {organization?.sso_enabled ? (language === 'fr' ? 'Actif' : 'Active') : (language === 'fr' ? 'Non configuré' : 'Not set up')}
+        </Badge>
+      </div>
+      <p className="text-sm text-ink-500 mb-4">
+        {language === 'fr'
+          ? "Renseignez les informations de votre fournisseur d'identité (IdP) SAML 2.0. Une fois enregistrées, notre équipe finalise l'activation avec vous."
+          : 'Provide your SAML 2.0 identity provider (IdP) details. Once saved, our team finalizes activation with you.'}
+      </p>
+      <div className="space-y-3">
+        <div>
+          <label className="label">Entity ID</label>
+          <input className="input" value={entityId} onChange={e => setEntityId(e.target.value)} placeholder="https://idp.example.com/entity" />
+        </div>
+        <div>
+          <label className="label">SSO URL</label>
+          <input className="input" value={ssoUrl} onChange={e => setSsoUrl(e.target.value)} placeholder="https://idp.example.com/sso" />
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Certificat X.509' : 'X.509 Certificate'}</label>
+          <textarea className="input" rows={4} value={certificate} onChange={e => setCertificate(e.target.value)} placeholder="-----BEGIN CERTIFICATE-----" />
+        </div>
+      </div>
+      {saved && <p className="mt-3 text-xs text-success-600">{language === 'fr' ? 'Configuration enregistrée. Contactez support@liafrik.com pour finaliser l\'activation.' : 'Configuration saved. Contact support@liafrik.com to finalize activation.'}</p>}
+      <button onClick={save} disabled={saving || !entityId || !ssoUrl} className="btn-primary btn-sm mt-4">
+        {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+        {language === 'fr' ? 'Enregistrer' : 'Save'}
+      </button>
     </div>
   );
 }

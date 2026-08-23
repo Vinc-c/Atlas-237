@@ -20,6 +20,8 @@ export interface Organization {
   signup_sales_code: string | null;
   status: string;
   ai_provider: string;
+  sso_config: Record<string, unknown> | null;
+  sso_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
