@@ -23,6 +23,9 @@ interface AppDef {
 }
 
 const AVAILABLE_APPS: AppDef[] = [
+  { provider: 'openai', name: 'OpenAI (ChatGPT)', category: 'AI', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'sk-xxx', type: 'password' }], docsUrl: 'https://platform.openai.com/api-keys' },
+  { provider: 'anthropic', name: 'Anthropic (Claude)', category: 'AI', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'sk-ant-xxx', type: 'password' }], docsUrl: 'https://console.anthropic.com/settings/keys' },
+  { provider: 'gemini', name: 'Google Gemini', category: 'AI', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'AIzaSy...', type: 'password' }], docsUrl: 'https://aistudio.google.com/apikey' },
   { provider: 'libooks', name: 'Libooks', category: 'Accounting', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'lbk_live_xxx', type: 'password' }, { key: 'workspace_id', label: 'Workspace ID', placeholder: 'e.g. your Libooks workspace slug' }], docsUrl: 'https://libooks.liafrik.com' },
   { provider: 'gmail', name: 'Gmail', category: 'Email', authType: 'oauth', docsUrl: 'https://developers.google.com/gmail/api' },
   { provider: 'outlook', name: 'Outlook', category: 'Email', authType: 'oauth', docsUrl: 'https://learn.microsoft.com/graph' },

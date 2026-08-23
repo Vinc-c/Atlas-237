@@ -317,8 +317,11 @@ export function ListPage<T extends { id: string }>({
         const { error } = await supabase.from(table).update(payload).eq('id', editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(table).insert(payload);
+        const { data: inserted, error } = await supabase.from(table).insert(payload).select().single();
         if (error) throw error;
+        if (table === 'tickets' && inserted) {
+          notifyNewTicket(inserted as Record<string, unknown>);
+        }
       }
       setModalOpen(false);
       load();
@@ -326,6 +329,29 @@ export function ListPage<T extends { id: string }>({
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function notifyNewTicket(ticket: Record<string, unknown>) {
+    // Fire-and-forget: notification failures must never block ticket
+    // creation itself. Silently no-ops if RESEND_API_KEY isn't configured.
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-ticket-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({
+          ticket_number: ticket.ticket_number || ticket.id,
+          subject: ticket.subject,
+          priority: ticket.priority,
+          description: ticket.description,
+        }),
+      });
+    } catch {
+      // ignore — best-effort notification only
     }
   }
 

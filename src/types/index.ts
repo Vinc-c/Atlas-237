@@ -19,6 +19,7 @@ export interface Organization {
   branding_enabled: boolean;
   signup_sales_code: string | null;
   status: string;
+  ai_provider: string;
   created_at: string;
   updated_at: string;
 }

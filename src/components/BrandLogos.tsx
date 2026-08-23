@@ -179,6 +179,42 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
           <path d="M12 9l2.2 1.3v2.6L12 14.2l-2.2-1.3v-2.6L12 9Z" fill="#DF0067" />
         </svg>
       );
+    case 'openai':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="OpenAI">
+          <rect width="24" height="24" rx="5" fill="#10A37F" />
+          <path d="M12 6.2a3.2 3.2 0 0 1 3.1 2.4 3 3 0 0 1 2 4.5 3.2 3.2 0 0 1-1.1 4.4 3 3 0 0 1-3.6 1.4 3.2 3.2 0 0 1-5.4-1.1 3 3 0 0 1-2-4.5 3.2 3.2 0 0 1 1.1-4.4A3 3 0 0 1 9.6 6.9 3.2 3.2 0 0 1 12 6.2Z" stroke="#fff" strokeWidth="1.2" fill="none" />
+          <circle cx="12" cy="12" r="1.6" fill="#fff" />
+        </svg>
+      );
+    case 'anthropic':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Anthropic Claude">
+          <rect width="24" height="24" rx="5" fill="#D97757" />
+          <path d="M8 16.5 11 7.5h2l3 9h-1.8l-.65-2h-3.1l-.65 2H8Zm3-3.4h2.05L12 9.6l-1.05 3.5Z" fill="#fff" />
+        </svg>
+      );
+    case 'gemini':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Google Gemini">
+          <rect width="24" height="24" rx="5" fill="#1A1A2E" />
+          <path d="M12 5c0 3.5 2.5 6 6 6-3.5 0-6 2.5-6 6 0-3.5-2.5-6-6-6 3.5 0 6-2.5 6-6Z" fill="url(#gemGrad)" />
+          <defs>
+            <linearGradient id="gemGrad" x1="6" y1="5" x2="18" y2="19" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#4285F4" />
+              <stop offset="0.5" stopColor="#9B72CB" />
+              <stop offset="1" stopColor="#D96570" />
+            </linearGradient>
+          </defs>
+        </svg>
+      );
+    case 'atlas':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Atlas AI">
+          <rect width="24" height="24" rx="5" fill="#0176d3" />
+          <path d="M12 6l-6 12h3l1.2-2.6h3.6L15 18h3L12 6Zm0 4.2 1.3 2.8h-2.6L12 10.2Z" fill="#fff" />
+        </svg>
+      );
     default:
       return (
         <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label={provider}>

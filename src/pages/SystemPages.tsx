@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import type { Factor } from '@supabase/supabase-js';
 import { Bell, ScrollText, CreditCard, Gauge, Sparkles, ArrowRight, CheckCircle2, Loader2, Upload, ShieldCheck, Building2, User, Lock, Image as ImageIcon, Smartphone, Monitor } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +10,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { initiateFlutterwaveCheckout, recordSubscription, isFlutterwaveConfigured } from '@/lib/flutterwave';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
+import { BrandLogo } from '@/components/BrandLogos';
 import { Loading } from '@/components/Loading';
 import { COUNTRIES, CURRENCIES, TIMEZONES } from '@/lib/i18n-countries';
 import { fetchRoles, createRole, deleteRole, setRolePermissions, fetchPermissions, MODULES, ACTIONS, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
@@ -144,7 +145,7 @@ export function AuditLogPage() {
 
 export function SettingsPage() {
   const { language, organization, profile, refreshOrg } = useAuth();
-  const [activeTab, setActiveTab] = useState<'account' | 'profile' | 'branding' | 'roles' | 'security'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'profile' | 'branding' | 'roles' | 'security' | 'ai'>('account');
 
   const tabs = [
     { key: 'account' as const, label: language === 'fr' ? 'Compte' : 'Account', icon: Building2 },
@@ -152,6 +153,7 @@ export function SettingsPage() {
     { key: 'branding' as const, label: language === 'fr' ? 'Branding' : 'Branding', icon: ImageIcon },
     { key: 'roles' as const, label: language === 'fr' ? 'Rôles & Permissions' : 'Roles & Permissions', icon: ShieldCheck },
     { key: 'security' as const, label: language === 'fr' ? 'Sécurité' : 'Security', icon: Lock },
+    { key: 'ai' as const, label: language === 'fr' ? 'Assistant IA' : 'AI Assistant', icon: Sparkles },
   ];
 
   return (
@@ -177,7 +179,88 @@ export function SettingsPage() {
         {activeTab === 'branding' && <BrandingTab language={language} organization={organization} onSave={refreshOrg} />}
         {activeTab === 'roles' && <RolesPermissionsTab language={language} organization={organization} />}
         {activeTab === 'security' && <SecurityTab language={language} />}
+        {activeTab === 'ai' && <AIProviderTab language={language} organization={organization} onSave={refreshOrg} />}
       </div>
+    </div>
+  );
+}
+
+/* ── AI Provider Tab ── */
+function AIProviderTab({ language, organization, onSave }: { language: Language; organization: Organization | null; onSave: () => Promise<void> }) {
+  const [provider, setProvider] = useState(organization?.ai_provider || 'platform_free');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [connected, setConnected] = useState<string[]>([]);
+
+  useEffect(() => {
+    setProvider(organization?.ai_provider || 'platform_free');
+  }, [organization?.ai_provider]);
+
+  useEffect(() => {
+    supabase.from('integrations').select('provider,status').in('provider', ['openai', 'anthropic', 'gemini']).eq('status', 'connected')
+      .then(({ data }) => setConnected((data || []).map((i: { provider: string }) => i.provider)));
+  }, []);
+
+  const options: { value: string; label: string; desc: string; byok: boolean }[] = [
+    { value: 'platform_free', label: language === 'fr' ? 'Atlas AI (gratuit)' : 'Atlas AI (free)', desc: language === 'fr' ? 'Inclus dans votre plan, aucune configuration requise.' : 'Included with your plan, no setup needed.', byok: false },
+    { value: 'openai', label: 'OpenAI (ChatGPT)', desc: language === 'fr' ? 'Utilise votre propre clé API OpenAI.' : 'Uses your own OpenAI API key.', byok: true },
+    { value: 'anthropic', label: 'Anthropic (Claude)', desc: language === 'fr' ? 'Utilise votre propre clé API Anthropic.' : 'Uses your own Anthropic API key.', byok: true },
+    { value: 'gemini', label: 'Google Gemini', desc: language === 'fr' ? 'Utilise votre propre clé API Gemini.' : 'Uses your own Gemini API key.', byok: true },
+  ];
+
+  async function save(next: string) {
+    if (!organization) return;
+    setProvider(next);
+    setSaving(true); setSaved(false);
+    const { error } = await supabase.from('organizations').update({ ai_provider: next }).eq('id', organization.id);
+    if (error) { alert(error.message); setSaving(false); return; }
+    setSaved(true);
+    await onSave();
+    setSaving(false);
+  }
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-1">
+        <Sparkles className="text-primary-500" size={24} />
+        <h3 className="font-bold text-ink-800">{language === 'fr' ? 'Choisissez votre IA' : 'Choose your AI'}</h3>
+      </div>
+      <p className="text-sm text-ink-500 mb-6">
+        {language === 'fr'
+          ? "Ask Atlas et les insights IA fonctionnent avec Atlas AI gratuitement. Pour utiliser un modèle payant (GPT, Claude, Gemini), connectez votre propre clé API dans Intégrations, puis sélectionnez-le ici."
+          : 'Ask Atlas and AI insights work with Atlas AI for free. To use a paid model (GPT, Claude, Gemini), connect your own API key in Integrations, then select it here.'}
+      </p>
+      <div className="space-y-3">
+        {options.map((opt) => {
+          const isConnected = !opt.byok || connected.includes(opt.value);
+          return (
+            <label key={opt.value} className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition ${provider === opt.value ? 'border-primary-400 bg-primary-50' : 'border-ink-200 hover:border-ink-300'} ${!isConnected ? 'opacity-60' : ''}`}>
+              <input
+                type="radio"
+                name="ai_provider"
+                checked={provider === opt.value}
+                disabled={!isConnected || saving}
+                onChange={() => save(opt.value)}
+                className="mt-1"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <BrandLogo provider={opt.value === 'platform_free' ? 'atlas' : opt.value} size={20} />
+                  <span className="font-semibold text-ink-800">{opt.label}</span>
+                  {opt.byok && !isConnected && (
+                    <span className="text-xs text-warning-700 bg-warning-50 rounded-full px-2 py-0.5">{language === 'fr' ? 'Non connecté' : 'Not connected'}</span>
+                  )}
+                </div>
+                <p className="text-xs text-ink-500 mt-0.5">{opt.desc}</p>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+      {saved && <p className="mt-4 text-xs text-success-600">{language === 'fr' ? 'Préférence enregistrée.' : 'Preference saved.'}</p>}
+      <Link to="/app/marketplace" className="mt-4 inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
+        {language === 'fr' ? 'Connecter une clé API IA' : 'Connect an AI API key'} →
+      </Link>
     </div>
   );
 }
