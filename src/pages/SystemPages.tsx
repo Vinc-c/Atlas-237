@@ -8,6 +8,7 @@ import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
 import { getErrorMessage } from '@/lib/errors';
 import { initiateFlutterwaveCheckout, recordSubscription, isFlutterwaveConfigured } from '@/lib/flutterwave';
+import { initiatePayunitCheckout, confirmPayunitPayment } from '@/lib/payunit';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { BrandLogo } from '@/components/BrandLogos';
@@ -865,8 +866,32 @@ export function BillingPage() {
   const lang = language;
   const [currentPlan, setCurrentPlan] = useState(organization?.plan || 'starter');
   const [busy, setBusy] = useState<string | null>(null);
+  const [payunitError, setPayunitError] = useState('');
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
+
+  // Returning from PayUnit's hosted payment page: confirm the real status
+  // server-side (never trust the redirect alone) before showing anything.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payunit_status') !== 'return') return;
+    const pendingTxId = sessionStorage.getItem('payunit_pending_tx');
+    if (!pendingTxId) return;
+    setVerifying(true);
+    confirmPayunitPayment(pendingTxId).then((res) => {
+      setVerifying(false);
+      sessionStorage.removeItem('payunit_pending_tx');
+      window.history.replaceState({}, '', window.location.pathname);
+      if (res.ok && res.status === 'SUCCESS') {
+        alert(lang === 'fr' ? 'Paiement confirmé !' : 'Payment confirmed!');
+      } else if (res.ok) {
+        alert(lang === 'fr' ? `Paiement non finalisé (statut: ${res.status}).` : `Payment not completed (status: ${res.status}).`);
+      } else {
+        alert(res.msg || (lang === 'fr' ? 'Impossible de confirmer le paiement.' : 'Could not confirm payment.'));
+      }
+    });
+  }, [lang]);
 
   const plans = [
     { name: 'Starter', key: 'starter', price: 19, features: [lang === 'fr' ? '5 employés IA' : '5 AI employees', lang === 'fr' ? '3 utilisateurs' : '3 users', lang === 'fr' ? 'Contacts illimités' : 'Unlimited contacts', lang === 'fr' ? 'Pipelines de ventes' : 'Sales pipelines', lang === 'fr' ? 'Support e-mail' : 'Email support'] },
@@ -900,6 +925,24 @@ export function BillingPage() {
     });
   }
 
+  async function payWithPayunit(plan: typeof plans[number]) {
+    if (!organization || plan.key === currentPlan) return;
+    if (plan.key === 'enterprise') {
+      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
+      return;
+    }
+    setPayunitError('');
+    setBusy(`payunit_${plan.key}`);
+    const result = await initiatePayunitCheckout({ plan: plan.key, orgId: organization.id, paymentCountry: organization.country || undefined });
+    if (!result.ok || !result.transactionUrl) {
+      setPayunitError(result.msg || (lang === 'fr' ? 'PayUnit indisponible pour le moment.' : 'PayUnit unavailable right now.'));
+      setBusy(null);
+      return;
+    }
+    sessionStorage.setItem('payunit_pending_tx', result.transactionUrl.split('/').pop() || '');
+    window.location.href = result.transactionUrl;
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader title={t('nav.billing', lang)} subtitle="" />
@@ -920,6 +963,14 @@ export function BillingPage() {
           <p className="mt-3 rounded-lg bg-warning-50 p-2 text-xs text-warning-700">
             {lang === 'fr' ? 'Paiement Flutterwave non configuré. Ajoutez VITE_FLW_PUBLIC_KEY dans les variables d\'environnement.' : 'Flutterwave payment not configured. Add VITE_FLW_PUBLIC_KEY to environment variables.'}
           </p>
+        )}
+        {verifying && (
+          <p className="mt-3 rounded-lg bg-primary-50 p-2 text-xs text-primary-700 flex items-center gap-2">
+            <Loader2 size={12} className="animate-spin" /> {lang === 'fr' ? 'Confirmation du paiement PayUnit...' : 'Confirming PayUnit payment...'}
+          </p>
+        )}
+        {payunitError && (
+          <p className="mt-3 rounded-lg bg-error-50 p-2 text-xs text-error-700">{payunitError}</p>
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -944,8 +995,18 @@ export function BillingPage() {
                 className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
               >
                 {busy === plan.key ? <Loader2 size={14} className="animate-spin" /> : null}
-                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : plan.key === 'enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Payer' : 'Pay')}
+                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : plan.key === 'enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Payer (Flutterwave)' : 'Pay (Flutterwave)')}
               </button>
+              {!isCurrent && plan.key !== 'enterprise' && (
+                <button
+                  onClick={() => payWithPayunit(plan)}
+                  disabled={busy !== null}
+                  className="btn-sm w-full mt-2 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 border border-ink-200 text-ink-700 hover:bg-ink-50"
+                >
+                  {busy === `payunit_${plan.key}` ? <Loader2 size={14} className="animate-spin" /> : null}
+                  {busy === `payunit_${plan.key}` ? (lang === 'fr' ? 'Redirection...' : 'Redirecting...') : (lang === 'fr' ? 'Payer (PayUnit — Mobile Money)' : 'Pay (PayUnit — Mobile Money)')}
+                </button>
+              )}
             </div>
           );
         })}
