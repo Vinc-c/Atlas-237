@@ -1,4 +1,4 @@
-import { Plug, Webhook, Plus, Check, Trash2, Ban, Copy, Key, ExternalLink, Eye, EyeOff, Send, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { Plug, Webhook, Plus, Check, Trash2, Ban, Copy, Key, ExternalLink, Eye, EyeOff, Send, Settings as SettingsIcon, Loader2, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +20,8 @@ interface AppDef {
   authType: 'oauth' | 'api_key' | 'webhook_url';
   configFields?: { key: string; label: string; placeholder: string; type?: string }[];
   docsUrl: string;
+  /** Only meaningful for category 'Payments' — drives the Cards/Mobile Money/Transfers sub-filter. */
+  paymentType?: 'cards' | 'mobile_money' | 'transfers';
 }
 
 const AVAILABLE_APPS: AppDef[] = [
@@ -64,6 +66,8 @@ export function MarketplacePage() {
   const [configData, setConfigData] = useState<Record<string, string>>({});
   const [connecting, setConnecting] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [paymentSubFilter, setPaymentSubFilter] = useState<'all' | 'cards' | 'mobile_money' | 'transfers'>('all');
   const [customAppOpen, setCustomAppOpen] = useState(false);
   const [customApp, setCustomApp] = useState({
     name: '', baseUrl: '', authType: 'bearer' as 'none' | 'bearer' | 'api_key_header' | 'basic',
@@ -189,7 +193,30 @@ export function MarketplacePage() {
   }
 
   const categories = ['all', ...Array.from(new Set(AVAILABLE_APPS.map(a => a.category)))];
-  const filtered = filter === 'all' ? AVAILABLE_APPS : AVAILABLE_APPS.filter(a => a.category === filter);
+  const filtered = AVAILABLE_APPS
+    .filter(a => filter === 'all' || a.category === filter)
+    .filter(a => filter !== 'Payments' || paymentSubFilter === 'all' || a.paymentType === paymentSubFilter)
+    .filter(a => !search.trim() || a.name.toLowerCase().includes(search.trim().toLowerCase()));
+
+  const categoryLabels: Record<string, string> = {
+    all: lang === 'fr' ? 'Tous' : 'All',
+    AI: 'IA',
+    Accounting: lang === 'fr' ? 'Comptabilité' : 'Accounting',
+    Email: 'Email',
+    Payments: lang === 'fr' ? 'Paiements' : 'Payments',
+    Communication: lang === 'fr' ? 'Communication' : 'Communication',
+    Messaging: 'Messaging',
+    Video: lang === 'fr' ? 'Vidéo' : 'Video',
+    Scheduling: 'Scheduling',
+    'CRM Sync': 'CRM Sync',
+    Marketing: 'Marketing',
+    'SMS/Voice': 'SMS/Voice',
+    'E-commerce': 'E-commerce',
+    Automation: lang === 'fr' ? 'Automatisation' : 'Automation',
+    Support: lang === 'fr' ? 'Support client' : 'Customer Support',
+    Storage: lang === 'fr' ? 'Stockage' : 'Storage',
+    'Project Management': lang === 'fr' ? 'Gestion de projet' : 'Project Management',
+  };
 
   return (
     <div className="animate-fade-in">
@@ -202,13 +229,40 @@ export function MarketplacePage() {
           </button>
         }
       />
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="mb-4 relative max-w-md">
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+        <input
+          className="input pl-9"
+          placeholder={lang === 'fr' ? 'Rechercher une intégration...' : 'Search integrations...'}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-wrap gap-2 mb-3">
         {categories.map(c => (
-          <button key={c} onClick={() => setFilter(c)} className={`btn-sm px-3 py-1.5 rounded-lg font-medium capitalize ${filter === c ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
-            {c}
+          <button key={c} onClick={() => { setFilter(c); setPaymentSubFilter('all'); }} className={`btn-sm px-3 py-1.5 rounded-lg font-medium ${filter === c ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
+            {categoryLabels[c] || c}
           </button>
         ))}
       </div>
+      {filter === 'Payments' && (
+        <div className="flex flex-wrap gap-2 mb-4 pl-1">
+          {([
+            { key: 'all', label: lang === 'fr' ? 'Tous' : 'All' },
+            { key: 'cards', label: lang === 'fr' ? 'Cartes bancaires' : 'Cards' },
+            { key: 'mobile_money', label: 'Mobile Money' },
+            { key: 'transfers', label: lang === 'fr' ? 'Virements' : 'Transfers' },
+          ] as const).map(sf => (
+            <button key={sf.key} onClick={() => setPaymentSubFilter(sf.key)} className={`text-xs px-2.5 py-1 rounded-full font-medium border ${paymentSubFilter === sf.key ? 'border-primary-400 bg-primary-50 text-primary-700' : 'border-ink-200 text-ink-500 hover:bg-ink-50'}`}>
+              {sf.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-ink-400 mb-3">
+        {filtered.length} {lang === 'fr' ? 'intégration' + (filtered.length !== 1 ? 's' : '') : 'integration' + (filtered.length !== 1 ? 's' : '')}
+        {filter !== 'all' ? ` ${lang === 'fr' ? 'dans' : 'in'} ${categoryLabels[filter] || filter}` : ''}
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtered.map(app => {
           const isConnected = connected.includes(app.provider);
