@@ -13,15 +13,17 @@ import { useAuth } from '@/context/AuthContext';
  * lives in exactly one place.
  */
 export function usePlanAccess() {
-  const { organization, isSuperAdmin } = useAuth();
+  const { organization, isSuperAdmin, isPlatformExempt } = useAuth();
   const plan = organization?.plan || 'starter';
-  const features = isSuperAdmin ? UNLIMITED_FEATURES : getPlanFeatures(plan);
+  const exempt = isSuperAdmin || isPlatformExempt;
+  const features = exempt ? UNLIMITED_FEATURES : getPlanFeatures(plan);
   return {
     plan,
     isSuperAdmin,
+    isPlatformExempt,
     features,
     hasFeature: (feature: keyof Omit<PlanFeatures, 'maxContacts' | 'maxAIEmployees' | 'maxUsers'>) =>
-      isSuperAdmin ? true : hasFeature(plan, feature),
+      exempt ? true : hasFeature(plan, feature),
   };
 }
 

@@ -14,6 +14,7 @@ interface AuthContextValue {
   setLanguage: (lang: Language) => void;
   signOut: () => Promise<void>;
   isSuperAdmin: boolean;
+  isPlatformExempt: boolean;
   brandingLogoUrl: string | null;
   refreshOrg: () => Promise<void>;
 }
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isPlatformExempt, setIsPlatformExempt] = useState(false);
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('atlas-lang');
     return (stored as Language) || 'en';
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
           setOrganization(null);
           setIsSuperAdmin(false);
+          setIsPlatformExempt(false);
           setLoading(false);
         }
       })();
@@ -62,6 +65,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function loadProfile(userId: string, email?: string) {
+    // Resolve super admin / platform-staff exemption status first and
+    // independently of the tenant profile lookup below — platform staff
+    // may not always have a tenant `profiles` row, and this status must
+    // never be skipped just because that lookup comes back empty.
+    if (email) {
+      try {
+        await supabase.rpc('link_super_admin', { login_email: email, login_user_id: userId });
+      } catch { /* ignore if function doesn't exist yet */ }
+    }
+    try {
+      const { data: saFlag } = await supabase.rpc('is_super_admin', { check_user_id: userId });
+      setIsSuperAdmin(Boolean(saFlag));
+      if (saFlag) {
+        setIsPlatformExempt(true);
+      } else {
+        try {
+          const { data: exemptFlag } = await supabase.rpc('is_platform_exempt', { check_user_id: userId });
+          setIsPlatformExempt(Boolean(exemptFlag));
+        } catch { /* function may not exist yet */ }
+      }
+    } catch {
+      // Fallback: check by email in super_admins table
+      if (email) {
+        const { data: saRow } = await supabase
+          .from('super_admins')
+          .select('id')
+          .eq('email', email)
+          .eq('active', true)
+          .maybeSingle();
+        setIsSuperAdmin(Boolean(saRow));
+        setIsPlatformExempt(Boolean(saRow));
+      }
+    }
+
     const { data: prof, error } = await supabase
       .from('profiles')
       .select('*')
@@ -84,28 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setOrganization(org as Organization);
     setLoading(false);
-
-    // Link super admin on login + check status
-    if (email) {
-      try {
-        await supabase.rpc('link_super_admin', { login_email: email, login_user_id: userId });
-      } catch { /* ignore if function doesn't exist yet */ }
-    }
-    try {
-      const { data: saFlag } = await supabase.rpc('is_super_admin', { check_user_id: userId });
-      setIsSuperAdmin(Boolean(saFlag));
-    } catch {
-      // Fallback: check by email in super_admins table
-      if (email) {
-        const { data: saRow } = await supabase
-          .from('super_admins')
-          .select('id')
-          .eq('email', email)
-          .eq('active', true)
-          .maybeSingle();
-        setIsSuperAdmin(Boolean(saRow));
-      }
-    }
   }
 
   async function refreshOrg() {
@@ -128,12 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setOrganization(null);
     setIsSuperAdmin(false);
+    setIsPlatformExempt(false);
   }
 
   const brandingLogoUrl = organization?.logo_url && organization.branding_enabled ? organization.logo_url : null;
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, organization, loading, language, setLanguage, signOut, isSuperAdmin, brandingLogoUrl, refreshOrg }}>
+    <AuthContext.Provider value={{ session, user, profile, organization, loading, language, setLanguage, signOut, isSuperAdmin, isPlatformExempt, brandingLogoUrl, refreshOrg }}>
       {children}
     </AuthContext.Provider>
   );
