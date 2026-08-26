@@ -22,11 +22,11 @@ const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: stri
   blog: { icon: BookOpen, title: { en: 'Blog', fr: 'Blog' }, updated: '2026-08-08' },
   gdpr: { icon: Database, title: { en: 'GDPR / RGPD Compliance', fr: 'Conformité RGPD' }, updated: '2026-08-08' },
   pledge: { icon: Heart, title: { en: 'Pledge 1%', fr: 'Pledge 1%' }, updated: '2026-08-08' },
-  'sales-cloud': { icon: Activity, title: { en: 'Sales Cloud', fr: 'Sales Cloud' }, updated: '2026-08-08' },
-  'service-cloud': { icon: Activity, title: { en: 'Service Cloud', fr: 'Service Cloud' }, updated: '2026-08-08' },
-  agentforce: { icon: Activity, title: { en: 'Agentforce', fr: 'Agentforce' }, updated: '2026-08-08' },
-  'data-360': { icon: Database, title: { en: 'Data 360', fr: 'Data 360' }, updated: '2026-08-08' },
-  tableau: { icon: BookOpen, title: { en: 'Tableau Analytics', fr: 'Tableau Analytics' }, updated: '2026-08-08' },
+  'sales-cloud': { icon: Activity, title: { en: 'Atlas Sales', fr: 'Atlas Sales' }, updated: '2026-08-08' },
+  'service-cloud': { icon: Activity, title: { en: 'Atlas Service', fr: 'Atlas Service' }, updated: '2026-08-08' },
+  agentforce: { icon: Activity, title: { en: 'Atlas AI Workforce', fr: 'Atlas AI Workforce' }, updated: '2026-08-08' },
+  'data-360': { icon: Database, title: { en: 'Atlas Data Hub', fr: 'Atlas Data Hub' }, updated: '2026-08-08' },
+  tableau: { icon: BookOpen, title: { en: 'Atlas Dashboards', fr: 'Atlas Dashboards' }, updated: '2026-08-08' },
 };
 
 function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | 'pt' | 'ar' }) {
@@ -81,7 +81,8 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
       return (
         <>
           {h2(fr ? 'Sécurité de la plateforme' : 'Platform Security', '')}
-          <ul><li>{fr ? 'Chiffrement TLS 1.3 en transit, AES-256 au repos' : 'TLS 1.3 encryption in transit, AES-256 at rest'}</li><li>{fr ? 'Authentification SSO/SAML et OAuth2' : 'SSO/SAML and OAuth2 authentication'}</li><li>{fr ? 'Row-Level Security (RLS) sur toutes les données' : 'Row-Level Security (RLS) on all data'}</li><li>{fr ? 'Audit logs complets et traçabilité' : 'Comprehensive audit logs and traceability'}</li><li>{fr ? 'Conformité RGPD/GDPR, SOC 2 Type II' : 'GDPR compliance, SOC 2 Type II'}</li></ul>
+          <ul><li>{fr ? 'Chiffrement TLS 1.3 en transit, AES-256 au repos' : 'TLS 1.3 encryption in transit, AES-256 at rest'}</li><li>{fr ? 'Authentification SSO/SAML et OAuth2' : 'SSO/SAML and OAuth2 authentication'}</li><li>{fr ? 'Row-Level Security (RLS) sur toutes les données, isolation stricte par organisation' : 'Row-Level Security (RLS) on all data, strict per-organization isolation'}</li><li>{fr ? 'Audit logs complets et traçabilité' : 'Comprehensive audit logs and traceability'}</li><li>{fr ? 'Pratiques conformes au RGPD/GDPR' : 'GDPR-aligned practices'}</li></ul>
+          <p className="mt-4 text-sm text-ink-500">{fr ? 'Une certification SOC 2 Type II n\'est pas encore obtenue ; elle fait partie de notre feuille de route sécurité.' : 'SOC 2 Type II certification has not yet been obtained; it is on our security roadmap.'}</p>
           {h2(fr ? 'Signaler une vulnérabilité' : 'Report a Vulnerability', '')}
           <p>{fr ? 'Contactez security@liafrik.com pour signaler une faille de sécurité.' : 'Contact security@liafrik.com to report a security vulnerability.'}</p>
         </>

@@ -10,11 +10,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
 const cloudProducts = [
-  { icon: MessageSquare, name: 'Slack', desc: { fr: 'Connectez workflows et données conversationnelles là où le travail se fait.', en: 'Connect workflows and conversational data where work happens.' } },
-  { icon: BarChart3, name: 'Tableau', desc: { fr: 'Transformez l’analytique agentique en intelligence actionable.', en: 'Turn agentic analytics into actionable intelligence.' } },
-  { icon: Bot, name: 'Agentforce', desc: { fr: 'Créez des expériences agentiques de confiance qui agissent avec intention.', en: 'Build trusted agentic experiences that act with intention.' } },
-  { icon: Cloud, name: 'Customer 360', desc: { fr: 'Ancrez chaque décision dans un contexte métier éprouvé.', en: 'Anchor every decision in proven business context.' } },
-  { icon: Database, name: 'Data 360', desc: { fr: 'Une fondation de données gouvernée, unifiée et fiable.', en: 'A governed, unified, and trusted data foundation.' } },
+  { icon: MessageSquare, name: { fr: 'Slack', en: 'Slack' }, desc: { fr: 'Connectez workflows et données conversationnelles là où le travail se fait.', en: 'Connect workflows and conversational data where work happens.' } },
+  { icon: BarChart3, name: { fr: 'Atlas Dashboards', en: 'Atlas Dashboards' }, desc: { fr: 'Transformez l’analytique agentique en intelligence actionable.', en: 'Turn agentic analytics into actionable intelligence.' } },
+  { icon: Bot, name: { fr: 'Atlas AI Workforce', en: 'Atlas AI Workforce' }, desc: { fr: 'Créez des expériences agentiques de confiance qui agissent avec intention.', en: 'Build trusted agentic experiences that act with intention.' } },
+  { icon: Cloud, name: { fr: 'Atlas 360', en: 'Atlas 360' }, desc: { fr: 'Ancrez chaque décision dans un contexte métier éprouvé.', en: 'Anchor every decision in proven business context.' } },
+  { icon: Database, name: { fr: 'Atlas Data Hub', en: 'Atlas Data Hub' }, desc: { fr: 'Une fondation de données gouvernée, unifiée et fiable.', en: 'A governed, unified, and trusted data foundation.' } },
 ];
 
 const industries = [
@@ -29,9 +29,9 @@ const industries = [
 ];
 
 const reports = [
-  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Agentforce délivre un ROI plus rapide et à moindre coût qu’une approche DIY', en: 'Agentforce delivers faster ROI at lower cost than a DIY approach' }, cta: { fr: 'Lire le rapport Valoir', en: 'Read Valoir report' } },
-  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Salesforce est élu n°1 des éditeurs logiciers mondiaux sur G2', en: 'Salesforce named #1 global software vendor on G2' }, cta: { fr: 'Lire le rapport G2', en: 'Read G2 report' } },
-  { tag: { fr: 'Rapport', en: 'Report' }, title: { fr: 'Pourquoi Agentforce est le chemin le plus rapide vers la valeur entreprise', en: 'Why Agentforce is the fastest path to enterprise value' }, cta: { fr: 'Lire le rapport Futurum', en: 'Read Futurum report' } },
+  { tag: { fr: 'Guide', en: 'Guide' }, title: { fr: 'Comment l’IA agentique change la manière de vendre en 2026', en: 'How agentic AI is changing the way teams sell in 2026' }, cta: { fr: 'Lire le guide', en: 'Read the guide' } },
+  { tag: { fr: 'Étude de cas', en: 'Case study' }, title: { fr: 'Comment Sahara Logistics a fermé 30% de deals en plus avec Atlas CRM', en: 'How Sahara Logistics closed 30% more deals with Atlas CRM' }, cta: { fr: 'Lire l’étude de cas', en: 'Read the case study' } },
+  { tag: { fr: 'Product tour', en: 'Product tour' }, title: { fr: 'Découvrez les agents IA d’Atlas CRM en action', en: 'See Atlas CRM’s AI agents in action' }, cta: { fr: 'Voir la démo', en: 'Watch the demo' } },
 ];
 
 const plans = [
@@ -46,7 +46,7 @@ type Row = { label: { fr: string; en: string }; values: (boolean | string)[] };
 const faqs = [
   { q: 'Qu’est-ce qu’Atlas CRM ?', qEn: 'What is Atlas CRM?', a: 'Atlas CRM est la plateforme de gestion de la relation client n°1 propulsée par l’IA agentique. Elle réunit entreprises et clients via un ensemble unifié d’applications — alimentées par l’IA agentique et la donnée — qui aident chaque département (ventes, service, marketing, commerce, IT) à travailler comme un seul.', aEn: 'Atlas CRM is the #1 customer relationship management platform powered by agentic AI. It brings together companies and customers through a unified suite of applications — powered by agentic AI and data — that helps every department (sales, service, marketing, commerce, IT) work as one.' },
   { q: 'Qu’est-ce qu’un CRM et pourquoi en ai-je besoin ?', qEn: 'What is a CRM and why do I need one?', a: 'Un CRM gère toutes les relations et interactions de votre entreprise avec ses clients. Il vous aide à organiser les contacts, automatiser les tâches (logs d’appels, relances) et analyser les données pour comprendre le comportement client — vous donnant une vue à 360° de chaque client.', aEn: 'A CRM manages all your company’s relationships and interactions with customers. It helps you organize contacts, automate tasks (call logs, follow-ups), and analyze data to understand customer behavior — giving you a 360° view of every customer.' },
-  { q: 'Qu’est-ce que l’IA agentique et comment l’utilise Atlas CRM ?', qEn: 'What is agentic AI and how does Atlas CRM use it?', a: 'L’IA agentique désigne des systèmes d’IA capables d’agir de manière autonome pour atteindre un objectif. Dans Atlas CRM (via Agentforce), elle automatise des workflows complexes (qualification de leads, résolution de tickets), prédit les résultats et personnalise chaque interaction client.', aEn: 'Agentic AI refers to AI systems capable of acting autonomously to achieve a goal. In Atlas CRM (via Agentforce), it automates complex workflows (lead qualification, ticket resolution), predicts outcomes, and personalizes every customer interaction.' },
+  { q: 'Qu’est-ce que l’IA agentique et comment l’utilise Atlas CRM ?', qEn: 'What is agentic AI and how does Atlas CRM use it?', a: 'L’IA agentique désigne des systèmes d’IA capables d’agir de manière autonome pour atteindre un objectif. Dans Atlas CRM (via Atlas AI Workforce), elle automatise des workflows complexes (qualification de leads, résolution de tickets), prédit les résultats et personnalise chaque interaction client.', aEn: 'Agentic AI refers to AI systems capable of acting autonomously to achieve a goal. In Atlas CRM (via Atlas AI Workforce), it automates complex workflows (lead qualification, ticket resolution), predicts outcomes, and personalizes every customer interaction.' },
   { q: 'Comment Atlas CRM aide-t-il ma PME à grandir ?', qEn: 'How does Atlas CRM help my SMB grow?', a: 'Atlas CRM propose des solutions adaptées à toutes les tailles. La plateforme flexible vous permet de démarrer avec l’essentiel (ventes, service, marketing) puis d’ajouter des fonctions à mesure que vous grandissez — vous ne payez que ce que vous utilisez.', aEn: 'Atlas CRM offers solutions for all sizes. The flexible platform lets you start with the essentials (sales, service, marketing) and add capabilities as you grow — you only pay for what you use.' },
 ];
 
@@ -79,7 +79,7 @@ export function LandingPage() {
     {
       group: { fr: 'Automatisation & IA', en: 'Automation & AI' },
       rows: [
-        { label: { fr: 'Agents pré-construits (Agentforce)', en: 'Pre-built agents (Agentforce)' }, values: [true, true, true, true] },
+        { label: { fr: 'Agents IA pré-construits' , en: 'Pre-built AI agents' }, values: [true, true, true, true] },
         { label: { fr: 'Automations / workflows', en: 'Automations / workflows' }, values: [false, true, true, true] },
         { label: { fr: 'Analyses prédictives', en: 'Predictive analytics' }, values: [false, false, true, true] },
         { label: { fr: 'Workflows personnalisés', en: 'Custom workflows' }, values: [false, false, true, true] },
@@ -194,12 +194,12 @@ export function LandingPage() {
           </div>
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {cloudProducts.map((p) => (
-              <div key={p.name} className="group reveal flex gap-4 rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-600/5">
+              <div key={p.name[contentLang]} className="group reveal flex gap-4 rounded-2xl border border-ink-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-600/5">
                 <div className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition group-hover:scale-110 group-hover:bg-primary-600 group-hover:text-white">
                   <p.icon size={22} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-ink-900">{p.name}</h3>
+                  <h3 className="text-lg font-bold text-ink-900">{p.name[contentLang]}</h3>
                   <p className="mt-1.5 text-sm leading-6 text-ink-600">{p.desc[contentLang]}</p>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export function LandingPage() {
               <div className="reveal rounded-2xl bg-white/10 p-8 backdrop-blur-sm">
                 <div className="grid gap-4">
                   {[
-                    [lang === 'fr' ? 'Conversations gérées par Agentforce' : 'Agentforce conversations handled', '4M+'],
+                    [lang === 'fr' ? 'Conversations gérées par l’IA' : 'AI-handled conversations', '4M+'],
                     [lang === 'fr' ? 'Résolution autonome des cas' : 'Autonomous case resolution', '66%'],
                     [lang === 'fr' ? 'Pipeline marketing supplémentaire' : 'Additional marketing pipeline', '+15%'],
                     [lang === 'fr' ? 'Conversion de leads' : 'Lead conversion', '1.8x'],
@@ -296,9 +296,9 @@ export function LandingPage() {
           {/* Layered architecture diagram */}
           <div className="reveal mx-auto mt-14 max-w-3xl space-y-3">
             {[
-              { label: 'Agentforce', desc: lang === 'fr' ? 'IA agentique au-dessus de tout' : 'Agentic AI on top of everything', color: 'bg-primary-600 text-white' },
+              { label: lang === 'fr' ? 'Atlas AI Workforce' : 'Atlas AI Workforce', desc: lang === 'fr' ? 'IA agentique au-dessus de tout' : 'Agentic AI on top of everything', color: 'bg-primary-600 text-white' },
               { label: lang === 'fr' ? 'Produits (Ventes, Service, Marketing, Commerce)' : 'Products (Sales, Service, Marketing, Commerce)', desc: lang === 'fr' ? 'Bâtis sur la donnée et la confiance' : 'Built on data and trust', color: 'bg-primary-100 text-primary-800' },
-              { label: 'Data 360', desc: lang === 'fr' ? 'Fondation de données gouvernée et unifiée' : 'Governed, unified data foundation', color: 'bg-primary-50 text-primary-800' },
+              { label: lang === 'fr' ? 'Atlas Data Hub' : 'Atlas Data Hub', desc: lang === 'fr' ? 'Fondation de données gouvernée et unifiée' : 'Governed, unified data foundation', color: 'bg-primary-50 text-primary-800' },
               { label: lang === 'fr' ? 'Plateforme Atlas' : 'Atlas Platform', desc: lang === 'fr' ? 'Workflows, IA, sécurité & métadonnées' : 'Workflows, AI, security & metadata', color: 'bg-ink-100 text-ink-700' },
             ].map((layer) => (
               <div key={layer.label} className={`rounded-xl px-6 py-4 transition hover:scale-[1.02] ${layer.color}`}>
@@ -338,10 +338,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ───────── Analyst reports ───────── */}
+        {/* ───────── Resources ───────── */}
         <section className="mx-auto max-w-7xl px-6 py-20 md:px-10 lg:py-24">
           <div className="reveal mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-ink-950 sm:text-4xl">{lang === 'fr' ? 'Pourquoi les analystes s’accordent : Atlas CRM doit être votre partenaire IA agentique' : 'Why analysts agree: Atlas CRM must be your agentic AI partner'}</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-ink-950 sm:text-4xl">{lang === 'fr' ? 'Découvrez Atlas CRM en profondeur' : 'Go deeper with Atlas CRM'}</h2>
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {reports.map((r) => (
@@ -494,11 +494,11 @@ export function LandingPage() {
             </div>
             {[
               { h: lang === 'fr' ? 'Produit' : 'Product', links: [
-                { l: 'Sales Cloud', to: '/legal/sales-cloud' },
-                { l: 'Service Cloud', to: '/legal/service-cloud' },
-                { l: 'Agentforce', to: '/legal/agentforce' },
-                { l: 'Data 360', to: '/legal/data-360' },
-                { l: 'Tableau', to: '/legal/tableau' },
+                { l: lang === 'fr' ? 'Atlas Sales' : 'Atlas Sales', to: '/legal/sales-cloud' },
+                { l: lang === 'fr' ? 'Atlas Service' : 'Atlas Service', to: '/legal/service-cloud' },
+                { l: lang === 'fr' ? 'Atlas AI Workforce' : 'Atlas AI Workforce', to: '/legal/agentforce' },
+                { l: lang === 'fr' ? 'Atlas Data Hub' : 'Atlas Data Hub', to: '/legal/data-360' },
+                { l: lang === 'fr' ? 'Atlas Dashboards' : 'Atlas Dashboards', to: '/legal/tableau' },
               ] },
               { h: lang === 'fr' ? 'Ressources' : 'Resources', links: [
                 { l: lang === 'fr' ? 'Tarifs' : 'Pricing', to: '/legal/pricing' },
