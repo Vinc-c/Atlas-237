@@ -38,9 +38,7 @@ export function UpgradeGate({ language, feature, minPlan }: UpgradeGateProps) {
           : `${feature} is available starting on the ${PLAN_LABEL[minPlan]} plan.`}
       </p>
       <p className="text-xs text-ink-400 max-w-sm mb-5">
-        {price.monthly >= 0
-          ? (fr ? `À partir de $${price.monthly}/mois.` : `Starting at $${price.monthly}/mo.`)
-          : (fr ? 'Tarification personnalisée.' : 'Custom pricing.')}
+        {fr ? `À partir de $${price.monthly}/mois.` : `Starting at $${price.monthly}/mo.`}
       </p>
       <Link to="/app/billing" className="btn-primary btn-sm">
         {fr ? 'Voir les plans' : 'View plans'} <ArrowRight size={14} />

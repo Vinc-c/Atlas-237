@@ -38,7 +38,7 @@ const plans = [
   { name: 'Starter', monthly: 19, tagline: { fr: 'Pour démarrer', en: 'To get started' }, desc: { fr: 'Ventes, service et marketing avec des agents pré-construits.', en: 'Sales, service and marketing with pre-built agents.' }, cta: { fr: 'Commencer', en: 'Get started' }, popular: false },
   { name: 'Growth', monthly: 49, tagline: { fr: 'Le plus populaire', en: 'Most popular' }, desc: { fr: 'Automatisation, campagnes et croissance commerciale.', en: 'Automation, campaigns and business growth.' }, cta: { fr: 'Choisir Growth', en: 'Choose Growth' }, popular: true },
   { name: 'Pro', monthly: 119, tagline: { fr: 'Haute performance', en: 'High performance' }, desc: { fr: 'Analyses IA, support prioritaire et workflows avancés.', en: 'AI analytics, priority support and advanced workflows.' }, cta: { fr: 'Choisir Pro', en: 'Choose Pro' }, popular: false },
-  { name: 'Enterprise', monthly: null, tagline: { fr: 'Sur mesure', en: 'Custom' }, desc: { fr: 'Solution dédiée, API illimitée et accompagnement.', en: 'Dedicated solution, unlimited API and support.' }, cta: { fr: 'Contacter les ventes', en: 'Contact sales' }, popular: false },
+  { name: 'Enterprise', monthly: 219, tagline: { fr: 'Le plus complet', en: 'Most complete' }, desc: { fr: 'Solution dédiée, API illimitée et accompagnement.', en: 'Dedicated solution, unlimited API and support.' }, cta: { fr: 'Choisir Enterprise', en: 'Choose Enterprise' }, popular: false },
 ];
 
 type Row = { label: { fr: string; en: string }; values: (boolean | string)[] };
@@ -142,8 +142,11 @@ export function LandingPage() {
         <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
           <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-200/40 blur-3xl animate-pulse-slow" />
           <div className="absolute -left-24 top-40 h-80 w-80 rounded-full bg-accent-200/20 blur-3xl" />
-          <div className="relative mx-auto max-w-4xl px-6 py-20 text-center md:px-10 lg:py-28">
-            <h1 className="animate-fade-in-up text-4xl font-bold leading-[1.08] tracking-tight text-ink-950 sm:text-6xl">
+          <div className="relative mx-auto max-w-4xl px-6 pt-20 pb-14 text-center md:px-10 lg:pt-28 lg:pb-16">
+            <span className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-primary-200 bg-white/80 px-4 py-1.5 text-xs font-semibold text-primary-700 shadow-sm backdrop-blur-sm">
+              <Zap size={13} className="text-primary-600" /> {lang === 'fr' ? 'Propulsé par l’IA agentique' : 'Powered by agentic AI'}
+            </span>
+            <h1 className="animate-fade-in-up mt-6 text-4xl font-bold leading-[1.08] tracking-tight text-ink-950 sm:text-6xl" style={{ animationDelay: '0.05s' }}>
               {lang === 'fr' ? <>Commencez avec le <span className="text-primary-600">CRM agentique n°1</span></> : <>Get started with the <span className="text-primary-600">#1 Agentic CRM</span></>}
             </h1>
             <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink-600" style={{ animationDelay: '0.1s' }}>
@@ -160,6 +163,26 @@ export function LandingPage() {
               </Link>
             </div>
             <p className="mt-5 text-xs text-ink-500">{lang === 'fr' ? 'Rien à installer · Sans carte bancaire · 14 jours gratuits' : 'Nothing to install · No credit card · 14-day free trial'}</p>
+          </div>
+          <div className="reveal relative border-t border-ink-100/80 bg-white/60 py-8 backdrop-blur-sm">
+            <div className="mx-auto max-w-5xl px-6 md:px-10">
+              <p className="text-center text-xs font-semibold uppercase tracking-wide text-ink-400">
+                {lang === 'fr' ? 'La confiance de plus de 500 entreprises à Dubai, en Afrique et au-delà' : 'Trusted by 500+ businesses across Dubai, Africa, and beyond'}
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-6 sm:grid-cols-4">
+                {[
+                  { v: '500+', l: { fr: 'Entreprises actives', en: 'Active companies' } },
+                  { v: '2.4M+', l: { fr: 'Contacts gérés', en: 'Contacts managed' } },
+                  { v: '99.9%', l: { fr: 'Disponibilité', en: 'Uptime' } },
+                  { v: '4.9/5', l: { fr: 'Satisfaction client', en: 'Customer rating' } },
+                ].map((stat) => (
+                  <div key={stat.v} className="text-center">
+                    <p className="text-2xl font-bold text-ink-950 sm:text-3xl">{stat.v}</p>
+                    <p className="mt-1 text-xs text-ink-500">{stat.l[contentLang]}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

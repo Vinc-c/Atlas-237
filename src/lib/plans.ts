@@ -144,7 +144,7 @@ export const PLAN_PRICES: Record<Plan, { monthly: number; label: string }> = {
   starter: { monthly: 19, label: 'Starter' },
   growth: { monthly: 49, label: 'Growth' },
   pro: { monthly: 119, label: 'Pro' },
-  enterprise: { monthly: -1, label: 'Enterprise' },
+  enterprise: { monthly: 219, label: 'Enterprise' },
 };
 
 export function getPlanFeatures(plan: Plan): PlanFeatures {

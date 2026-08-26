@@ -897,15 +897,11 @@ export function BillingPage() {
     { name: 'Starter', key: 'starter', price: 19, features: [lang === 'fr' ? '5 employés IA' : '5 AI employees', lang === 'fr' ? '3 utilisateurs' : '3 users', lang === 'fr' ? 'Contacts illimités' : 'Unlimited contacts', lang === 'fr' ? 'Pipelines de ventes' : 'Sales pipelines', lang === 'fr' ? 'Support e-mail' : 'Email support'] },
     { name: 'Growth', key: 'growth', price: 49, features: [lang === 'fr' ? '15 employés IA' : '15 AI employees', lang === 'fr' ? '10 utilisateurs' : '10 users', lang === 'fr' ? 'Analytique avancée' : 'Advanced analytics', lang === 'fr' ? 'Support prioritaire' : 'Priority support', lang === 'fr' ? 'Accès API & Webhooks' : 'API access & Webhooks'] },
     { name: 'Pro', key: 'pro', price: 119, features: [lang === 'fr' ? 'Employés IA illimités' : 'Unlimited AI employees', lang === 'fr' ? '25 utilisateurs' : '25 users', lang === 'fr' ? 'Tableaux de bord personnalisés' : 'Custom dashboards', lang === 'fr' ? 'SSO & SAML' : 'SSO & SAML', lang === 'fr' ? 'Support 24/7 + SLA' : '24/7 support + SLA'] },
-    { name: 'Enterprise', key: 'enterprise', price: -1, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
+    { name: 'Enterprise', key: 'enterprise', price: 219, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
   ] as const;
 
   async function changePlan(plan: typeof plans[number]) {
     if (!organization || plan.key === currentPlan) return;
-    if (plan.key === 'enterprise') {
-      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
-      return;
-    }
     setBusy(plan.key);
     initiateFlutterwaveCheckout({
       plan: plan.key,
@@ -927,10 +923,6 @@ export function BillingPage() {
 
   async function payWithPayunit(plan: typeof plans[number]) {
     if (!organization || plan.key === currentPlan) return;
-    if (plan.key === 'enterprise') {
-      window.location.href = 'mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan';
-      return;
-    }
     setPayunitError('');
     setBusy(`payunit_${plan.key}`);
     const result = await initiatePayunitCheckout({ plan: plan.key, orgId: organization.id, paymentCountry: organization.country || undefined });
@@ -980,7 +972,7 @@ export function BillingPage() {
             <div key={plan.name} className={`card p-6 ${isCurrent ? 'border-primary-300 ring-2 ring-primary-100' : ''}`}>
               <h3 className="font-bold text-ink-800">{plan.name}</h3>
               <p className="text-2xl font-bold text-ink-900 mt-2">
-                {plan.price === -1 ? (lang === 'fr' ? 'Sur devis' : 'Custom') : `$${plan.price}/${lang === 'fr' ? 'mois' : 'mo'}`}
+                {`$${plan.price}/${lang === 'fr' ? 'mois' : 'mo'}`}
               </p>
               <ul className="mt-4 space-y-2">
                 {plan.features.map(f => (
@@ -995,9 +987,9 @@ export function BillingPage() {
                 className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
               >
                 {busy === plan.key ? <Loader2 size={14} className="animate-spin" /> : null}
-                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : plan.key === 'enterprise' ? (lang === 'fr' ? 'Contacter' : 'Contact Sales') : (lang === 'fr' ? 'Payer (Flutterwave)' : 'Pay (Flutterwave)')}
+                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : (lang === 'fr' ? 'Payer (Flutterwave)' : 'Pay (Flutterwave)')}
               </button>
-              {!isCurrent && plan.key !== 'enterprise' && (
+              {!isCurrent && (
                 <button
                   onClick={() => payWithPayunit(plan)}
                   disabled={busy !== null}

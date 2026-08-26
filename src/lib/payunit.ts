@@ -16,7 +16,7 @@ export const PAYUNIT_PLAN_PRICES: Record<string, { amount: number; label: string
   starter: { amount: 11400, label: 'Starter — ~19 USD/mo' },
   growth: { amount: 29400, label: 'Growth — ~49 USD/mo' },
   pro: { amount: 71400, label: 'Pro — ~119 USD/mo' },
-  enterprise: { amount: 0, label: 'Enterprise — Custom' },
+  enterprise: { amount: 131400, label: 'Enterprise — ~219 USD/mo' },
 };
 
 /**

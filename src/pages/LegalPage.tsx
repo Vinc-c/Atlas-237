@@ -106,7 +106,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
       return (
         <>
           {h2(fr ? 'Nos tarifs' : 'Our Pricing', '')}
-          <ul><li>Starter — $19/{fr ? 'mois' : 'mo'}</li><li>Growth — $49/{fr ? 'mois' : 'mo'}</li><li>Pro — $119/{fr ? 'mois' : 'mo'}</li><li>Enterprise — {fr ? 'Sur devis' : 'Custom'}</li></ul>
+          <ul><li>Starter — $19/{fr ? 'mois' : 'mo'}</li><li>Growth — $49/{fr ? 'mois' : 'mo'}</li><li>Pro — $119/{fr ? 'mois' : 'mo'}</li><li>Enterprise — $219/{fr ? 'mois' : 'mo'}</li></ul>
           <p>{fr ? 'Essai gratuit de 14 jours. Sans carte bancaire. Paiement via Flutterwave.' : '14-day free trial. No credit card. Payment via Flutterwave.'}</p>
           <Link to="/auth" className="btn-primary btn-sm mt-4 inline-flex">{fr ? 'Commencer' : 'Get started'}</Link>
         </>
@@ -114,9 +114,18 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
     case 'docs':
       return (
         <>
-          {h2(fr ? 'Documentation API' : 'API Documentation', '')}
-          <p>{fr ? 'Atlas CRM fournit une API REST complète avec webhooks en temps réel. Authentification par clé API (Bearer token).' : 'Atlas CRM provides a complete REST API with real-time webhooks. Authentication via API key (Bearer token).'}</p>
-          <ul><li>Base URL: https://api.liafrik.com/v1</li><li>{fr ? 'Endpoints : Contacts, Deals, Pipelines, Invoices, Webhooks' : 'Endpoints: Contacts, Deals, Pipelines, Invoices, Webhooks'}</li><li>{fr ? 'Rate limit : 1000 req/min' : 'Rate limit: 1000 req/min'}</li></ul>
+          {h2(fr ? 'Documentation' : 'Documentation', '')}
+          <p>{fr ? 'Atlas CRM est construit sur une architecture Postgres (Supabase) avec sécurité au niveau des lignes (RLS) : chaque organisation n\'a accès qu\'à ses propres données, isolées de celles des autres tenants.' : 'Atlas CRM runs on a Postgres (Supabase) architecture with row-level security (RLS): every organization can only ever access its own data, isolated from other tenants.'}</p>
+
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Connecter une intégration' : 'Connecting an integration'}</h3>
+          <p>{fr ? 'Depuis Paramètres → Intégrations, choisissez une application et connectez-la avec votre propre clé API (stockée chiffrée, par organisation) ou via OAuth pour les apps qui le proposent (Google, Microsoft, Meta, Slack, PayPal, Xero, Notion, etc.). Chaque carte affiche un lien "Docs" vers la documentation officielle du fournisseur.' : 'From Settings → Integrations, pick an app and connect it with your own API key (stored encrypted, per organization) or via OAuth for apps that support it (Google, Microsoft, Meta, Slack, PayPal, Xero, Notion, and more). Each card links out to the provider\'s official "Docs" for that integration.'}</p>
+
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Webhooks sortants' : 'Outgoing webhooks'}</h3>
+          <p>{fr ? 'Pour les intégrations de type webhook, un test d\'envoi (ping signé, en-tête X-Atlas-Signature) est disponible directement depuis la carte d\'intégration pour vérifier que votre endpoint répond correctement avant de l\'activer.' : 'For webhook-style integrations, a signed test ping (X-Atlas-Signature header) is available right from the integration card, so you can verify your endpoint responds correctly before turning it on.'}</p>
+
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Accès aux données' : 'Data access'}</h3>
+          <p>{fr ? 'L\'accès API est une fonctionnalité de plan (Growth et supérieur) qui autorise l\'usage programmatique de vos données CRM (contacts, deals, factures) via l\'infrastructure Supabase de votre organisation ; la consommation est visible dans Paramètres → Utilisation.' : 'API access is a plan feature (Growth and above) that enables programmatic use of your CRM data (contacts, deals, invoices) through your organization\'s Supabase infrastructure; consumption is visible under Settings → Usage.'}</p>
+          <p>{fr ? 'Besoin d\'un accompagnement technique pour votre intégration ? Contactez-nous à support@liafrik.com.' : 'Need help with a custom integration? Reach us at support@liafrik.com.'}</p>
         </>
       );
     case 'status':

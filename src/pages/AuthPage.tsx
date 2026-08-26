@@ -206,7 +206,7 @@ export function AuthPage() {
         {/* ───────── Form panel ───────── */}
         <div className="flex flex-col px-5 py-8 sm:px-10 lg:px-16 lg:py-10">
           {/* Mobile/tablet brand banner */}
-          <div className="-mx-5 -mt-8 mb-6 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-5 sm:-mx-10 sm:px-10 lg:hidden">
+          <div className="-mx-5 -mt-8 mb-8 bg-gradient-to-r from-primary-600 to-primary-700 px-5 py-6 sm:-mx-10 sm:px-10 lg:hidden">
             <div className="flex items-start justify-between gap-3">
               <Link to="/" className="flex items-center gap-2.5">
                 <Logo size={36} />
@@ -228,7 +228,7 @@ export function AuthPage() {
                 </select>
               </div>
             </div>
-            <p className="mt-2 text-sm text-primary-100">{t('auth.brandTagline', lang)}</p>
+            <p className="mt-4 text-sm leading-6 text-primary-100">{t('auth.brandTagline', lang)}</p>
           </div>
 
           <div className="hidden items-center justify-end lg:flex">

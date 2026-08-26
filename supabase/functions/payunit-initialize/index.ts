@@ -17,6 +17,7 @@ const PLAN_PRICES_USD: Record<string, number> = {
   starter: 19,
   growth: 49,
   pro: 119,
+  enterprise: 219,
 };
 
 async function convertUsdToXaf(usdAmount: number): Promise<number> {

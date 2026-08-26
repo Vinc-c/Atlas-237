@@ -36,7 +36,7 @@ export const PLAN_PRICES: Record<string, { cents: number; label: string }> = {
   starter: { cents: 1900, label: 'Starter — $19/mo' },
   growth: { cents: 4900, label: 'Growth — $49/mo' },
   pro: { cents: 11900, label: 'Pro — $119/mo' },
-  enterprise: { cents: 0, label: 'Enterprise — Custom' },
+  enterprise: { cents: 21900, label: 'Enterprise — $219/mo' },
 };
 
 export const FLW_PUBLIC_KEY = import.meta.env.VITE_FLW_PUBLIC_KEY as string | undefined;
@@ -86,8 +86,10 @@ export function initiateFlutterwaveCheckout(params: {
   const { plan, email, orgId, onSuccess, onClose } = params;
   const price = PLAN_PRICES[plan];
   if (!price || price.cents === 0) {
-    // Enterprise → contact sales
-    window.location.href = `mailto:sales@liafrik.com?subject=Atlas%20CRM%20Enterprise%20Plan`;
+    // Defensive fallback only — every plan in PLAN_PRICES currently has a
+    // real price. Should this ever be hit (unknown plan key), don't try to
+    // charge $0; send the user to sales instead of opening a broken modal.
+    window.location.href = `mailto:sales@liafrik.com?subject=Atlas%20CRM%20Subscription`;
     return;
   }
 
