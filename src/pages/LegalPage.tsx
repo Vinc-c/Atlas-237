@@ -141,7 +141,8 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
       return (
         <>
           {h2(fr ? 'Communauté Atlas' : 'Atlas Community', '')}
-          <p>{fr ? 'Rejoignez 150 000+ professionnels. Partagez vos best practices, posez vos questions et collaboriez.' : 'Join 150,000+ professionals. Share best practices, ask questions, and collaborate.'}</p>
+          <p>{fr ? 'Rejoignez les utilisateurs Atlas CRM. Partagez vos best practices, posez vos questions et collaborez.' : 'Join fellow Atlas CRM users. Share best practices, ask questions, and collaborate.'}</p>
+          <p className="mt-2 text-sm text-ink-500">{fr ? 'community@liafrik.com' : 'community@liafrik.com'}</p>
         </>
       );
     case 'blog':
