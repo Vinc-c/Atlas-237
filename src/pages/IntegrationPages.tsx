@@ -44,9 +44,80 @@ const AVAILABLE_APPS: AppDef[] = [
   { provider: 'mailchimp', name: 'Mailchimp', category: 'Marketing', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxxx-us1', type: 'password' }], docsUrl: 'https://mailchimp.com/developer' },
   { provider: 'twilio', name: 'Twilio', category: 'SMS / Voice', authType: 'api_key', configFields: [{ key: 'account_sid', label: 'Account SID', placeholder: 'ACxxx' }, { key: 'auth_token', label: 'Auth Token', placeholder: 'xxx', type: 'password' }, { key: 'from_number', label: 'From Number', placeholder: '+1234567890' }], docsUrl: 'https://www.twilio.com/docs' },
   { provider: 'shopify', name: 'Shopify', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_domain', label: 'Shop Domain', placeholder: 'mystore.myshopify.com' }, { key: 'access_token', label: 'Access Token', placeholder: 'shpat_xxx', type: 'password' }], docsUrl: 'https://shopify.dev/docs/api' },
-  { provider: 'os', name: 'Os', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'os_live_xxx', type: 'password' }, { key: 'store_id', label: 'Store ID', placeholder: 'e.g. your Os store slug' }], docsUrl: 'https://os.liafrik.com' },
+  { provider: 'sellia', name: 'Sellia', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'sel_live_xxx', type: 'password' }, { key: 'store_id', label: 'Store ID', placeholder: 'e.g. your Sellia store slug' }], docsUrl: 'https://sellia.liafrik.com' },
   { provider: 'woocommerce', name: 'WooCommerce', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_url', label: 'Store URL', placeholder: 'https://mystore.com' }, { key: 'consumer_key', label: 'Consumer Key', placeholder: 'ck_xxx' }, { key: 'consumer_secret', label: 'Consumer Secret', placeholder: 'cs_xxx', type: 'password' }], docsUrl: 'https://woocommerce.github.io/woocommerce-rest-api-docs' },
   { provider: 'prestashop', name: 'PrestaShop', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'shop_url', label: 'Store URL', placeholder: 'https://mystore.com' }, { key: 'api_key', label: 'Webservice Key', placeholder: 'PSWS_xxx', type: 'password' }], docsUrl: 'https://devdocs.prestashop-project.org/8/webservice' },
+  { provider: 'bigcommerce', name: 'BigCommerce', category: 'E-commerce', authType: 'api_key', configFields: [{ key: 'store_hash', label: 'Store Hash', placeholder: 'abc123' }, { key: 'access_token', label: 'Access Token', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developer.bigcommerce.com' },
+
+  // Automation
+  { provider: 'zapier', name: 'Zapier', category: 'Automation', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'zap_xxx', type: 'password' }], docsUrl: 'https://zapier.com/developer' },
+  { provider: 'make', name: 'Make (Integromat)', category: 'Automation', authType: 'api_key', configFields: [{ key: 'api_token', label: 'API Token', placeholder: 'mk_xxx', type: 'password' }], docsUrl: 'https://www.make.com/en/api-documentation' },
+  { provider: 'n8n', name: 'n8n', category: 'Automation', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'n8n_api_xxx', type: 'password' }, { key: 'instance_url', label: 'Instance URL', placeholder: 'https://myinstance.n8n.cloud' }], docsUrl: 'https://docs.n8n.io' },
+  { provider: 'pipedream', name: 'Pipedream', category: 'Automation', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'pd_xxx', type: 'password' }], docsUrl: 'https://pipedream.com/docs/api/rest' },
+
+  // Payments
+  { provider: 'paypal', name: 'PayPal', category: 'Payments', authType: 'oauth', docsUrl: 'https://developer.paypal.com/docs/api/overview', paymentType: 'cards' },
+  { provider: 'adyen', name: 'Adyen', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'AQE...', type: 'password' }, { key: 'merchant_account', label: 'Merchant Account', placeholder: 'YourCompanyECOM' }], docsUrl: 'https://docs.adyen.com', paymentType: 'cards' },
+  { provider: 'mollie', name: 'Mollie', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'live_xxx', type: 'password' }], docsUrl: 'https://docs.mollie.com', paymentType: 'cards' },
+  { provider: 'checkout_com', name: 'Checkout.com', category: 'Payments', authType: 'api_key', configFields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'sk_xxx', type: 'password' }], docsUrl: 'https://api-reference.checkout.com', paymentType: 'cards' },
+  { provider: 'worldline', name: 'Worldline', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'merchant_id', label: 'Merchant ID', placeholder: 'xxx' }], docsUrl: 'https://docs.worldline-solutions.com', paymentType: 'cards' },
+  { provider: 'nexi', name: 'Nexi', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developer.nexi.it', paymentType: 'cards' },
+  { provider: 'gocardless', name: 'GoCardless', category: 'Payments', authType: 'oauth', docsUrl: 'https://developer.gocardless.com', paymentType: 'transfers' },
+  { provider: 'viva_wallet', name: 'Viva Wallet', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'merchant_id', label: 'Merchant ID', placeholder: 'xxx' }], docsUrl: 'https://developer.vivawallet.com', paymentType: 'cards' },
+  { provider: 'revolut_business', name: 'Revolut Business', category: 'Payments', authType: 'oauth', docsUrl: 'https://developer.revolut.com/docs/business', paymentType: 'transfers' },
+  { provider: 'flutterwave', name: 'Flutterwave', category: 'Payments', authType: 'api_key', configFields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'FLWSECK-xxx', type: 'password' }], docsUrl: 'https://developer.flutterwave.com/docs', paymentType: 'mobile_money' },
+  { provider: 'paystack', name: 'Paystack', category: 'Payments', authType: 'api_key', configFields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'sk_live_xxx', type: 'password' }], docsUrl: 'https://paystack.com/docs/api', paymentType: 'mobile_money' },
+  { provider: 'mpesa', name: 'M-Pesa', category: 'Payments', authType: 'api_key', configFields: [{ key: 'consumer_key', label: 'Consumer Key', placeholder: 'xxx' }, { key: 'consumer_secret', label: 'Consumer Secret', placeholder: 'xxx', type: 'password' }, { key: 'shortcode', label: 'Shortcode', placeholder: '174379' }], docsUrl: 'https://developer.safaricom.co.ke', paymentType: 'mobile_money' },
+  { provider: 'interswitch', name: 'Interswitch', category: 'Payments', authType: 'api_key', configFields: [{ key: 'client_id', label: 'Client ID', placeholder: 'xxx' }, { key: 'client_secret', label: 'Client Secret', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://docs.interswitchgroup.com', paymentType: 'cards' },
+  { provider: 'dpo_group', name: 'DPO Group', category: 'Payments', authType: 'api_key', configFields: [{ key: 'company_token', label: 'Company Token', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://docs.dpogroup.com', paymentType: 'mobile_money' },
+  { provider: 'cellulant', name: 'Cellulant', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developers.cellulant.io', paymentType: 'mobile_money' },
+  { provider: 'fawry', name: 'Fawry', category: 'Payments', authType: 'api_key', configFields: [{ key: 'merchant_code', label: 'Merchant Code', placeholder: 'xxx' }, { key: 'security_key', label: 'Security Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developer.fawry.com', paymentType: 'mobile_money' },
+  { provider: 'payfast', name: 'PayFast', category: 'Payments', authType: 'api_key', configFields: [{ key: 'merchant_id', label: 'Merchant ID', placeholder: 'xxx' }, { key: 'merchant_key', label: 'Merchant Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developers.payfast.co.za', paymentType: 'cards' },
+  { provider: 'peach_payments', name: 'Peach Payments', category: 'Payments', authType: 'api_key', configFields: [{ key: 'entity_id', label: 'Entity ID', placeholder: 'xxx' }, { key: 'access_token', label: 'Access Token', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://docs.peachpayments.com', paymentType: 'cards' },
+  { provider: 'payunit', name: 'PayUnit', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'api_username', label: 'API Username', placeholder: 'xxx' }], docsUrl: 'https://docs.payunit.net', paymentType: 'mobile_money' },
+  { provider: 'campay', name: 'CamPay', category: 'Payments', authType: 'api_key', configFields: [{ key: 'app_username', label: 'App Username', placeholder: 'xxx' }, { key: 'app_password', label: 'App Password', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://www.campay.net/docs', paymentType: 'mobile_money' },
+  { provider: 'cinetpay', name: 'CinetPay', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'site_id', label: 'Site ID', placeholder: 'xxx' }], docsUrl: 'https://docs.cinetpay.com', paymentType: 'mobile_money' },
+  { provider: 'kkiapay', name: 'Kkiapay', category: 'Payments', authType: 'api_key', configFields: [{ key: 'private_key', label: 'Private Key', placeholder: 'xxx', type: 'password' }, { key: 'public_key', label: 'Public Key', placeholder: 'xxx' }], docsUrl: 'https://docs.kkiapay.me', paymentType: 'mobile_money' },
+  { provider: 'wave', name: 'Wave', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'wave_sn_prod_xxx', type: 'password' }], docsUrl: 'https://docs.wave.com/business', paymentType: 'mobile_money' },
+  { provider: 'orange_money', name: 'Orange Money API', category: 'Payments', authType: 'api_key', configFields: [{ key: 'client_id', label: 'Client ID', placeholder: 'xxx' }, { key: 'client_secret', label: 'Client Secret', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developer.orange.com/apis/om-webpay', paymentType: 'mobile_money' },
+  { provider: 'mtn_momo', name: 'MTN MoMo API', category: 'Payments', authType: 'api_key', configFields: [{ key: 'subscription_key', label: 'Subscription Key', placeholder: 'xxx', type: 'password' }, { key: 'api_user', label: 'API User', placeholder: 'xxx' }], docsUrl: 'https://momodeveloper.mtn.com', paymentType: 'mobile_money' },
+  { provider: 'chapa', name: 'Chapa', category: 'Payments', authType: 'api_key', configFields: [{ key: 'secret_key', label: 'Secret Key', placeholder: 'CHASECK-xxx', type: 'password' }], docsUrl: 'https://developer.chapa.co', paymentType: 'mobile_money' },
+  { provider: 'semoa', name: 'Semoa', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://semoa.io', paymentType: 'mobile_money' },
+  { provider: 'maxicash', name: 'MaxiCash', category: 'Payments', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'merchant_id', label: 'Merchant ID', placeholder: 'xxx' }], docsUrl: 'https://www.maxicashapp.com/developers', paymentType: 'mobile_money' },
+
+  // Accounting
+  { provider: 'xero', name: 'Xero', category: 'Accounting', authType: 'oauth', docsUrl: 'https://developer.xero.com' },
+  { provider: 'sage', name: 'Sage', category: 'Accounting', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }], docsUrl: 'https://developer.sage.com' },
+
+  // Customer Support
+  { provider: 'zendesk', name: 'Zendesk', category: 'Support', authType: 'oauth', docsUrl: 'https://developer.zendesk.com' },
+  { provider: 'intercom', name: 'Intercom', category: 'Support', authType: 'oauth', docsUrl: 'https://developers.intercom.com' },
+  { provider: 'freshdesk', name: 'Freshdesk', category: 'Support', authType: 'api_key', configFields: [{ key: 'api_key', label: 'API Key', placeholder: 'xxx', type: 'password' }, { key: 'domain', label: 'Domain', placeholder: 'yourcompany.freshdesk.com' }], docsUrl: 'https://developers.freshdesk.com' },
+
+  // Communication / Messaging
+  { provider: 'facebook_messenger', name: 'Facebook Messenger', category: 'Messaging', authType: 'oauth', docsUrl: 'https://developers.facebook.com/docs/messenger-platform' },
+  { provider: 'instagram_dm', name: 'Instagram DM', category: 'Messaging', authType: 'oauth', docsUrl: 'https://developers.facebook.com/docs/messenger-platform/instagram' },
+
+  // Video
+  { provider: 'microsoft_teams', name: 'Microsoft Teams', category: 'Video', authType: 'oauth', docsUrl: 'https://learn.microsoft.com/microsoftteams/platform' },
+
+  // Scheduling
+  { provider: 'google_calendar', name: 'Google Calendar', category: 'Scheduling', authType: 'oauth', docsUrl: 'https://developers.google.com/calendar' },
+
+  // Marketing
+  { provider: 'meta_ads', name: 'Meta Ads', category: 'Marketing', authType: 'oauth', docsUrl: 'https://developers.facebook.com/docs/marketing-apis' },
+  { provider: 'google_ads', name: 'Google Ads', category: 'Marketing', authType: 'oauth', docsUrl: 'https://developers.google.com/google-ads/api/docs/start' },
+  { provider: 'linkedin_ads', name: 'LinkedIn Ads', category: 'Marketing', authType: 'oauth', docsUrl: 'https://learn.microsoft.com/linkedin/marketing' },
+
+  // Storage / Documents
+  { provider: 'google_drive', name: 'Google Drive', category: 'Storage', authType: 'oauth', docsUrl: 'https://developers.google.com/drive' },
+  { provider: 'dropbox', name: 'Dropbox', category: 'Storage', authType: 'oauth', docsUrl: 'https://www.dropbox.com/developers/documentation' },
+  { provider: 'docusign', name: 'DocuSign', category: 'Storage', authType: 'oauth', docsUrl: 'https://developers.docusign.com' },
+
+  // Project Management
+  { provider: 'notion', name: 'Notion', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developers.notion.com' },
+  { provider: 'asana', name: 'Asana', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developers.asana.com' },
+  { provider: 'trello', name: 'Trello', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developer.atlassian.com/cloud/trello' },
 ];
 
 const WEBHOOK_EVENTS = [
@@ -164,6 +235,26 @@ export function MarketplacePage() {
     zoom: import.meta.env.VITE_ZOOM_CLIENT_ID,
     outlook: import.meta.env.VITE_MICROSOFT_CLIENT_ID,
     quickbooks: import.meta.env.VITE_QUICKBOOKS_CLIENT_ID,
+    paypal: import.meta.env.VITE_PAYPAL_CLIENT_ID,
+    gocardless: import.meta.env.VITE_GOCARDLESS_CLIENT_ID,
+    revolut_business: import.meta.env.VITE_REVOLUT_CLIENT_ID,
+    xero: import.meta.env.VITE_XERO_CLIENT_ID,
+    intercom: import.meta.env.VITE_INTERCOM_CLIENT_ID,
+    facebook_messenger: import.meta.env.VITE_FACEBOOK_CLIENT_ID,
+    instagram_dm: import.meta.env.VITE_FACEBOOK_CLIENT_ID,
+    meta_ads: import.meta.env.VITE_FACEBOOK_CLIENT_ID,
+    microsoft_teams: import.meta.env.VITE_MICROSOFT_CLIENT_ID,
+    google_calendar: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    google_ads: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    google_drive: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+    linkedin_ads: import.meta.env.VITE_LINKEDIN_CLIENT_ID,
+    dropbox: import.meta.env.VITE_DROPBOX_CLIENT_ID,
+    docusign: import.meta.env.VITE_DOCUSIGN_CLIENT_ID,
+    notion: import.meta.env.VITE_NOTION_CLIENT_ID,
+    asana: import.meta.env.VITE_ASANA_CLIENT_ID,
+    trello: import.meta.env.VITE_TRELLO_CLIENT_ID,
+    // Zendesk requires a per-account subdomain before an authorize URL can be built,
+    // so it intentionally has no client id here and always shows the "setup required" panel.
   };
 
   function isOAuthReady(provider: string) {
@@ -184,6 +275,24 @@ export function MarketplacePage() {
       zoom: `https://zoom.us/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
       outlook: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=https://graph.microsoft.com/.default offline_access&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
       quickbooks: `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&scope=com.intuit.quickbooks.accounting&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
+      paypal: `https://www.paypal.com/connect?flowEntry=static&client_id=${clientId}&scope=openid&redirect_uri=${redirectUri}&state=${state}`,
+      gocardless: `https://connect.gocardless.com/oauth/authorize?client_id=${clientId}&initial_view=login&scope=read_write&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
+      revolut_business: `https://business.revolut.com/app-confirm?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`,
+      xero: `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=openid profile email accounting.transactions offline_access&state=${state}`,
+      intercom: `https://app.intercom.com/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`,
+      facebook_messenger: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=pages_messaging&state=${state}`,
+      instagram_dm: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=instagram_basic,instagram_manage_messages&state=${state}`,
+      meta_ads: `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=ads_management,ads_read&state=${state}`,
+      microsoft_teams: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&scope=https://graph.microsoft.com/.default offline_access&response_type=code&redirect_uri=${redirectUri}&state=${state}`,
+      google_calendar: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&scope=https://www.googleapis.com/auth/calendar&response_type=code&access_type=offline&prompt=consent&redirect_uri=${redirectUri}&state=${state}`,
+      google_ads: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&scope=https://www.googleapis.com/auth/adwords&response_type=code&access_type=offline&prompt=consent&redirect_uri=${redirectUri}&state=${state}`,
+      google_drive: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&scope=https://www.googleapis.com/auth/drive&response_type=code&access_type=offline&prompt=consent&redirect_uri=${redirectUri}&state=${state}`,
+      linkedin_ads: `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=r_ads%20rw_ads&state=${state}`,
+      dropbox: `https://www.dropbox.com/oauth2/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&state=${state}&token_access_type=offline`,
+      docusign: `https://account.docusign.com/oauth/auth?response_type=code&scope=signature&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`,
+      notion: `https://api.notion.com/v1/oauth/authorize?client_id=${clientId}&response_type=code&owner=user&redirect_uri=${redirectUri}&state=${state}`,
+      asana: `https://app.asana.com/-/oauth_authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`,
+      trello: `https://trello.com/1/authorize?expiration=never&name=Atlas%20CRM&scope=read,write&response_type=token&key=${clientId}&return_url=${redirectUri}`,
     };
     const authUrl = authUrls[app.provider];
     if (authUrl) {
