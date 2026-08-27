@@ -51,6 +51,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    const body = await req.json().catch(() => ({}));
+
+    // Availability ping: the frontend uses this (no plan/org needed) to
+    // decide whether to offer PayUnit as a payment option at all — PayUnit's
+    // credentials are server-only, so this is the only way the client can
+    // know it's configured, without ever seeing the actual secrets.
+    if (body?.check === true) {
+      return new Response(JSON.stringify({ ok: true, configured: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const authHeader = req.headers.get("Authorization") || "";
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL")!,

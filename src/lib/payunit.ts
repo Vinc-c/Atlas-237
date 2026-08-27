@@ -1,23 +1,17 @@
 import { supabase } from '@/lib/supabase';
 
 /**
- * PayUnit plan prices in XAF (Central African CFA Franc — zero-decimal
- * currency, no cents). PayUnit's confirmed API example only demonstrates
- * XAF; its supported mobile-money operators (MTN MoMo, Orange Money,
- * Express Union, YUP) are all CFA-zone providers, so pricing is expressed
- * in XAF rather than converted from the USD prices used elsewhere.
- *
- * ⚠️ These XAF amounts are a placeholder peg (~600 XAF / USD) and MUST be
- * reviewed and set to your actual desired local pricing before enabling
- * PayUnit in production — do not rely on this exchange rate for real
- * charges.
+ * All subscription plans are priced in USD (see src/lib/plans.ts — the
+ * single source of truth for the $ amount). PayUnit settles in XAF, so
+ * the actual charge amount is computed server-side, in
+ * supabase/functions/payunit-initialize, by converting the USD price to
+ * XAF at the live exchange rate at the moment of checkout — never a
+ * fixed/guessed peg on the client. The frontend never computes or
+ * displays a currency-converted amount itself; it always shows the USD
+ * price and lets the PayUnit-hosted payment page show the customer the
+ * converted total in their own currency before they pay.
  */
-export const PAYUNIT_PLAN_PRICES: Record<string, { amount: number; label: string }> = {
-  starter: { amount: 11400, label: 'Starter — ~19 USD/mo' },
-  growth: { amount: 29400, label: 'Growth — ~49 USD/mo' },
-  pro: { amount: 71400, label: 'Pro — ~119 USD/mo' },
-  enterprise: { amount: 131400, label: 'Enterprise — ~219 USD/mo' },
-};
+const KNOWN_PLANS = new Set(['starter', 'growth', 'pro', 'enterprise']);
 
 /**
  * Unlike Flutterwave (which uses a public key safe to expose to the
@@ -26,15 +20,28 @@ export const PAYUNIT_PLAN_PRICES: Record<string, { amount: number; label: string
  * can only be confirmed by asking the edge function, not by checking an
  * env var in the browser.
  */
+export async function isPayunitConfigured(): Promise<boolean> {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payunit-initialize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ check: true }),
+    });
+    const result = await res.json();
+    return Boolean(res.ok && result.ok && result.configured);
+  } catch {
+    return false;
+  }
+}
+
 export async function initiatePayunitCheckout(params: {
   plan: string;
   orgId: string;
   paymentCountry?: string;
 }): Promise<{ ok: boolean; transactionUrl?: string; msg?: string }> {
   const { plan, orgId, paymentCountry } = params;
-  const price = PAYUNIT_PLAN_PRICES[plan];
-  if (!price || price.amount === 0) {
-    return { ok: false, msg: 'enterprise_contact_sales' };
+  if (!KNOWN_PLANS.has(plan)) {
+    return { ok: false, msg: 'unknown_plan' };
   }
 
   try {

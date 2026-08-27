@@ -7,8 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { askAtlas } from '@/lib/askAtlas';
 import { t } from '@/lib/i18n';
 import { getErrorMessage } from '@/lib/errors';
-import { initiateFlutterwaveCheckout, recordSubscription, isFlutterwaveConfigured } from '@/lib/flutterwave';
-import { initiatePayunitCheckout, confirmPayunitPayment } from '@/lib/payunit';
+import { confirmPayunitPayment } from '@/lib/payunit';
+import { getAvailablePsps, payWithPsp, PSP_REGISTRY, type PspOption } from '@/lib/psp';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
 import { BrandLogo } from '@/components/BrandLogos';
@@ -866,8 +866,24 @@ export function BillingPage() {
   const lang = language;
   const [currentPlan, setCurrentPlan] = useState(organization?.plan || 'starter');
   const [busy, setBusy] = useState<string | null>(null);
-  const [payunitError, setPayunitError] = useState('');
+  const [payError, setPayError] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [availablePsps, setAvailablePsps] = useState<PspOption[] | null>(null);
+  const [selectedPsp, setSelectedPsp] = useState<string>('');
+
+  useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
+
+  // Detect which payment providers are actually configured (not just
+  // "exist in code") and auto-pick the best available one. The customer
+  // can still switch manually if more than one is available — nothing is
+  // hardcoded to exactly two providers, so adding a future PSP to
+  // src/lib/psp.ts is the only change needed for it to show up here.
+  useEffect(() => {
+    getAvailablePsps().then((psps) => {
+      setAvailablePsps(psps);
+      if (psps.length > 0) setSelectedPsp(psps[0].key);
+    });
+  }, []);
 
   useEffect(() => { setCurrentPlan(organization?.plan || 'starter'); }, [organization?.plan]);
 
@@ -900,39 +916,26 @@ export function BillingPage() {
     { name: 'Enterprise', key: 'enterprise', price: 219, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
   ] as const;
 
-  async function changePlan(plan: typeof plans[number]) {
-    if (!organization || plan.key === currentPlan) return;
+  async function pay(plan: typeof plans[number]) {
+    if (!organization || plan.key === currentPlan || !selectedPsp) return;
+    setPayError('');
     setBusy(plan.key);
-    initiateFlutterwaveCheckout({
+    const result = await payWithPsp(selectedPsp, {
       plan: plan.key,
-      email: session?.user?.email || '',
       orgId: organization.id,
-      onSuccess: async (txRef, paymentId) => {
-        const res = await recordSubscription({ orgId: organization.id, plan: plan.key, txRef, paymentId });
-        if (res.success) {
-          setCurrentPlan(plan.key);
-          setBusy(null);
-        } else {
-          alert(res.error || 'Payment failed');
-          setBusy(null);
-        }
-      },
-      onClose: () => setBusy(null),
+      email: session?.user?.email || '',
+      paymentCountry: organization.country || undefined,
     });
-  }
-
-  async function payWithPayunit(plan: typeof plans[number]) {
-    if (!organization || plan.key === currentPlan) return;
-    setPayunitError('');
-    setBusy(`payunit_${plan.key}`);
-    const result = await initiatePayunitCheckout({ plan: plan.key, orgId: organization.id, paymentCountry: organization.country || undefined });
-    if (!result.ok || !result.transactionUrl) {
-      setPayunitError(result.msg || (lang === 'fr' ? 'PayUnit indisponible pour le moment.' : 'PayUnit unavailable right now.'));
+    if (result.redirected) return; // browser is navigating away to the PSP's hosted page
+    if (result.ok) {
+      setCurrentPlan(plan.key);
       setBusy(null);
-      return;
+    } else {
+      if (result.msg && result.msg !== 'cancelled') {
+        setPayError(result.msg);
+      }
+      setBusy(null);
     }
-    sessionStorage.setItem('payunit_pending_tx', result.transactionUrl.split('/').pop() || '');
-    window.location.href = result.transactionUrl;
   }
 
   return (
@@ -951,18 +954,33 @@ export function BillingPage() {
           </div>
           <CreditCard size={32} className="text-ink-300" />
         </div>
-        {!isFlutterwaveConfigured() && (
+        {availablePsps !== null && availablePsps.length === 0 && (
           <p className="mt-3 rounded-lg bg-warning-50 p-2 text-xs text-warning-700">
-            {lang === 'fr' ? 'Paiement Flutterwave non configuré. Ajoutez VITE_FLW_PUBLIC_KEY dans les variables d\'environnement.' : 'Flutterwave payment not configured. Add VITE_FLW_PUBLIC_KEY to environment variables.'}
+            {lang === 'fr' ? 'Aucun moyen de paiement n\'est configuré actuellement. Contactez le support.' : 'No payment provider is currently configured. Contact support.'}
           </p>
+        )}
+        {availablePsps !== null && availablePsps.length > 1 && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-ink-500">{lang === 'fr' ? 'Payer avec :' : 'Pay with:'}</span>
+            {availablePsps.map((psp) => (
+              <button
+                key={psp.key}
+                onClick={() => setSelectedPsp(psp.key)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${selectedPsp === psp.key ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}
+                title={psp.method}
+              >
+                {psp.label}
+              </button>
+            ))}
+          </div>
         )}
         {verifying && (
           <p className="mt-3 rounded-lg bg-primary-50 p-2 text-xs text-primary-700 flex items-center gap-2">
-            <Loader2 size={12} className="animate-spin" /> {lang === 'fr' ? 'Confirmation du paiement PayUnit...' : 'Confirming PayUnit payment...'}
+            <Loader2 size={12} className="animate-spin" /> {lang === 'fr' ? 'Confirmation du paiement...' : 'Confirming payment...'}
           </p>
         )}
-        {payunitError && (
-          <p className="mt-3 rounded-lg bg-error-50 p-2 text-xs text-error-700">{payunitError}</p>
+        {payError && (
+          <p className="mt-3 rounded-lg bg-error-50 p-2 text-xs text-error-700">{payError}</p>
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -982,23 +1000,19 @@ export function BillingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => changePlan(plan)}
-                disabled={isCurrent || busy !== null}
+                onClick={() => pay(plan)}
+                disabled={isCurrent || busy !== null || !selectedPsp}
                 className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
               >
                 {busy === plan.key ? <Loader2 size={14} className="animate-spin" /> : null}
-                {busy === plan.key ? (lang === 'fr' ? 'Paiement...' : 'Paying...') : isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : (lang === 'fr' ? 'Payer (Flutterwave)' : 'Pay (Flutterwave)')}
+                {busy === plan.key
+                  ? (lang === 'fr' ? 'Paiement...' : 'Paying...')
+                  : isCurrent
+                    ? (lang === 'fr' ? 'Actuel' : 'Current')
+                    : selectedPsp
+                      ? `${lang === 'fr' ? 'Payer' : 'Pay'} (${PSP_REGISTRY.find(p => p.key === selectedPsp)?.label})`
+                      : (lang === 'fr' ? 'Indisponible' : 'Unavailable')}
               </button>
-              {!isCurrent && (
-                <button
-                  onClick={() => payWithPayunit(plan)}
-                  disabled={busy !== null}
-                  className="btn-sm w-full mt-2 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 border border-ink-200 text-ink-700 hover:bg-ink-50"
-                >
-                  {busy === `payunit_${plan.key}` ? <Loader2 size={14} className="animate-spin" /> : null}
-                  {busy === `payunit_${plan.key}` ? (lang === 'fr' ? 'Redirection...' : 'Redirecting...') : (lang === 'fr' ? 'Payer (PayUnit — Mobile Money)' : 'Pay (PayUnit — Mobile Money)')}
-                </button>
-              )}
             </div>
           );
         })}
