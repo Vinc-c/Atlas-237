@@ -12,6 +12,7 @@ import { BrandLogo } from '@/components/BrandLogos';
 import { UpgradeGate } from '@/components/UpgradeGate';
 import { usePlanAccess } from '@/lib/plans';
 import type { Integration, ApiKey, Webhook as WebhookType } from '@/types';
+import { validateKeyFormat, LIVE_VERIFIABLE_PROVIDERS } from '@/lib/integrationValidation';
 
 interface AppDef {
   provider: string;
@@ -136,6 +137,7 @@ export function MarketplacePage() {
   const [configApp, setConfigApp] = useState<AppDef | null>(null);
   const [configData, setConfigData] = useState<Record<string, string>>({});
   const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [paymentSubFilter, setPaymentSubFilter] = useState<'all' | 'cards' | 'mobile_money' | 'transfers'>('all');
@@ -198,15 +200,71 @@ export function MarketplacePage() {
       setBusy(null);
     } else if (app.authType === 'oauth') {
       setConfigApp(app);
+      setConnectError('');
     } else {
       setConfigApp(app);
       setConfigData({});
+      setConnectError('');
     }
   }
 
   async function confirmConnect() {
     if (!configApp) return;
+    setConnectError('');
+
+    // 1. Format validation — catches an obviously-wrong-provider key
+    //    (e.g. a Gemini key pasted into the Claude field) instantly,
+    //    with no network call.
+    const formatCheck = validateKeyFormat(configApp.provider, configData);
+    if (!formatCheck.ok) {
+      const field = configApp.configFields?.find(f => f.key === formatCheck.field);
+      const fieldLabel = field?.label || (lang === 'fr' ? 'ce champ' : 'this field');
+      if (formatCheck.message === 'required') {
+        setConnectError(lang === 'fr' ? `${fieldLabel} est requis.` : `${fieldLabel} is required.`);
+      } else if (formatCheck.message.startsWith('format_mismatch:')) {
+        const hint = formatCheck.message.slice('format_mismatch:'.length);
+        setConnectError(
+          lang === 'fr'
+            ? `Ça ne ressemble pas à une clé ${configApp.name} valide (${hint}). Vérifiez que vous n'avez pas collé la clé d'un autre fournisseur.`
+            : `This doesn't look like a valid ${configApp.name} key (${hint}). Double-check you didn't paste a key from a different provider.`
+        );
+      } else {
+        setConnectError(lang === 'fr' ? 'Cette valeur semble incorrecte ou incomplète.' : 'This value looks incorrect or incomplete.');
+      }
+      return;
+    }
+
     setConnecting(true);
+
+    // 2. Live verification — for the providers we can actually call,
+    //    reject a correctly-formatted but wrong/expired/revoked key
+    //    before ever saving it as "connected".
+    let verified = false;
+    if (LIVE_VERIFIABLE_PROVIDERS.has(configApp.provider)) {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-integration-key`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: JSON.stringify({ provider: configApp.provider, config: configData }),
+        });
+        const result = await res.json();
+        if (!result.ok) {
+          setConnectError(result.message || (lang === 'fr' ? 'La vérification a échoué. Vérifiez vos identifiants.' : 'Verification failed. Please check your credentials.'));
+          setConnecting(false);
+          return;
+        }
+        verified = Boolean(result.verified);
+      } catch {
+        // Network/edge-function issue — don't hard-block the connection
+        // over an infrastructure hiccup, but don't claim it was verified.
+        verified = false;
+      }
+    }
+
     const rand = () => crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
     const fullKey = 'atlas_' + configApp.provider + '_' + rand();
     const keyPrefix = fullKey.substring(0, 14);
@@ -215,12 +273,13 @@ export function MarketplacePage() {
       category: configApp.category,
       status: 'connected',
       connected_at: new Date().toISOString(),
-      config: { ...configData, key_prefix: keyPrefix, auth_type: configApp.authType },
+      config: { ...configData, key_prefix: keyPrefix, auth_type: configApp.authType, verified },
     });
     if (error) { alert(error.message); setConnecting(false); return; }
     setConnected(prev => [...prev, configApp.provider]);
     setConfigApp(null);
     setConfigData({});
+    setConnectError('');
     setConnecting(false);
   }
 
@@ -439,6 +498,14 @@ export function MarketplacePage() {
                 {lang === 'fr' ? 'Entrez vos identifiants API. Vous pouvez les trouver dans la documentation de ' : 'Enter your API credentials. You can find them in the '}
                 <a href={configApp?.docsUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">{configApp?.name} docs</a>.
               </p>
+              {configApp && LIVE_VERIFIABLE_PROVIDERS.has(configApp.provider) && (
+                <p className="flex items-center gap-1.5 text-xs text-success-600">
+                  <Check size={13} /> {lang === 'fr' ? 'Cette clé sera vérifiée en direct auprès de ' : 'This key will be live-verified with '}{configApp.name}.
+                </p>
+              )}
+              {connectError && (
+                <p className="rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-700">{connectError}</p>
+              )}
               {configApp?.configFields?.map(field => (
                 <div key={field.key}>
                   <label className="label">{field.label}</label>
@@ -456,7 +523,7 @@ export function MarketplacePage() {
               <div className="flex justify-end gap-2">
                 <button onClick={() => setConfigApp(null)} className="btn-secondary btn-sm">{t('common.cancel', lang)}</button>
                 <button onClick={confirmConnect} disabled={connecting || (configApp?.configFields || []).some(f => !configData[f.key])} className="btn-primary btn-sm">
-                  {connecting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} {lang === 'fr' ? 'Connecter' : 'Connect'}
+                  {connecting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} {connecting ? (lang === 'fr' ? 'Vérification...' : 'Verifying...') : (lang === 'fr' ? 'Connecter' : 'Connect')}
                 </button>
               </div>
             </>
