@@ -1,20 +1,26 @@
 // Brand marks below fall into two categories, and it matters which:
 //
 // 1. Providers where the exact official vector path is embedded, sourced
-//    from the `simple-icons` project (https://simpleicons.org, CC0-1.0 —
-//    public domain, no attribution required, safe to embed statically).
-//    These render the actual brand silhouette in the brand's official
-//    hex color. Simple Icons intentionally renders every mark as a flat
-//    single color, so a naturally multi-color logo (Google's four-color
-//    "G", Instagram's gradient) will look monochrome here — that's a
-//    known simplification of the source, not a wrong color.
-// 2. Providers not present in simple-icons (often because the trademark
-//    holder — e.g. Microsoft/Outlook/Teams, LinkedIn, Slack, Twilio,
-//    DocuSign — requested removal from that library, or the brand is too
-//    regional to be catalogued) get a hand-drawn approximation instead:
-//    the real brand color(s) with a simplified version of the mark. It
-//    is a stylized stand-in, not the official artwork, and is labelled
-//    as such in code review / logo audits.
+//    from open, permissively-licensed icon libraries: `simple-icons`
+//    (https://simpleicons.org, CC0-1.0), `@lobehub/icons`
+//    (https://github.com/lobehub/lobe-icons, MIT — used for OpenAI, whose
+//    mark isn't in simple-icons), and the "SVG Logos" collection by Gil
+//    Barbara (https://github.com/gilbarbara/logos, CC0-1.0, via
+//    @iconify-json/logos — used for Slack, Microsoft Teams, LinkedIn,
+//    Twilio, whose full-color marks aren't in simple-icons either). All
+//    three are public-domain-equivalent or MIT, safe to embed statically,
+//    no attribution required. Where the source renders flat single-color
+//    (simple-icons' style), a naturally multi-color logo (Google's
+//    four-color "G") will look monochrome here — a known simplification
+//    of that source, not a wrong color. Where the source is full-color
+//    (Slack, Microsoft Teams), the real official hex values are used.
+// 2. Providers not present in any of those libraries — often because the
+//    trademark holder requested removal (Outlook specifically), or the
+//    brand is too regional/niche to be catalogued (most mobile-money
+//    PSPs, DocuSign, Sage, Freshdesk, Pipedream) — get a hand-drawn
+//    approximation instead: the real brand color(s) with a simplified
+//    version of the mark. It is a stylized stand-in, not the official
+//    artwork, and is labelled as such in code review / logo audits.
 // 'atlas', 'libooks', and 'sellia' are LiAfrik's own first-party
 // products, not third-party brands, so they were always custom-designed
 // rather than sourced.
@@ -55,15 +61,8 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
       );
     case 'slack':
       return (
-        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Slack">
-          <path d="M5 15a2 2 0 1 1 0-4h2v4H5Z" fill="#E01E5A" />
-          <path d="M5 8a2 2 0 1 1 4 0v2H5V8Z" fill="#36C5F0" />
-          <path d="M19 9a2 2 0 1 1 0 4h-2V9h2Z" fill="#2EB67D" />
-          <path d="M19 16a2 2 0 1 1-4 0v-2h4v2Z" fill="#ECB22E" />
-          <path d="M9 5a2 2 0 1 1 4 0v2H9V5Z" fill="#36C5F0" />
-          <path d="M8 19a2 2 0 1 1 0-4h2v4H8Z" fill="#E01E5A" />
-          <path d="M15 19a2 2 0 1 1-4 0v-2h4v2Z" fill="#ECB22E" />
-          <path d="M16 5a2 2 0 1 1 0 4h-2V5h2Z" fill="#2EB67D" />
+        <svg viewBox="0 0 256 256" fill="none" style={s} className={className} aria-label="Slack">
+          <path fill="#e01e5a" d="M53.841 161.32c0 14.832-11.987 26.82-26.819 26.82S.203 176.152.203 161.32c0-14.831 11.987-26.818 26.82-26.818H53.84zm13.41 0c0-14.831 11.987-26.818 26.819-26.818s26.819 11.987 26.819 26.819v67.047c0 14.832-11.987 26.82-26.82 26.82c-14.83 0-26.818-11.988-26.818-26.82z"/><path fill="#36c5f0" d="M94.07 53.638c-14.832 0-26.82-11.987-26.82-26.819S79.239 0 94.07 0s26.819 11.987 26.819 26.819v26.82zm0 13.613c14.832 0 26.819 11.987 26.819 26.819s-11.987 26.819-26.82 26.819H26.82C11.987 120.889 0 108.902 0 94.069c0-14.83 11.987-26.818 26.819-26.818z"/><path fill="#2eb67d" d="M201.55 94.07c0-14.832 11.987-26.82 26.818-26.82s26.82 11.988 26.82 26.82s-11.988 26.819-26.82 26.819H201.55zm-13.41 0c0 14.832-11.988 26.819-26.82 26.819c-14.831 0-26.818-11.987-26.818-26.82V26.82C134.502 11.987 146.489 0 161.32 0s26.819 11.987 26.819 26.819z"/><path fill="#ecb22e" d="M161.32 201.55c14.832 0 26.82 11.987 26.82 26.818s-11.988 26.82-26.82 26.82c-14.831 0-26.818-11.988-26.818-26.82V201.55zm0-13.41c-14.831 0-26.818-11.988-26.818-26.82c0-14.831 11.987-26.818 26.819-26.818h67.25c14.832 0 26.82 11.987 26.82 26.819s-11.988 26.819-26.82 26.819z"/>
         </svg>
       );
     case 'zoom':
@@ -96,13 +95,8 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
       );
     case 'twilio':
       return (
-        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Twilio">
-          <rect width="24" height="24" rx="4" fill="#F22F46" />
-          <circle cx="12" cy="12" r="7" fill="#fff" />
-          <circle cx="9.5" cy="9.5" r="1.5" fill="#F22F46" />
-          <circle cx="14.5" cy="9.5" r="1.5" fill="#F22F46" />
-          <circle cx="9.5" cy="14.5" r="1.5" fill="#F22F46" />
-          <circle cx="14.5" cy="14.5" r="1.5" fill="#F22F46" />
+        <svg viewBox="0 0 256 256" fill="none" style={s} className={className} aria-label="Twilio">
+          <path fill="#f12e45" d="M128 0c70.656 0 128 57.344 128 128s-57.344 128-128 128S0 198.656 0 128S57.344 0 128 0m0 33.792c-52.224 0-94.208 41.984-94.208 94.208S75.776 222.208 128 222.208s94.208-41.984 94.208-94.208S180.224 33.792 128 33.792m31.744 99.328c14.704 0 26.624 11.92 26.624 26.624s-11.92 26.624-26.624 26.624s-26.624-11.92-26.624-26.624s11.92-26.624 26.624-26.624m-63.488 0c14.704 0 26.624 11.92 26.624 26.624s-11.92 26.624-26.624 26.624s-26.624-11.92-26.624-26.624s11.92-26.624 26.624-26.624m63.488-63.488c14.704 0 26.624 11.92 26.624 26.624s-11.92 26.624-26.624 26.624s-26.624-11.92-26.624-26.624s11.92-26.624 26.624-26.624m-63.488 0c14.704 0 26.624 11.92 26.624 26.624s-11.92 26.624-26.624 26.624s-26.624-11.92-26.624-26.624s11.92-26.624 26.624-26.624"/>
         </svg>
       );
     case 'shopify':
@@ -460,12 +454,8 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
       );
     case 'microsoft_teams':
       return (
-        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="Microsoft Teams">
-          <rect width="24" height="24" rx="5" fill="#5059C9" />
-          <circle cx="15.5" cy="8" r="1.8" fill="#fff" />
-          <rect x="13" y="10" width="6" height="6.5" rx="1.5" fill="#fff" />
-          <rect x="6" y="9" width="6.5" height="8" rx="1.2" fill="#7B83EB" />
-          <circle cx="9.2" cy="7" r="2" fill="#7B83EB" />
+        <svg viewBox="0 0 256 239" fill="none" style={s} className={className} aria-label="Microsoft Teams">
+          <defs><linearGradient id="SVGCo9xpmZW" x1="17.372%" x2="82.628%" y1="-6.51%" y2="106.51%"><stop offset="0%" stop-color="#5a62c3"/><stop offset="50%" stop-color="#4d55bd"/><stop offset="100%" stop-color="#3940ab"/></linearGradient><path id="SVGhJCUgeMn" d="M136.93 64.476v12.8a32.7 32.7 0 0 1-5.953-.952a38.7 38.7 0 0 1-26.79-22.742h21.848c6.008.022 10.872 4.887 10.895 10.894"/></defs><path fill="#5059c9" d="M178.563 89.302h66.125c6.248 0 11.312 5.065 11.312 11.312v60.231c0 22.96-18.613 41.574-41.573 41.574h-.197c-22.96.003-41.576-18.607-41.579-41.568V95.215a5.91 5.91 0 0 1 5.912-5.913"/><circle cx="223.256" cy="50.605" r="26.791" fill="#5059c9"/><circle cx="139.907" cy="38.698" r="38.698" fill="#7b83eb"/><path fill="#7b83eb" d="M191.506 89.302H82.355c-6.173.153-11.056 5.276-10.913 11.449v68.697c-.862 37.044 28.445 67.785 65.488 68.692c37.043-.907 66.35-31.648 65.489-68.692v-68.697c.143-6.173-4.74-11.296-10.913-11.449"/><path d="M142.884 89.302v96.268a10.96 10.96 0 0 1-6.787 10.062c-1.3.55-2.697.833-4.108.833H76.68c-.774-1.965-1.488-3.93-2.084-5.953a72.5 72.5 0 0 1-3.155-21.076v-68.703c-.143-6.163 4.732-11.278 10.895-11.43z" opacity=".1"/><path d="M136.93 89.302v102.222c0 1.411-.283 2.808-.833 4.108a10.96 10.96 0 0 1-10.062 6.787H79.48c-1.012-1.965-1.965-3.93-2.798-5.954a59 59 0 0 1-2.084-5.953a72.5 72.5 0 0 1-3.155-21.076v-68.703c-.143-6.163 4.732-11.278 10.895-11.43z" opacity=".2"/><path d="M136.93 89.302v90.315c-.045 5.998-4.896 10.85-10.895 10.895H74.597a72.5 72.5 0 0 1-3.155-21.076v-68.703c-.143-6.163 4.732-11.278 10.895-11.43z" opacity=".2"/><path d="M130.977 89.302v90.315c-.046 5.998-4.897 10.85-10.895 10.895H74.597a72.5 72.5 0 0 1-3.155-21.076v-68.703c-.143-6.163 4.732-11.278 10.895-11.43z" opacity=".2"/><path d="M142.884 58.523v18.753c-1.012.06-1.965.12-2.977.12s-1.965-.06-2.977-.12a32.7 32.7 0 0 1-5.953-.952a38.7 38.7 0 0 1-26.791-22.742a33 33 0 0 1-1.905-5.954h29.708c6.007.023 10.872 4.887 10.895 10.895" opacity=".1"/><use href="#SVGhJCUgeMn" opacity=".2"/><use href="#SVGhJCUgeMn" opacity=".2"/><path d="M130.977 64.476v11.848a38.7 38.7 0 0 1-26.791-22.743h15.896c6.008.023 10.872 4.888 10.895 10.895" opacity=".2"/><path fill="url(#SVGCo9xpmZW)" d="M10.913 53.581h109.15c6.028 0 10.914 4.886 10.914 10.913v109.151c0 6.027-4.886 10.913-10.913 10.913H10.913C4.886 184.558 0 179.672 0 173.645V64.495C0 58.466 4.886 53.58 10.913 53.58"/><path fill="#fff" d="M94.208 95.125h-21.82v59.416H58.487V95.125H36.769V83.599h57.439z"/>
         </svg>
       );
     case 'google_calendar':
@@ -491,11 +481,8 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
       );
     case 'linkedin_ads':
       return (
-        <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="LinkedIn Ads">
-          <rect width="24" height="24" rx="4" fill="#0A66C2" />
-          <rect x="6" y="10" width="2.4" height="7" fill="#fff" />
-          <circle cx="7.2" cy="7.2" r="1.4" fill="#fff" />
-          <path d="M11 10h2.3v1.1c.5-.8 1.4-1.3 2.5-1.3 2 0 2.7 1.3 2.7 3.2V17h-2.4v-3.6c0-.9-.3-1.5-1.2-1.5-.9 0-1.4.6-1.4 1.5V17H11v-7Z" fill="#fff" />
+        <svg viewBox="0 0 256 256" fill="none" style={s} className={className} aria-label="LinkedIn Ads">
+          <path fill="#0a66c2" d="M218.123 218.127h-37.931v-59.403c0-14.165-.253-32.4-19.728-32.4c-19.756 0-22.779 15.434-22.779 31.369v60.43h-37.93V95.967h36.413v16.694h.51a39.91 39.91 0 0 1 35.928-19.733c38.445 0 45.533 25.288 45.533 58.186zM56.955 79.27c-12.157.002-22.014-9.852-22.016-22.009s9.851-22.014 22.008-22.016c12.157-.003 22.014 9.851 22.016 22.008A22.013 22.013 0 0 1 56.955 79.27m18.966 138.858H37.95V95.967h37.97zM237.033.018H18.89C8.58-.098.125 8.161-.001 18.471v219.053c.122 10.315 8.576 18.582 18.89 18.474h218.144c10.336.128 18.823-8.139 18.966-18.474V18.454c-.147-10.33-8.635-18.588-18.966-18.453"/>
         </svg>
       );
     case 'google_drive':
@@ -558,9 +545,8 @@ export function BrandLogo({ provider, size = 24, className = '' }: BrandLogoProp
     case 'openai':
       return (
         <svg viewBox="0 0 24 24" fill="none" style={s} className={className} aria-label="OpenAI">
-          <rect width="24" height="24" rx="5" fill="#10A37F" />
-          <path d="M12 6.2a3.2 3.2 0 0 1 3.1 2.4 3 3 0 0 1 2 4.5 3.2 3.2 0 0 1-1.1 4.4 3 3 0 0 1-3.6 1.4 3.2 3.2 0 0 1-5.4-1.1 3 3 0 0 1-2-4.5 3.2 3.2 0 0 1 1.1-4.4A3 3 0 0 1 9.6 6.9 3.2 3.2 0 0 1 12 6.2Z" stroke="#fff" strokeWidth="1.2" fill="none" />
-          <circle cx="12" cy="12" r="1.6" fill="#fff" />
+          <rect width="24" height="24" rx="5" fill="#fff" stroke="#E5E7EB" strokeWidth="1" />
+          <path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z" fill="#000000" transform="translate(2.6 2.6) scale(0.783)" />
         </svg>
       );
     case 'anthropic':
