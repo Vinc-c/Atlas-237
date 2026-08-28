@@ -8,8 +8,9 @@ import { PspCheckoutModal } from '@/components/PspCheckoutModal';
 import { Logo } from '@/components/Logo';
 
 export function Paywall({ children }: { children: React.ReactNode }) {
-  const { organization, session, loading, language, isSuperAdmin, isPlatformExempt } = useAuth();
+  const { organization, session, loading, language, isSuperAdmin, isPlatformExempt, profile } = useAuth();
   const lang = language;
+  const canManageBilling = profile ? ['owner', 'admin'].includes(profile.role) : false;
   const [access, setAccess] = useState<{ allowed: boolean; status: string; plan: string; trialEndsAt: string | null; periodEnd: string | null } | null>(null);
   const [checking, setChecking] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -81,6 +82,12 @@ export function Paywall({ children }: { children: React.ReactNode }) {
           </p>
         </div>
 
+        {!canManageBilling && (
+          <div className="mt-4 rounded-lg border border-ink-200 bg-ink-50 p-3 text-xs text-ink-600">
+            {lang === 'fr' ? 'Seul le propriétaire ou un administrateur de l\'organisation peut souscrire un plan. Contactez-le pour réactiver l\'accès.' : 'Only an organization owner or admin can subscribe to a plan. Contact them to reactivate access.'}
+          </div>
+        )}
+
         {availablePsps !== null && availablePsps.length === 0 && (
           <div className="mt-4 rounded-lg border border-warning-200 bg-warning-50 p-3 text-xs text-warning-700">
             {lang === 'fr' ? 'Aucun moyen de paiement n\'est configuré actuellement. Contactez le support.' : 'No payment provider is currently configured. Contact support.'}
@@ -99,7 +106,7 @@ export function Paywall({ children }: { children: React.ReactNode }) {
               </div>
               <button
                 onClick={() => { setCheckoutPlan(key); setPayError(''); }}
-                disabled={availablePsps === null}
+                disabled={availablePsps === null || !canManageBilling}
                 className="btn-primary btn-sm"
               >
                 <CreditCard size={14} /> {lang === 'fr' ? 'Payer' : 'Pay'}

@@ -269,6 +269,8 @@ function AIProviderTab({ language, organization, onSave }: { language: Language;
 
 /* ── Account Tab ── */
 function AccountTab({ language, organization, onSave }: { language: Language; organization: Organization | null; onSave: () => Promise<void> }) {
+  const { profile } = useAuth();
+  const canEdit = profile ? ['owner', 'admin'].includes(profile.role) : false;
   const [org, setOrg] = useState<Organization | null>(organization);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -276,6 +278,7 @@ function AccountTab({ language, organization, onSave }: { language: Language; or
   useEffect(() => { setOrg(organization); }, [organization]);
 
   async function save() {
+    if (!canEdit) return;
     setSaving(true); setSaved(false);
     if (org) {
       const { error } = await supabase.from('organizations').update({
@@ -283,6 +286,7 @@ function AccountTab({ language, organization, onSave }: { language: Language; or
         country: org.country, address: org.address, currency: org.currency, timezone: org.timezone,
       }).eq('id', org.id);
       if (!error) { setSaved(true); await onSave(); }
+      else alert(error.message);
     }
     setSaving(false);
   }
@@ -290,6 +294,12 @@ function AccountTab({ language, organization, onSave }: { language: Language; or
   return (
     <div className="card p-6">
       <h3 className="font-bold text-ink-800 mb-4">{language === 'fr' ? 'Organisation' : 'Organization'}</h3>
+      {!canEdit && (
+        <p className="mb-4 rounded-lg bg-ink-50 p-2 text-xs text-ink-600">
+          {language === 'fr' ? 'Seul le propriétaire ou un administrateur peut modifier ces informations.' : 'Only an owner or admin can edit these settings.'}
+        </p>
+      )}
+      <fieldset disabled={!canEdit} className="contents">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">{language === 'fr' ? "Nom de l'entreprise" : 'Company Name'}</label>
@@ -327,10 +337,13 @@ function AccountTab({ language, organization, onSave }: { language: Language; or
           <input className="input" value={org?.address || ''} onChange={e => setOrg({ ...org!, address: e.target.value })} />
         </div>
       </div>
-      <div className="flex items-center gap-3 mt-4">
-        <button onClick={save} disabled={saving} className="btn-primary btn-sm">{saving ? '...' : t('common.save', language)}</button>
-        {saved && <span className="text-sm text-success-600">✓ {language === 'fr' ? 'Enregistré' : 'Saved'}</span>}
-      </div>
+      </fieldset>
+      {canEdit && (
+        <div className="flex items-center gap-3 mt-4">
+          <button onClick={save} disabled={saving} className="btn-primary btn-sm">{saving ? '...' : t('common.save', language)}</button>
+          {saved && <span className="text-sm text-success-600">✓ {language === 'fr' ? 'Enregistré' : 'Saved'}</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -863,7 +876,8 @@ function SsoSection({ language, organization, allowed, onSave }: { language: Lan
 }
 
 export function BillingPage() {
-  const { language, organization, session } = useAuth();
+  const { language, organization, session, profile } = useAuth();
+  const canManageBilling = profile ? ['owner', 'admin'].includes(profile.role) : false;
   const lang = language;
   const [currentPlan, setCurrentPlan] = useState<string>(organization?.plan || 'starter');
   const [busy, setBusy] = useState<string | null>(null);
@@ -962,6 +976,11 @@ export function BillingPage() {
             {lang === 'fr' ? 'Aucun moyen de paiement n\'est configuré actuellement. Contactez le support.' : 'No payment provider is currently configured. Contact support.'}
           </p>
         )}
+        {!canManageBilling && (
+          <p className="mt-3 rounded-lg bg-ink-50 p-2 text-xs text-ink-600">
+            {lang === 'fr' ? 'Seul le propriétaire ou un administrateur de l\'organisation peut changer de plan.' : 'Only an organization owner or admin can change the plan.'}
+          </p>
+        )}
         {verifying && (
           <p className="mt-3 rounded-lg bg-primary-50 p-2 text-xs text-primary-700 flex items-center gap-2">
             <Loader2 size={12} className="animate-spin" /> {lang === 'fr' ? 'Confirmation du paiement...' : 'Confirming payment...'}
@@ -986,7 +1005,7 @@ export function BillingPage() {
               </ul>
               <button
                 onClick={() => { setCheckoutPlan(plan); setPayError(''); }}
-                disabled={isCurrent || availablePsps === null}
+                disabled={isCurrent || availablePsps === null || !canManageBilling}
                 className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
               >
                 {isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : (lang === 'fr' ? 'Payer' : 'Pay')}

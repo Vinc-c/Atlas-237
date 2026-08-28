@@ -91,9 +91,15 @@ Deno.serve(async (req: Request) => {
 
     // Verify the caller actually belongs to org_id (org-scoped, mirrors the
     // same check used by other org-mutating edge functions in this app).
-    const { data: profile } = await supabaseClient.from("profiles").select("org_id").eq("id", userData.user.id).single();
+    const { data: profile } = await supabaseClient.from("profiles").select("org_id, role").eq("id", userData.user.id).single();
     if (!profile || profile.org_id !== org_id) {
       return new Response(JSON.stringify({ ok: false, msg: "You do not belong to this organization" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Only owner/admin roles may spend the organization's money on a plan.
+    if (!["owner", "admin"].includes(profile.role)) {
+      return new Response(JSON.stringify({ ok: false, msg: "Only an organization owner or admin can change the subscription plan." }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
