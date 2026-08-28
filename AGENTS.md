@@ -56,18 +56,31 @@ ai_tasks, approvals, workflows, ai_memory, knowledge_documents, integrations, ap
 webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are at
 `supabase/migrations/` (latest: `20260808180000_005_fix_signup_and_subscriptions.sql`).
 
-## Billing / Flutterwave / Trial enforcement
+## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise custom (per user/month).
+- `src/lib/psp.ts` is the single PSP registry — currently Flutterwave (card/bank),
+  PayUnit (mobile money: MTN, Orange, Express Union, YUP), Paystack (card/bank/
+  mobile money). `getAvailablePsps()` only returns a PSP once its
+  `checkAvailable()` proves real configuration; `BillingPage`/`PspCheckoutModal`
+  render exactly that filtered list, never a hardcoded one.
+- **"No payment method is currently available" is expected, not a bug, until
+  real PSP credentials are set** — see `.env.example` for the exact variable
+  names and where each one goes (Cloudflare Pages `VITE_*` client vars vs.
+  Supabase Edge Function secrets for everything else, secret keys included).
+  Client-side `checkAvailable()`: Flutterwave/Paystack check their `VITE_*`
+  public key is present in the built bundle. PayUnit has no public key at all,
+  so it pings `payunit-initialize` with `{ check: true }` and trusts only a
+  live server confirmation.
 - `src/lib/flutterwave.ts` — inline Flutterwave Checkout, `checkSubscriptionAccess(orgId)`
   via Supabase RPC `org_subscription_status`, `recordSubscription()` to upsert
   `subscriptions` table + update `organizations.plan`.
 - `src/components/Paywall.tsx` wraps all protected routes; blocks access when trial
   expired and no active subscription. The user CANNOT bypass — the Paywall renders
   before any app content.
-- `BillingPage` (in SystemPages.tsx) uses Flutterwave checkout to upgrade plans.
-- Env vars: `VITE_FLW_PUBLIC_KEY` and `VITE_FLW_SECRET_KEY` (see `.env.example`).
+- `BillingPage` (in SystemPages.tsx) uses the PSP registry above to upgrade plans.
 - DB: `subscriptions` table + `org_subscription_status(check_org_id)` RPC function
-  added by migration `005`. RLS enabled.
+  added by migration `005`. RLS enabled and further locked down by migrations
+  `024_billing_rls_enforcement` and `025_lock_down_billing_writes`.
 
 ## Logo
 - `src/components/Logo.tsx` — simple CRM logo (stacked card + "A" mark), replaces

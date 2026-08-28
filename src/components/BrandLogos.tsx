@@ -24,10 +24,10 @@
 //    simplified version of the mark. It is a stylized stand-in, not the
 //    official artwork, and is labelled as such in code review / logo
 //    audits.
-// 'atlas' and 'libooks' are LiAfrik's own first-party products, not
-// third-party brands, so they were always custom-designed rather than
-// sourced. 'sellia' is also a first-party LiAfrik product, but as of the
-// image-logo batch below it uses the actual supplied Sellia mark.
+// 'atlas' is LiAfrik's own first-party product and has no supplied file,
+// so it stays custom-designed (category 2 style, inline SVG below).
+// 'libooks' and 'sellia' are also first-party LiAfrik products, but each
+// now uses its actual supplied official mark as an image file (category 0).
 
 /** Providers with a real logo file in public/brand-logos/ — see category 0 above. */
 const IMAGE_LOGOS: Record<string, string> = {
@@ -68,6 +68,7 @@ const IMAGE_LOGOS: Record<string, string> = {
   facebook_messenger: '/brand-logos/facebook_messenger.png',
   whatsapp: '/brand-logos/whatsapp.png',
   maxicash: '/brand-logos/maxicash.png',
+  libooks: '/brand-logos/libooks.png',
 };
 
 interface BrandLogoProps {
