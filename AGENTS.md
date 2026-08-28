@@ -57,7 +57,18 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
 `supabase/migrations/` (latest: `20260808180000_005_fix_signup_and_subscriptions.sql`).
 
 ## Billing / PSP registry / Trial enforcement
-- Plans: Starter $19, Growth $49, Pro $119, Enterprise custom (per user/month).
+- Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly
+  price per organization (not per seat; `maxUsers` in `src/lib/plans.ts`
+  caps seats per plan, it doesn't multiply the price). All amounts are
+  defined in USD in exactly 4 places that must stay in sync: `src/lib/
+  plans.ts` (PLAN_PRICES, feature gating), `src/lib/flutterwave.ts`,
+  `src/lib/paystack.ts`, and `supabase/functions/payunit-initialize`
+  (PLAN_PRICES_USD in each). The platform's own currency is always USD;
+  each PSP converts from there — Flutterwave and Paystack charge the USD
+  amount directly (their own checkout UI shows it in the customer's local
+  currency), PayUnit converts USD → XAF itself server-side using a live
+  exchange rate fetched from open.er-api.com (never a hardcoded/guessed
+  peg). The frontend never performs its own currency conversion.
 - `src/lib/psp.ts` is the single PSP registry — currently Flutterwave (card/bank),
   PayUnit (mobile money: MTN, Orange, Express Union, YUP), Paystack (card/bank/
   mobile money). `getAvailablePsps()` only returns a PSP once its

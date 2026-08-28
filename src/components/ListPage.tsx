@@ -326,7 +326,7 @@ export function ListPage<T extends { id: string }>({
       setModalOpen(false);
       load();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setError(getErrorMessage(err, 'Save failed'));
     } finally {
       setSaving(false);
     }

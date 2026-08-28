@@ -1,0 +1,18 @@
+-- 028: fix "Save failed" when creating a contact/client.
+--
+-- The Contacts form (src/pages/CRMPages.tsx, ContactsPage) has always had a
+-- free-text "Company" field (key: 'company') distinct from the optional
+-- company_id relation (used to link a contact to a full Companies record).
+-- But public.contacts was only ever created with a company_id uuid
+-- column — there is no company text column. As soon as a user typed
+-- anything into that field, INSERT INTO contacts (..., company, ...)
+-- failed with: column "company" of relation "contacts" does not exist
+-- surfaced to the user as a generic "Save failed" (the raw Postgres error
+-- object isn't always an `instanceof Error`, so ListPage's catch block
+-- fell back to its generic message instead of showing the real reason).
+--
+-- This migration only adds the missing column — the free-text company name
+-- a contact might give you before they exist as a full Companies record —
+-- it does not touch or replace company_id, which still works exactly as
+-- before for contacts linked to a real Companies record.
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS company text;

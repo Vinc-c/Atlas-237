@@ -27,7 +27,11 @@ interface KeyRule {
 const RULES: Record<string, KeyRule> = {
   openai: { field: 'api_key', pattern: /^sk-[A-Za-z0-9_-]{20,}$/, hint: 'starts with "sk-"' },
   anthropic: { field: 'api_key', pattern: /^sk-ant-[A-Za-z0-9_-]{20,}$/, hint: 'starts with "sk-ant-"' },
-  gemini: { field: 'api_key', pattern: /^AIza[A-Za-z0-9_-]{20,}$/, hint: 'starts with "AIza"' },
+  // Every real Google API key starts this way (console.cloud.google.com >
+  // Credentials). Spelled out below because "AIza" is easy to misread as
+  // "Alza"/"Alaza" in some fonts, where the capital I looks like a
+  // lowercase l — this is not a typo in the pattern.
+  gemini: { field: 'api_key', pattern: /^AIza[A-Za-z0-9_-]{20,}$/, hint: 'starts with "AIza" (capital A, capital I, lowercase z, lowercase a)' },
   stripe: { field: 'secret_key', pattern: /^sk_(live|test)_[A-Za-z0-9]{20,}$/, hint: 'starts with "sk_live_" or "sk_test_"' },
   twilio: { field: 'account_sid', pattern: /^AC[a-f0-9]{32}$/, hint: 'starts with "AC" followed by 32 hex characters' },
   shopify: { field: 'access_token', pattern: /^shp(at|ca|ss)_[a-f0-9]{32,}$/, hint: 'starts with "shpat_", "shpca_" or "shpss_"' },
