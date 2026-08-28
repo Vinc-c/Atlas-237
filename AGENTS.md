@@ -54,7 +54,35 @@ and individual pages. Tables expected: contacts, companies, leads, deals, pipeli
 activities, products, quotes, orders, invoices, payments, campaigns, tickets, ai_agents,
 ai_tasks, approvals, workflows, ai_memory, knowledge_documents, integrations, api_keys,
 webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are at
-`supabase/migrations/` (latest: `20260808180000_005_fix_signup_and_subscriptions.sql`).
+`supabase/migrations/` (latest: `20260828140000_028_add_contacts_company_text_column.sql`).
+- Whenever you add or edit a `ListPage` `formFields` array, or a direct
+  `supabase.from(table).insert({...})` / `.update({...})` call anywhere else,
+  double-check every key against the table's real columns in
+  `supabase/migrations/`. A field/column-name mismatch fails silently at
+  runtime (Postgres rejects the whole write with "column X does not exist")
+  and is easy to miss in review since TypeScript can't catch it — the two
+  real bugs fixed for this reason so far: contacts' `company` field had no
+  matching column (migration 028), and TeamPages inserted `profile_id` into
+  `team_members`, which only has `user_id` (profiles.id IS auth.users.id in
+  this schema, so passing a profile id as user_id is correct once renamed).
+- Campaigns (`campaigns` table, `MarketingPage`) and Knowledge Base
+  (`knowledge_documents` table, `KnowledgeBasePage`) are intentionally
+  metadata-only trackers right now — recording a campaign's budget/subject/
+  content or a document's title/file_path, with no button claiming to
+  actually send an email or upload a file to storage. That's an honest,
+  accurate scope (no fake "Sent"/"Uploaded" state), just not yet a feature
+  — real send/upload would be new functionality, not a bug fix.
+
+## Data-layer bug-hunting tool
+There's no CI check for form-field/column-name drift (the exact bug class
+above), so when doing a broader integrity pass, re-derive the column map
+from `supabase/migrations/*.sql` (CREATE TABLE + later ALTER TABLE ADD/DROP
+COLUMN) and diff it against every `key: '...'` in a ListPage `formFields`
+array and every literal key in a direct `.insert({...})`/`.update({...})`
+call. Skip keys inside a nested object (most raw `.insert()` calls
+correctly nest provider-specific fields inside a jsonb column like `config`
+or `permissions` — those are not top-level columns and will show as false
+positives in a naive flat-key diff).
 
 ## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly

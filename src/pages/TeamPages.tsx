@@ -289,14 +289,14 @@ export function TeamsPage() {
 
   async function openManage(team: TeamRecord) {
     setManageTeam(team);
-    const { data } = await supabase.from('team_members').select('profile_id').eq('team_id', team.id);
-    const memberIds = (data || []).map((m: { profile_id: string }) => m.profile_id);
+    const { data } = await supabase.from('team_members').select('user_id').eq('team_id', team.id);
+    const memberIds = (data || []).map((m: { user_id: string }) => m.user_id);
     setTeamMembers(employees.filter(e => memberIds.includes(e.id)));
   }
 
   async function addMember() {
     if (!manageTeam || !addMemberId) return;
-    const { error } = await supabase.from('team_members').insert({ team_id: manageTeam.id, profile_id: addMemberId });
+    const { error } = await supabase.from('team_members').insert({ team_id: manageTeam.id, user_id: addMemberId });
     if (error) { alert(error.message); return; }
     setTeamMembers(prev => [...prev, employees.find(e => e.id === addMemberId)!].filter(Boolean));
     setAddMemberId('');
@@ -304,7 +304,7 @@ export function TeamsPage() {
 
   async function removeMember(profileId: string) {
     if (!manageTeam) return;
-    const { error } = await supabase.from('team_members').delete().eq('team_id', manageTeam.id).eq('profile_id', profileId);
+    const { error } = await supabase.from('team_members').delete().eq('team_id', manageTeam.id).eq('user_id', profileId);
     if (error) { alert(error.message); return; }
     setTeamMembers(prev => prev.filter(m => m.id !== profileId));
   }
