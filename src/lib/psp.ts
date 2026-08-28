@@ -1,5 +1,6 @@
 import { isFlutterwaveConfigured, initiateFlutterwaveCheckout, recordSubscription } from '@/lib/flutterwave';
 import { isPayunitConfigured, initiatePayunitCheckout } from '@/lib/payunit';
+import { isPaystackConfigured, initiatePaystackCheckout, confirmPaystackPayment } from '@/lib/paystack';
 
 /**
  * Payment Service Provider registry.
@@ -20,8 +21,9 @@ import { isPayunitConfigured, initiatePayunitCheckout } from '@/lib/payunit';
  */
 export interface PspOption {
   key: string;
+  /** Internal label — used only for logging/dev reference, never shown to the customer. */
   label: string;
-  /** Short description of how the customer pays (shown in the picker). */
+  /** Customer-facing description of the payment method (e.g. "Card / bank transfer"). Shown in the picker instead of the PSP's name. */
   method: string;
   checkAvailable: () => Promise<boolean>;
 }
@@ -39,9 +41,15 @@ export const PSP_REGISTRY: PspOption[] = [
     method: 'Mobile Money (MTN, Orange, Express Union, YUP)',
     checkAvailable: () => isPayunitConfigured(),
   },
-  // Future PSPs (Paystack, PayPal, etc.) are added here — the Billing
-  // page automatically picks them up, checks availability, and includes
-  // them in the manual-selection list. Nothing else needs to change.
+  {
+    key: 'paystack',
+    label: 'Paystack',
+    method: 'Card / bank / mobile money',
+    checkAvailable: async () => isPaystackConfigured(),
+  },
+  // Future PSPs are added here — the Billing page automatically picks
+  // them up, checks availability, and includes them in the manual-
+  // selection list. Nothing else needs to change.
 ];
 
 /** Checks every registered PSP in parallel and returns only the available ones, in registry priority order. */
@@ -76,6 +84,20 @@ export async function payWithPsp(
     sessionStorage.setItem('payunit_pending_tx', result.transactionUrl.split('/').pop() || '');
     window.location.href = result.transactionUrl;
     return { ok: true, redirected: true };
+  }
+  if (pspKey === 'paystack') {
+    return new Promise((resolve) => {
+      initiatePaystackCheckout({
+        plan: params.plan,
+        email: params.email,
+        orgId: params.orgId,
+        onSuccess: async (reference) => {
+          const res = await confirmPaystackPayment({ orgId: params.orgId, plan: params.plan, reference });
+          resolve(res.success ? { ok: true } : { ok: false, msg: res.error });
+        },
+        onClose: () => resolve({ ok: false, msg: 'cancelled' }),
+      });
+    });
   }
   return { ok: false, msg: 'unknown_psp' };
 }

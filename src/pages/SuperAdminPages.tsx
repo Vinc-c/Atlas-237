@@ -387,31 +387,16 @@ export function SuperAdminUsersPage() {
 
   async function changePlan(orgId: string, orgName: string, newPlan: string) {
     if (!user) return;
-    const { error } = await supabase.from('organizations').update({ plan: newPlan }).eq('id', orgId);
+    const { error } = await supabase.rpc('admin_set_org_plan', { target_org_id: orgId, new_plan: newPlan });
     if (error) { alert(error.message); return; }
-    const { error: subErr } = await supabase.from('subscriptions').update({ plan: newPlan }).eq('org_id', orgId).eq('status', 'active');
-    if (subErr) console.error('subscriptions.update failed:', subErr.message);
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'plan.change', p_target_type: 'organization', p_target_id: orgId, p_details: { new_plan: newPlan } });
     await load();
   }
 
   async function extendAccess(org: Organization, days: number) {
     if (!user) return;
-    const now = new Date();
-    if (!org.trial_ends_at || new Date(org.trial_ends_at) > now || org.status === 'trial') {
-      const base = org.trial_ends_at && new Date(org.trial_ends_at) > now ? new Date(org.trial_ends_at) : now;
-      base.setDate(base.getDate() + days);
-      const { error } = await supabase.from('organizations').update({ trial_ends_at: base.toISOString() }).eq('id', org.id);
-      if (error) { alert(error.message); return; }
-    }
-    const { data: sub } = await supabase.from('subscriptions').select('id,current_period_end').eq('org_id', org.id).eq('status', 'active').maybeSingle();
-    if (sub) {
-      const base = sub.current_period_end && new Date(sub.current_period_end) > now ? new Date(sub.current_period_end) : now;
-      base.setDate(base.getDate() + days);
-      await supabase.from('subscriptions').update({ current_period_end: base.toISOString() }).eq('id', sub.id).then(({ error }) => {
-        if (error) console.error('subscription period extend failed:', error.message);
-      });
-    }
+    const { error } = await supabase.rpc('admin_extend_org_access', { target_org_id: org.id, extend_days: days });
+    if (error) { alert(error.message); return; }
     await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: org.id, p_details: { days } });
     await load();
   }

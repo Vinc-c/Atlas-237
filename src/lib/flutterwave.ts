@@ -40,7 +40,13 @@ export const PLAN_PRICES: Record<string, { cents: number; label: string }> = {
 };
 
 export const FLW_PUBLIC_KEY = import.meta.env.VITE_FLW_PUBLIC_KEY as string | undefined;
-export const FLW_SECRET_KEY = import.meta.env.VITE_FLW_SECRET_KEY as string | undefined;
+// NOTE: there is intentionally no client-side "FLW_SECRET_KEY" export here.
+// A payment provider's secret key can charge cards, issue refunds, and
+// read full transaction history — it must never be bundled into
+// client-side JS (a VITE_-prefixed env var is baked into the public
+// bundle at build time and readable by anyone). The real secret key is
+// read only inside supabase/functions/flutterwave-verify, from a
+// server-only Deno.env var with no VITE_ prefix.
 
 export function isFlutterwaveConfigured() {
   return Boolean(FLW_PUBLIC_KEY);
@@ -134,8 +140,17 @@ export function initiateFlutterwaveCheckout(params: {
 }
 
 /**
- * Record a successful subscription payment in the database.
- * This updates the subscription + organization plan.
+ * Confirm a Flutterwave payment and activate the subscription.
+ *
+ * This calls the flutterwave-verify edge function, which independently
+ * re-checks the transaction with Flutterwave's own server-side API (using
+ * the secret key, which never reaches the browser) before writing
+ * anything — the amount, currency, and status the client-side checkout
+ * callback reported are never trusted on their own. Writing directly to
+ * the subscriptions/organizations tables from the browser is no longer
+ * possible (RLS + column privileges were locked down specifically to
+ * close that gap), so this edge function is the only path to activating
+ * a plan.
  */
 export async function recordSubscription(params: {
   orgId: string;
@@ -143,39 +158,21 @@ export async function recordSubscription(params: {
   txRef: string;
   paymentId: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const { orgId, plan, txRef, paymentId } = params;
-  const price = PLAN_PRICES[plan];
-  if (!price) return { success: false, error: 'Invalid plan' };
-
-  const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-  // Upsert subscription record
-  const { error: subError } = await supabase.from('subscriptions').upsert({
-    org_id: orgId,
-    plan,
-    status: 'active',
-    price_cents: price.cents,
-    currency: 'USD',
-    billing_cycle: 'monthly',
-    flutterwave_tx_ref: txRef,
-    flutterwave_payment_id: paymentId,
-    current_period_start: now.toISOString(),
-    current_period_end: periodEnd.toISOString(),
-  }, { onConflict: 'org_id' });
-
-  if (subError) return { success: false, error: subError.message };
-
-  // Update org plan
-  const { error: orgError } = await supabase
-    .from('organizations')
-    .update({ plan })
-    .eq('id', orgId);
-
-  if (orgError) return { success: false, error: orgError.message };
-
-  return { success: true };
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/flutterwave-verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ org_id: params.orgId, plan: params.plan, tx_ref: params.txRef, transaction_id: params.paymentId }),
+    });
+    const result = await res.json();
+    return result.ok ? { success: true } : { success: false, error: result.msg || 'Verification failed' };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Network error' };
+  }
 }
 
 /** React hook for subscription access in protected routes */

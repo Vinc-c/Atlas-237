@@ -3,7 +3,8 @@ import { Lock, CreditCard, CheckCircle2, AlertCircle, Loader2 } from 'lucide-rea
 import { useAuth } from '@/context/AuthContext';
 import { checkSubscriptionAccess } from '@/lib/flutterwave';
 import { PLAN_PRICES } from '@/lib/plans';
-import { getAvailablePsps, payWithPsp, PSP_REGISTRY, type PspOption } from '@/lib/psp';
+import { getAvailablePsps, payWithPsp, type PspOption } from '@/lib/psp';
+import { PspCheckoutModal } from '@/components/PspCheckoutModal';
 import { Logo } from '@/components/Logo';
 
 export function Paywall({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,7 @@ export function Paywall({ children }: { children: React.ReactNode }) {
   const [payError, setPayError] = useState('');
   const [availablePsps, setAvailablePsps] = useState<PspOption[] | null>(null);
   const [selectedPsp, setSelectedPsp] = useState<string>('');
+  const [checkoutPlan, setCheckoutPlan] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading || !organization) return;
@@ -84,24 +86,6 @@ export function Paywall({ children }: { children: React.ReactNode }) {
             {lang === 'fr' ? 'Aucun moyen de paiement n\'est configuré actuellement. Contactez le support.' : 'No payment provider is currently configured. Contact support.'}
           </div>
         )}
-        {availablePsps !== null && availablePsps.length > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <span className="text-xs text-ink-500">{lang === 'fr' ? 'Payer avec :' : 'Pay with:'}</span>
-            {availablePsps.map((psp) => (
-              <button
-                key={psp.key}
-                onClick={() => setSelectedPsp(psp.key)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${selectedPsp === psp.key ? 'bg-primary-600 text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}
-                title={psp.method}
-              >
-                {psp.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {payError && (
-          <div className="mt-4 rounded-lg border border-error-200 bg-error-50 p-3 text-xs text-error-700">{payError}</div>
-        )}
 
         <div className="mt-6 space-y-3">
           {Object.entries(PLAN_PRICES).map(([key, price]) => (
@@ -114,12 +98,11 @@ export function Paywall({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <button
-                onClick={() => handleSubscribe(key)}
-                disabled={busy !== null || !selectedPsp}
+                onClick={() => { setCheckoutPlan(key); setPayError(''); }}
+                disabled={availablePsps === null}
                 className="btn-primary btn-sm"
               >
-                {busy === key ? <Loader2 className="animate-spin" size={14} /> : <CreditCard size={14} />}
-                {lang === 'fr' ? 'Payer' : 'Pay'}
+                <CreditCard size={14} /> {lang === 'fr' ? 'Payer' : 'Pay'}
               </button>
             </div>
           ))}
@@ -127,9 +110,22 @@ export function Paywall({ children }: { children: React.ReactNode }) {
 
         <div className="mt-6 flex items-center justify-center gap-4 text-xs text-ink-400">
           <span className="flex items-center gap-1"><Lock size={12} /> {lang === 'fr' ? 'Paiement sécurisé' : 'Secure payment'}</span>
-          {selectedPsp && <span>{PSP_REGISTRY.find(p => p.key === selectedPsp)?.label}</span>}
         </div>
       </div>
+      {checkoutPlan && (
+        <PspCheckoutModal
+          planLabel={checkoutPlan.charAt(0).toUpperCase() + checkoutPlan.slice(1)}
+          priceLabel={`$${PLAN_PRICES[checkoutPlan as keyof typeof PLAN_PRICES]?.monthly}/mo`}
+          availablePsps={availablePsps || []}
+          selectedPsp={selectedPsp}
+          onSelect={setSelectedPsp}
+          onConfirm={() => handleSubscribe(checkoutPlan)}
+          onClose={() => { if (busy === null) setCheckoutPlan(null); }}
+          busy={busy === checkoutPlan}
+          error={payError}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }

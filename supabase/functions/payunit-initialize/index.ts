@@ -76,7 +76,11 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { plan, org_id, payment_country, return_url } = await req.json();
+    // Reuse the already-parsed body — a Request's body stream can only be
+    // read once; calling req.json() a second time throws "Body already
+    // consumed" and was the exact cause of checkout failing for every
+    // customer trying to pay.
+    const { plan, org_id, payment_country, return_url } = body;
     const usdPrice = PLAN_PRICES_USD[plan];
     if (!usdPrice) {
       return new Response(JSON.stringify({ ok: false, msg: `Unknown or non-payable plan: ${plan}` }), {
@@ -126,7 +130,15 @@ Deno.serve(async (req: Request) => {
     // The subscription's currency of record is always USD (consistent with
     // Flutterwave subscriptions and platform-wide MRR calculations, which
     // sum price_cents assuming USD) — only the actual charge rail differs.
-    const { error: subErr } = await supabaseClient.from("subscriptions").upsert({
+    // Uses the service role: regular authenticated users no longer have
+    // direct write access to subscriptions (see migration 025) — org
+    // membership was already verified above, so this pending placeholder
+    // row is safe to create server-side.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+    const { error: subErr } = await adminClient.from("subscriptions").upsert({
       org_id,
       plan,
       status: "pending",
