@@ -38,15 +38,40 @@ The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind s
 - OAuth has its own loading state (`oauthLoading`) with a spinner.
 - Inputs use proper `autoComplete` attributes (email, current-password, new-password, given-name…).
 
-## AskAtlas AI assistant (functional)
-- `src/lib/askAtlas.ts` is a shared business-question engine that answers in natural language
-  by querying live Supabase data (counts/aggregates). Intent keywords cover: contacts, leads
-  (hot/new), deals (open/at-risk), revenue/payments, invoices (unpaid), tickets, tasks
-  (overdue), meetings, AI tasks, employees, and an overview/summary fallback.
-- It returns `{ text, route? }` so answers can deep-link to the relevant module page.
-- Used in two places: `AskAtlasPage` (full chat UI with clickable suggestions + "View" link)
-  and `DashboardPage` AI command bar (inline reply panel).
-- No external LLM/API key required — it reads the org's own Supabase tables.
+## AskAtlas AI assistant (functional, two-tier)
+- `src/lib/askAtlas.ts` first tries the org's real configured AI (see
+  "Choose your AI" in Settings / `organizations.ai_provider` and the
+  `ai-assistant` edge function below); if that can't even be reached
+  (no session, network failure), it falls back to a deterministic
+  keyword-matched business-question engine that answers in natural
+  language by querying live Supabase data (counts/aggregates). Intent
+  keywords cover: contacts, leads (hot/new), deals (open/at-risk),
+  revenue/payments, invoices (unpaid), tickets, tasks (overdue), meetings,
+  AI tasks, employees, and an overview/summary fallback. No external LLM
+  key is required for this fallback tier — it reads the org's own tables.
+- If the real AI call IS reached but fails for a real reason (missing/bad
+  API key, the provider rejecting it, etc.), that reason is shown directly
+  to the user (prefixed "⚠️ AI unavailable: ..."), NOT silently swallowed
+  into a fallback keyword answer. This used to silently fall back on any
+  failure at all — meaning an org that connected and selected their own
+  OpenAI/Anthropic/Gemini key, but got the config wrong, would keep
+  getting what looked like normal working answers with zero indication
+  they were never actually AI-generated. Keep this distinction if you
+  touch `tryRealAI()` again: null = genuinely unreachable (fall back
+  silently), an error message = reached but failed (show it).
+- `supabase/functions/ai-assistant` is the real backend: reads
+  `organizations.ai_provider` (`platform_free` by default, using the
+  platform's own `GEMINI_API_KEY` server secret; or `openai`/`anthropic`/
+  `gemini` once the org both (1) connects their own key for that provider
+  in Marketplace AND (2) selects it in Settings > "Choose your AI" — step 1
+  alone does nothing, `ai_provider` still has to be flipped in step 2),
+  fetches a live CRM snapshot (contacts/leads/deals/invoices/tickets/
+  revenue counts) as grounding context, and calls the selected provider.
+- It returns `{ text, route? }` (fallback tier only) so answers can
+  deep-link to the relevant module page.
+- Used in two places: `AskAtlasPage` (full chat UI with clickable
+  suggestions + "View" link) and `DashboardPage` AI command bar (inline
+  reply panel).
 
 ## Data layer
 All CRUD goes through Supabase via `src/components/ListPage.tsx` (generic table editor)
