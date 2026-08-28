@@ -27,11 +27,17 @@ interface KeyRule {
 const RULES: Record<string, KeyRule> = {
   openai: { field: 'api_key', pattern: /^sk-[A-Za-z0-9_-]{20,}$/, hint: 'starts with "sk-"' },
   anthropic: { field: 'api_key', pattern: /^sk-ant-[A-Za-z0-9_-]{20,}$/, hint: 'starts with "sk-ant-"' },
-  // Every real Google API key starts this way (console.cloud.google.com >
-  // Credentials). Spelled out below because "AIza" is easy to misread as
-  // "Alza"/"Alaza" in some fonts, where the capital I looks like a
-  // lowercase l — this is not a typo in the pattern.
-  gemini: { field: 'api_key', pattern: /^AIza[A-Za-z0-9_-]{20,}$/, hint: 'starts with "AIza" (capital A, capital I, lowercase z, lowercase a)' },
+  // Google is mid-migration on Gemini key format (as of Aug 2026): the
+  // classic "AIza..." Standard key is being replaced by a new "AQ.Ab..."
+  // Auth key. Unrestricted Standard keys already started getting rejected
+  // by Google itself on 2026-06-19, and ALL Standard/AIza keys — restricted
+  // or not — stop working entirely once Google finishes the cutover in
+  // September 2026. Until that's fully done, a real, currently-working key
+  // can legitimately be either prefix, so both are accepted here. Once
+  // AIza keys are fully retired Google-side, the AIza branch below (and
+  // this comment) should be deleted — don't remove it before then, or
+  // every still-valid legacy key gets rejected early.
+  gemini: { field: 'api_key', pattern: /^(AIza[A-Za-z0-9_-]{20,}|AQ\.[A-Za-z0-9._-]{15,})$/, hint: 'starts with "AIza" (older keys, capital A, capital I, lowercase z, lowercase a) or "AQ." (new format Google is issuing since June 2026)' },
   stripe: { field: 'secret_key', pattern: /^sk_(live|test)_[A-Za-z0-9]{20,}$/, hint: 'starts with "sk_live_" or "sk_test_"' },
   twilio: { field: 'account_sid', pattern: /^AC[a-f0-9]{32}$/, hint: 'starts with "AC" followed by 32 hex characters' },
   shopify: { field: 'access_token', pattern: /^shp(at|ca|ss)_[a-f0-9]{32,}$/, hint: 'starts with "shpat_", "shpca_" or "shpss_"' },
