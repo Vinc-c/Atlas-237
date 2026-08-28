@@ -104,6 +104,11 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
   string, so a Trello connection attempt ends in "Invalid authorization
   response." Needs its own fragment-reading branch in `OAuthCallbackPage`
   (and a decision on how/where to persist the token) before Trello is real.
+  **Fixed** — `OAuthCallbackPage` now branches on `provider === 'trello'`,
+  reads the token from `window.location.hash`, and upserts it into
+  `integrations` directly from the client (safe: RLS scopes the write to
+  the caller's own `org_id`, same guarantee `oauth-exchange` gives
+  server-side for every other provider).
 - Every provider needs both its own `VITE_<X>_CLIENT_ID` (client-side,
   Cloudflare) and `<X>_CLIENT_SECRET` (server-side, Supabase Edge Function
   secret) registered in the provider's own developer console first — see
@@ -158,6 +163,16 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
 - `sales_codes` table: unique code → salesperson, max_uses, uses_count.
 - `sales_code_conversions` table: tracks signups + plan subscriptions per code.
 - Signup with sales code → `handle_new_user()` increments uses + logs conversion.
+- `handle_new_user()` also calls `seed_demo_data()` for every new org, which
+  inserts sample CRM records (contacts, deals, tickets, campaigns, workflow
+  definitions, etc.) so a new user isn't staring at an empty app. As of
+  migration `027` this sample data no longer includes anything that claims
+  a real external connection or credential exists — earlier it inserted
+  Gmail/Stripe as `status: 'connected'`, an "active" Production API key
+  with no real secret, and an "active" webhook to `example.com`, all of
+  which were fake and misleading. If you add new columns/tables to
+  `seed_demo_data`, keep that boundary: illustrative CRM records are fine,
+  anything implying a real connected account or live credential is not.
 - Super Admin generates codes in `/super-admin/sales-codes`.
 
 ## Branding (conditional on plan)
