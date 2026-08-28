@@ -82,6 +82,33 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
   added by migration `005`. RLS enabled and further locked down by migrations
   `024_billing_rls_enforcement` and `025_lock_down_billing_writes`.
 
+## OAuth app integrations (real connections, not decorative icons)
+- `supabase/functions/oauth-exchange` is the single server-side token-exchange
+  function for every OAuth-based app in `IntegrationPages.tsx`. Its `PROVIDERS`
+  registry must list every provider whose `authUrls[...]` entry exists
+  client-side — as of this note that's 20 providers (Google family, Slack,
+  Zoom, Microsoft family, QuickBooks, Xero, PayPal, GoCardless, Revolut
+  Business, Intercom, Facebook family, LinkedIn Ads, Dropbox, DocuSign,
+  Notion, Asana). Adding a new "Connect" button to `OAUTH_CLIENT_IDS` /
+  `authUrls` without also adding it here reproduces the exact bug that was
+  just fixed: the user completes the provider's real consent screen and then
+  hits "Unknown OAuth provider" back on `/auth/callback`.
+- Most providers are standard OAuth2 (client_id + client_secret in a
+  form-urlencoded body). PayPal and Notion are NOT — both require HTTP Basic
+  auth instead (`authStyle: 'basic'` in the registry); Notion additionally
+  wants a JSON body (`bodyFormat: 'json'`). Get this wrong and the exchange
+  is silently rejected by the provider even with correct credentials.
+- Known gap: Trello uses the legacy implicit/token flow (`response_type=token`,
+  token returned in the URL fragment, not a `code`) — it never reaches
+  `oauth-exchange` and `OAuthCallbackPage` currently only reads the query
+  string, so a Trello connection attempt ends in "Invalid authorization
+  response." Needs its own fragment-reading branch in `OAuthCallbackPage`
+  (and a decision on how/where to persist the token) before Trello is real.
+- Every provider needs both its own `VITE_<X>_CLIENT_ID` (client-side,
+  Cloudflare) and `<X>_CLIENT_SECRET` (server-side, Supabase Edge Function
+  secret) registered in the provider's own developer console first — see
+  `.env.example` for the exact names.
+
 ## Logo
 - `src/components/Logo.tsx` — simple CRM logo (stacked card + "A" mark), replaces
   the old Sparkles icon everywhere (AppLayout sidebar, AuthPage, LandingPage header/footer).
