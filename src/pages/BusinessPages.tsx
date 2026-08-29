@@ -4,6 +4,8 @@ import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { Badge } from '@/components/ui';
 import { CURRENCIES, formatMoney } from '@/lib/i18n-countries';
+import { usePlanAccess } from '@/lib/plans';
+import { UpgradeGate } from '@/components/UpgradeGate';
 import type { Product, Invoice, Ticket, Campaign } from '@/types';
 
 /**
@@ -63,6 +65,8 @@ export function ProductsPage() {
 export function QuotesPage() {
   const { language, organization } = useAuth();
   const orgCurrency = organization?.currency || 'USD';
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('quotesInvoicing');
   const fields: FormField[] = [
     { key: 'quote_number', label: t('list.quoteNumber', language), type: 'text', required: true },
     { key: 'status', label: t('common.status', language), type: 'select', options: [
@@ -74,7 +78,9 @@ export function QuotesPage() {
     { key: 'notes', label: t('list.notes', language), type: 'textarea' },
   ];
 
-  return (
+  return !allowed ? (
+    <UpgradeGate language={language} feature={t('nav.quotes', language)} minPlan="growth" />
+  ) : (
     <ListPage<{ id: string; quote_number: string; status: string; total: number; currency?: string; expiration_date: string | null; [key: string]: unknown }>
       table="quotes"
       title={t('nav.quotes', language)}
@@ -131,6 +137,8 @@ export function OrdersPage() {
 export function InvoicesPage() {
   const { language, organization } = useAuth();
   const orgCurrency = organization?.currency || 'USD';
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('quotesInvoicing');
   const fields: FormField[] = [
     { key: 'invoice_number', label: t('list.invoiceNumber', language), type: 'text', required: true },
     { key: 'status', label: t('common.status', language), type: 'select', options: [
@@ -146,7 +154,9 @@ export function InvoicesPage() {
     { key: 'notes', label: t('list.notes', language), type: 'textarea' },
   ];
 
-  return (
+  return !allowed ? (
+    <UpgradeGate language={language} feature={t('nav.invoices', language)} minPlan="growth" />
+  ) : (
     <ListPage<Invoice>
       table="invoices"
       title={t('nav.invoices', language)}
@@ -239,6 +249,8 @@ export function MarketingPage() {
 
 export function SupportPage() {
   const { language } = useAuth();
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('tickets');
   const fields: FormField[] = [
     { key: 'ticket_number', label: t('list.ticketNumber', language), type: 'text', required: true },
     { key: 'subject', label: t('list.subject', language), type: 'text', required: true },
@@ -252,7 +264,9 @@ export function SupportPage() {
     { key: 'description', label: t('list.description', language), type: 'textarea' },
   ];
 
-  return (
+  return !allowed ? (
+    <UpgradeGate language={language} feature={t('nav.support', language)} minPlan="growth" />
+  ) : (
     <ListPage<Ticket>
       table="tickets"
       title={t('nav.support', language)}

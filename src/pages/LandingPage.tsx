@@ -62,9 +62,18 @@ export function LandingPage() {
   // La page d'accueil n'a de copy qu'en fr/en ; on retombe sur 'en' pour les autres langues
   // pour éviter un contenu vide si le profil utilisateur est en es/pt/ar.
   const contentLang: 'fr' | 'en' = lang === 'fr' ? 'fr' : 'en';
-  const [annual, setAnnual] = useState(true);
+  // Pricing is a flat monthly amount per organization, charged the same
+  // way every time by every PSP (Flutterwave/Paystack/PayUnit — see
+  // src/lib/plans.ts PLAN_PRICES and each PSP's checkout code). There is
+  // no annual billing option anywhere in the real checkout flow
+  // (PayUnit's edge function even hardcodes billing_cycle: "monthly"), so
+  // this page must never advertise one — an "Annual, -17%" toggle used to
+  // sit here showing a discounted yearly price purely for display, with
+  // zero connection to what a customer would actually be charged after
+  // signing up. Don't reintroduce an annual price display without first
+  // building real annual billing all the way through checkout.
   useScrollReveal();
-  const price = (m: number | null) => (m === null ? (lang === 'fr' ? 'Sur devis' : 'Custom') : annual ? `$${Math.round(m * 10)}/${lang === 'fr' ? 'an' : 'yr'}` : `$${m}/${lang === 'fr' ? 'mois' : 'mo'}`);
+  const price = (m: number | null) => (m === null ? (lang === 'fr' ? 'Sur devis' : 'Custom') : `$${m}/${lang === 'fr' ? 'mois' : 'mo'}`);
 
   const matrixGroups: { group: { fr: string; en: string }; rows: Row[] }[] = [
     {
@@ -254,7 +263,7 @@ export function LandingPage() {
                     ? <>Mettez l’IA au travail sur les ventes, le service et le marketing avec <strong className="text-white">Starter Suite</strong> — un CRM qui connaît votre métier et automatise des expériences client dont vous serez fier. Démarrez simplement avec une configuration rapide et des agents pré-construits.</>
                     : <>Put AI to work across sales, service, and marketing with <strong className="text-white">Starter Suite</strong> — a CRM that knows your business and automates customer experiences you’ll be proud of. Get started fast with quick setup and pre-built agents.</>}
                 </p>
-                <p className="mt-4 text-sm text-primary-200"><em>{lang === 'fr' ? '19 $ USD/utilisateur/mois.' : '$19 USD/user/month.'}</em> <a href="#matrix" className="font-semibold text-white underline-offset-2 hover:underline">{lang === 'fr' ? 'Voir tous les tarifs' : 'See all pricing'}</a></p>
+                <p className="mt-4 text-sm text-primary-200"><em>{lang === 'fr' ? '19 $ USD/mois.' : '$19 USD/month.'}</em> <a href="#matrix" className="font-semibold text-white underline-offset-2 hover:underline">{lang === 'fr' ? 'Voir tous les tarifs' : 'See all pricing'}</a></p>
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                   <Link to="/auth" className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-primary-700 transition hover:bg-primary-50">
                     {lang === 'fr' ? 'Commencer gratuitement' : 'Start for free'} <ArrowRight size={16} className="transition group-hover:translate-x-1" />
@@ -359,14 +368,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-7xl px-6 md:px-10">
             <div className="reveal mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight text-ink-950 sm:text-4xl">{lang === 'fr' ? 'Une tarification claire et transparente' : 'Clear and transparent pricing'}</h2>
-              <p className="mt-4 text-ink-600">{lang === 'fr' ? 'Choisissez le plan adapté à votre croissance. Engagement annuel et 2 mois offerts.' : 'Choose the plan that fits your growth. Annual commitment, 2 months free.'}</p>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <span className={`text-sm font-medium ${!annual ? 'text-ink-900' : 'text-ink-400'}`}>{lang === 'fr' ? 'Mensuel' : 'Monthly'}</span>
-              <button onClick={() => setAnnual(!annual)} className={`relative h-7 w-12 rounded-full transition ${annual ? 'bg-primary-600' : 'bg-ink-300'}`} aria-label={lang === 'fr' ? 'Basculer la facturation' : 'Toggle billing'}>
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${annual ? 'left-6' : 'left-1'}`} />
-              </button>
-              <span className={`text-sm font-medium ${annual ? 'text-ink-900' : 'text-ink-400'}`}>{lang === 'fr' ? 'Annuel' : 'Annual'} <span className="ml-1 rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">-17%</span></span>
+              <p className="mt-4 text-ink-600">{lang === 'fr' ? 'Choisissez le plan adapté à votre croissance.' : 'Choose the plan that fits your growth.'}</p>
             </div>
             <div className="mt-12 grid gap-6 lg:grid-cols-4">
               {plans.map((plan) => (
@@ -377,7 +379,7 @@ export function LandingPage() {
                   <p className="mt-3 min-h-[2.5rem] text-sm leading-6 text-ink-600">{plan.desc[contentLang]}</p>
                   <div className="mt-5">
                     <p className="text-3xl font-bold text-ink-950">{price(plan.monthly)}</p>
-                    {plan.monthly !== null && <p className="mt-1 text-xs text-ink-400">{annual ? (lang === 'fr' ? 'Facturé annuellement' : 'Billed annually') : (lang === 'fr' ? 'par utilisateur' : 'per user')}</p>}
+                    {plan.monthly !== null && <p className="mt-1 text-xs text-ink-400">{lang === 'fr' ? 'par organisation, facturation mensuelle' : 'per organization, billed monthly'}</p>}
                   </div>
                   <Link to="/auth" className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition ${plan.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-ink-950 text-white hover:bg-ink-800'}`}>{plan.cta[contentLang]} <ArrowRight size={14} /></Link>
                 </div>

@@ -44,6 +44,10 @@ const UNLIMITED_FEATURES: PlanFeatures = {
   exportData: true,
   customRoles: true,
   salesCodeTracking: true,
+  quotesInvoicing: true,
+  tickets: true,
+  knowledgeBase: true,
+  workflowAutomation: true,
 };
 
 
@@ -65,6 +69,14 @@ export interface PlanFeatures {
   exportData: boolean;
   customRoles: boolean;
   salesCodeTracking: boolean;
+  /** "Devis & facturation" / "Quotes & invoicing" on the pricing matrix — gates QuotesPage + InvoicesPage. */
+  quotesInvoicing: boolean;
+  /** "Tickets clients" / "Customer tickets" on the pricing matrix — gates TicketsPage. */
+  tickets: boolean;
+  /** "Base de connaissances" / "Knowledge base" on the pricing matrix — gates KnowledgeBasePage. */
+  knowledgeBase: boolean;
+  /** "Automations / workflows" on the pricing matrix — gates the Workflows page. */
+  workflowAutomation: boolean;
 }
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
@@ -85,6 +97,10 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     exportData: true,
     customRoles: false,
     salesCodeTracking: false,
+    quotesInvoicing: false,
+    tickets: false,
+    knowledgeBase: false,
+    workflowAutomation: false,
   },
   growth: {
     maxContacts: 'unlimited',
@@ -103,6 +119,10 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     exportData: true,
     customRoles: true,
     salesCodeTracking: true,
+    quotesInvoicing: true,
+    tickets: true,
+    knowledgeBase: false,
+    workflowAutomation: true,
   },
   pro: {
     maxContacts: 'unlimited',
@@ -121,6 +141,10 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     exportData: true,
     customRoles: true,
     salesCodeTracking: true,
+    quotesInvoicing: true,
+    tickets: true,
+    knowledgeBase: true,
+    workflowAutomation: true,
   },
   enterprise: {
     maxContacts: 'unlimited',
@@ -139,6 +163,10 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     exportData: true,
     customRoles: true,
     salesCodeTracking: true,
+    quotesInvoicing: true,
+    tickets: true,
+    knowledgeBase: true,
+    workflowAutomation: true,
   },
 };
 
