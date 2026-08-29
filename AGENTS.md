@@ -127,6 +127,28 @@ key doesn't error, `t()` just returns the raw key string, so it silently
 renders as e.g. "list.value" instead of "Value"/"Valeur" in the UI (found
 and fixed one instance of this: AI Memory page's Value column/field).
 
+## Plan gating (must match the landing page's pricing matrix exactly)
+`src/lib/plans.ts` (`PLAN_FEATURES`) is the single source of truth for what
+each plan unlocks — every boolean/cap there must have a real enforcement
+point somewhere in the app, and every restriction the landing page's
+pricing comparison matrix (`src/pages/LandingPage.tsx`, `matrixGroups`)
+advertises must have a matching flag here. They drifted once already:
+the matrix promised "Devis & facturation"/"Tickets clients" (Growth+),
+"Base de connaissances" (Pro+), and "Automations / workflows" (Growth+)
+were plan-gated, but nothing in the code enforced any of the four — any
+Starter org had full access regardless. Fixed by adding `quotesInvoicing`,
+`tickets`, `knowledgeBase`, `workflowAutomation` flags and gating
+QuotesPage/InvoicesPage (BusinessPages.tsx), SupportPage/tickets
+(BusinessPages.tsx), KnowledgeBasePage, and AIWorkflowsPage (AIPages.tsx)
+with `usePlanAccess().hasFeature(...)` + the shared `<UpgradeGate>`
+component — the same pattern already used for `customDashboards`/
+`advancedAnalytics` (AnalyticsPages.tsx), `apiAccess`/`webhooks`
+(IntegrationPages.tsx API Keys & Webhooks tab), `customBranding`/`ssoSaml`
+(SystemPages.tsx Settings tabs), and `customRoles`/`maxUsers`
+(TeamPages.tsx). If you add a new plan-gated feature, use this same
+pattern rather than inventing a new one, and update the matrix and
+`PLAN_FEATURES` together — never one without the other.
+
 ## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly
   price per organization (not per seat; `maxUsers` in `src/lib/plans.ts`

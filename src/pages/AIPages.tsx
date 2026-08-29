@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import type { AIAgent, AITask, Approval, AIMemory, KnowledgeDocument, Workflow as WorkflowType } from '@/types';
 import { usePlanAccess } from '@/lib/plans';
+import { UpgradeGate } from '@/components/UpgradeGate';
 
 export function AIEmployeesPage() {
   const { language } = useAuth();
@@ -158,6 +159,8 @@ export function ApprovalsPage() {
 
 export function AIWorkflowsPage() {
   const { language } = useAuth();
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('workflowAutomation');
   const fields: FormField[] = [
     { key: 'name', label: t('common.name', language), type: 'text', required: true },
     { key: 'description', label: t('list.description', language), type: 'textarea' },
@@ -169,7 +172,9 @@ export function AIWorkflowsPage() {
     ], defaultValue: 'true' },
   ];
 
-  return (
+  return !allowed ? (
+    <UpgradeGate language={language} feature={t('nav.aiWorkflows', language)} minPlan="growth" />
+  ) : (
     <ListPage<WorkflowType>
       table="workflows"
       title={t('nav.aiWorkflows', language)}
@@ -221,6 +226,8 @@ export function AIMemoryPage() {
 
 export function KnowledgeBasePage() {
   const { language } = useAuth();
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('knowledgeBase');
   const fields: FormField[] = [
     { key: 'title', label: t('list.title', language), type: 'text', required: true },
     { key: 'type', label: t('list.type', language), type: 'select', options: [
@@ -231,7 +238,9 @@ export function KnowledgeBasePage() {
     { key: 'file_path', label: t('list.filePath', language), type: 'text' },
   ];
 
-  return (
+  return !allowed ? (
+    <UpgradeGate language={language} feature={t('nav.knowledgeBase', language)} minPlan="pro" />
+  ) : (
     <ListPage<KnowledgeDocument>
       table="knowledge_documents"
       title={t('nav.knowledgeBase', language)}
