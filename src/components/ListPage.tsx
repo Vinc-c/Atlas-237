@@ -40,7 +40,7 @@ interface ListPageProps<T extends { id: string }> {
 export interface FormField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'tel' | 'number' | 'select' | 'textarea' | 'date' | 'country' | 'phone';
+  type: 'text' | 'email' | 'tel' | 'number' | 'select' | 'textarea' | 'date' | 'country' | 'phone' | 'tags';
   required?: boolean;
   options?: { value: string; label: string }[];
   defaultValue?: string | number;
@@ -299,7 +299,13 @@ export function ListPage<T extends { id: string }>({
   function openEdit(row: T) {
     setEditing(row);
     const data: Record<string, unknown> = {};
-    formFields.forEach(f => { data[f.key] = (row as Record<string, unknown>)[f.key]; });
+    formFields.forEach(f => {
+      const v = (row as Record<string, unknown>)[f.key];
+      // 'tags' columns are real Postgres arrays (e.g. text[]); the input
+      // itself works with a plain comma-separated string, so convert here
+      // and convert back on save (see handleSave).
+      data[f.key] = f.type === 'tags' && Array.isArray(v) ? v.join(', ') : v;
+    });
     setFormData(data);
     setModalOpen(true);
   }
@@ -313,6 +319,19 @@ export function ListPage<T extends { id: string }>({
       const payload = Object.fromEntries(
         Object.entries(formData).filter(([k]) => !k.includes('__mode') && !k.endsWith('__other'))
       );
+      // Array-type columns (e.g. contacts.tags text[]) need a real array,
+      // not the comma-separated string the 'tags' input works with —
+      // sending a bare string like "1250" to Postgres for an array column
+      // fails with "malformed array literal": Postgres tries to parse the
+      // string itself as array syntax (e.g. "{a,b,c}") and rejects it.
+      formFields.forEach(f => {
+        if (f.type === 'tags' && f.key in payload) {
+          const raw = payload[f.key];
+          payload[f.key] = typeof raw === 'string'
+            ? raw.split(',').map(s => s.trim()).filter(Boolean)
+            : (Array.isArray(raw) ? raw : []);
+        }
+      });
       if (editing) {
         const { error } = await supabase.from(table).update(payload).eq('id', editing.id);
         if (error) throw error;
@@ -542,7 +561,15 @@ export function ListPage<T extends { id: string }>({
                     />
                   </div>
                 );
-              })() : field.type === 'textarea' ? (
+              })() : field.type === 'tags' ? (
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={language === 'fr' ? 'ex: vip, prospect, tech' : 'e.g. vip, prospect, tech'}
+                  value={String(formData[field.key] ?? '')}
+                  onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
+                />
+              ) : field.type === 'textarea' ? (
                 <textarea
                   className="input min-h-[80px]"
                   value={String(formData[field.key] ?? '')}

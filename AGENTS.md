@@ -10,6 +10,21 @@
 - Cloudflare Pages: build command `npm run build`, output dir `dist`.
 - `public/_redirects` (SPA fallback `/* /index.html 200`) and `public/_headers` are copied into `dist/` by Vite automatically.
 - Env vars `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` should be set in Cloudflare for live auth/data. `src/lib/supabase.ts` now uses safe placeholder fallbacks (no longer throws), so the landing/auth pages render even without env vars. Use the exported `isSupabaseConfigured` flag to gate real backend calls.
+- **Pushing to GitHub deploys NONE of the Supabase-side pieces automatically**
+  — this has been the root cause of several "I fixed it but it still doesn't
+  work" reports. Two separate, manual deploy steps are required after
+  pulling any change under `supabase/`:
+  - `supabase/migrations/*.sql` → `supabase db push` (or paste into the
+    Dashboard SQL Editor). A migration file existing in the repo has zero
+    effect on the live database until this runs.
+  - `supabase/functions/*/index.ts` → `supabase functions deploy` (all of
+    them) or `supabase functions deploy <name>` (one). Cloudflare Pages
+    only rebuilds the frontend — it has no idea Edge Functions exist. A
+    live project can easily be running edge function code from weeks
+    earlier than what's in the repo/frontend, silently. When debugging any
+    "the fix didn't work" report that touches an edge function, deploying
+    it (again) is the first thing to rule out, before assuming the fix
+    itself was wrong.
 
 ## Tailwind config gotcha (important)
 `tailwind.config.js` must define the full color palettes used across the app:
@@ -69,6 +84,15 @@ The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind s
   revenue counts) plus the org's 20 most recent Knowledge Base entries
   (title/category/description — metadata only, no file content) as
   grounding context, and calls the selected provider.
+- Gemini model name: Google periodically retires older model IDs outright
+  (gemini-2.0-flash was fully shut down 2026-06-01, breaking a hardcoded
+  call to it with a hard 404 the moment it happened). `callGemini()` tries
+  `GEMINI_MODEL_CANDIDATES` in order (currently `gemini-3.6-flash` first)
+  and only advances to the next one on a 404/"no longer available"
+  response — any other failure (bad key, quota, content policy) surfaces
+  immediately rather than retrying pointlessly. When Google deprecates the
+  first entry again, update the list rather than going back to a single
+  hardcoded model string — that's what caused this bug in the first place.
 - It returns `{ text, route? }` (fallback tier only) so answers can
   deep-link to the relevant module page.
 - Used in two places: `AskAtlasPage` (full chat UI with clickable
@@ -92,6 +116,15 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
   matching column (migration 028), and TeamPages inserted `profile_id` into
   `team_members`, which only has `user_id` (profiles.id IS auth.users.id in
   this schema, so passing a profile id as user_id is correct once renamed).
+  A related but distinct failure mode: a column existing with the right
+  name but the WRONG TYPE — `contacts.tags` is a real Postgres array
+  (`text[]`), but its form field was typed as plain `'text'`, so any value
+  typed into it got sent to Postgres as a bare string, which fails with
+  "malformed array literal" (Postgres tries to parse the string itself as
+  array syntax). `FormField` now has a proper `'tags'` type
+  (`ListPage.tsx`) that renders a comma-separated text input and
+  converts to/from a real array on save/edit — use it for any other
+  `text[]` column exposed in a form, don't reuse plain `'text'`.
 - Campaigns (`campaigns` table, `MarketingPage`) and Knowledge Base
   (`knowledge_documents` table, `KnowledgeBasePage`) are intentionally
   metadata-only trackers right now — recording a campaign's budget/subject/

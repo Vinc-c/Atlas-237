@@ -36,7 +36,7 @@ export function ContactsPage() {
       { value: 'active', label: t('status.active', language) }, { value: 'inactive', label: t('status.inactive', language) }, { value: 'lead', label: t('status.lead', language) },
     ], defaultValue: 'active' },
     { key: 'lead_score', label: t('list.leadScore', language), type: 'number', defaultValue: 0 },
-    { key: 'tags', label: t('list.tags', language), type: 'text' },
+    { key: 'tags', label: t('list.tags', language), type: 'tags' },
     { key: 'notes', label: t('list.notes', language), type: 'textarea' },
   ];
 

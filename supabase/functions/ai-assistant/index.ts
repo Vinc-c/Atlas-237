@@ -39,19 +39,45 @@ async function callOpenAI(apiKey: string, system: string, question: string): Pro
   return { ok: true, text: data.choices?.[0]?.message?.content || "" };
 }
 
+// Google periodically retires older Gemini model IDs (e.g. gemini-2.0-flash
+// was fully shut down on 2026-06-01), which breaks a hardcoded single model
+// name with a hard 404 the moment it happens — exactly what generated the
+// bug report this list fixes. Try a short list of candidates, newest
+// currently-stable first, and only move to the next one on a 404 "model not
+// found/no longer available" response (any other failure — bad key, quota,
+// content policy — is a real error and should surface immediately, not
+// trigger a pointless retry loop against models that would fail the same
+// way). Google's own guidance is to keep the model name out of hardcoded
+// app logic entirely for this exact reason; this list is the pragmatic
+// version of that for a single edge function. When Google deprecates the
+// first entry, move it to the end (or drop it) rather than deleting this
+// fallback structure — the same failure mode will recur on whatever is
+// hardcoded next otherwise.
+const GEMINI_MODEL_CANDIDATES = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
+
 async function callGemini(apiKey: string, system: string, question: string): Promise<CallResult> {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: question }] }],
-      generationConfig: { maxOutputTokens: 400 },
-    }),
-  });
-  if (!res.ok) return { ok: false, msg: `Gemini error: ${(await res.text()).slice(0, 200)}` };
-  const data = await res.json();
-  return { ok: true, text: data.candidates?.[0]?.content?.parts?.[0]?.text || "" };
+  let lastErr = "";
+  for (const model of GEMINI_MODEL_CANDIDATES) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: question }] }],
+        generationConfig: { maxOutputTokens: 400 },
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { ok: true, text: data.candidates?.[0]?.content?.parts?.[0]?.text || "" };
+    }
+    const bodyText = await res.text();
+    const isRetirableModelError = res.status === 404 || /no longer available|not found/i.test(bodyText);
+    lastErr = `Gemini error: ${bodyText.slice(0, 200)}`;
+    if (!isRetirableModelError) return { ok: false, msg: lastErr };
+    // else: this specific model was retired/renamed — try the next candidate
+  }
+  return { ok: false, msg: lastErr };
 }
 
 Deno.serve(async (req: Request) => {
