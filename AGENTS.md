@@ -107,7 +107,13 @@ array and every literal key in a direct `.insert({...})`/`.update({...})`
 call. Skip keys inside a nested object (most raw `.insert()` calls
 correctly nest provider-specific fields inside a jsonb column like `config`
 or `permissions` — those are not top-level columns and will show as false
-positives in a naive flat-key diff).
+positives in a naive flat-key diff). Also worth periodically re-running:
+every `.rpc('name', {...})` call vs. the real function signature in
+migrations (param names must match exactly), and every `t('key', lang)`
+call vs. the keys actually defined in `src/lib/i18n.ts` — a missing i18n
+key doesn't error, `t()` just returns the raw key string, so it silently
+renders as e.g. "list.value" instead of "Value"/"Valeur" in the UI (found
+and fixed one instance of this: AI Memory page's Value column/field).
 
 ## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly

@@ -134,6 +134,7 @@ export const translations: Translation = {
   'list.deleteConfirm': { en: 'Delete this item?', fr: 'Supprimer cet élément ?', es: '¿Eliminar este elemento?', pt: 'Excluir este item?', ar: 'حذف هذا العنصر؟' },
   'list.sku': { en: 'SKU', fr: 'UGS', es: 'SKU', pt: 'SKU', ar: 'SKU' },
   'list.category': { en: 'Category', fr: 'Catégorie', es: 'Categoría', pt: 'Categoria', ar: 'الفئة' },
+  'list.value': { en: 'Value', fr: 'Valeur', es: 'Valor', pt: 'Valor', ar: 'القيمة' },
   'list.price': { en: 'Price', fr: 'Prix', es: 'Precio', pt: 'Preço', ar: 'السعر' },
   'list.stock': { en: 'Stock', fr: 'Stock', es: 'Inventario', pt: 'Estoque', ar: 'المخزون' },
   'list.quoteNumber': { en: 'Quote #', fr: 'Devis n°', es: 'Cotización #', pt: 'Cotação #', ar: 'عرض سعر #' },
