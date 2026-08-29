@@ -5,6 +5,8 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
+import { VideoBackground } from '@/components/VideoBackground';
+import { AUTH_VIDEO_SOURCES, AUTH_VIDEO_POSTER } from '@/lib/media';
 import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency } from '@/lib/i18n-countries';
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
@@ -143,6 +145,11 @@ export function AuthPage() {
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* ───────── Brand / marketing panel (Salesforce cloud blue) ───────── */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-primary-600 p-10 text-white lg:flex xl:p-14">
+          <VideoBackground
+            sources={AUTH_VIDEO_SOURCES}
+            poster={AUTH_VIDEO_POSTER}
+            overlayClassName="bg-gradient-to-br from-primary-700/90 via-primary-600/85 to-primary-900/90"
+          />
           <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-primary-800/40 blur-3xl" />
 

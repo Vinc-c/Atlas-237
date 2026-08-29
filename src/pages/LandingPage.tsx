@@ -6,6 +6,8 @@ import {
   MessageSquare, Database, Workflow, PlayCircle, Building2, Globe,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { VideoBackground } from '@/components/VideoBackground';
+import { HERO_VIDEO_SOURCES, HERO_VIDEO_POSTER, FINAL_CTA_VIDEO_SOURCES, FINAL_CTA_VIDEO_POSTER } from '@/lib/media';
 import { useAuth } from '@/context/AuthContext';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
@@ -149,6 +151,11 @@ export function LandingPage() {
       <main>
         {/* ───────── Hero ───────── */}
         <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
+          <VideoBackground
+            sources={HERO_VIDEO_SOURCES}
+            poster={HERO_VIDEO_POSTER}
+            overlayClassName="bg-gradient-to-b from-white/92 via-white/90 to-white"
+          />
           <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary-200/40 blur-3xl animate-pulse-slow" />
           <div className="absolute -left-24 top-40 h-80 w-80 rounded-full bg-accent-200/20 blur-3xl" />
           <div className="relative mx-auto max-w-4xl px-6 pt-20 pb-14 text-center md:px-10 lg:pt-28 lg:pb-16">
@@ -479,6 +486,31 @@ export function LandingPage() {
                 <p className="mt-3 text-sm leading-6 text-ink-600">{lang === 'fr' ? f.a : f.aEn}</p>
               </details>
             ))}
+          </div>
+        </section>
+
+        {/* ───────── Pre-footer hero (premium enterprise video) ───────── */}
+        <section className="relative overflow-hidden py-24 text-white lg:py-32">
+          <VideoBackground
+            sources={FINAL_CTA_VIDEO_SOURCES}
+            poster={FINAL_CTA_VIDEO_POSTER}
+            overlayClassName="bg-gradient-to-br from-ink-950/92 via-primary-950/88 to-ink-950/95"
+          />
+          <div className="reveal relative mx-auto max-w-3xl px-6 text-center md:px-10">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/90 backdrop-blur-sm">
+              <Building2 size={13} /> {lang === 'fr' ? 'Fait pour l’entreprise' : 'Built for the enterprise'}
+            </span>
+            <h2 className="mt-6 text-3xl font-bold leading-tight tracking-tight sm:text-5xl">
+              {lang === 'fr' ? 'Votre entreprise mérite un CRM à la hauteur' : 'Your business deserves a CRM built to match it'}
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-lg text-white/80">
+              {lang === 'fr'
+                ? 'Rejoignez les équipes qui pilotent leur croissance avec Atlas — sécurité, fiabilité et performance de niveau entreprise.'
+                : 'Join the teams running their growth on Atlas — enterprise-grade security, reliability, and performance.'}
+            </p>
+            <Link to="/auth" className="group mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-7 py-3.5 text-base font-semibold text-ink-950 shadow-lg transition hover:bg-white/90">
+              {lang === 'fr' ? 'Demander une démo' : 'Request a demo'} <ArrowRight size={18} className="transition group-hover:translate-x-1" />
+            </Link>
           </div>
         </section>
       </main>
