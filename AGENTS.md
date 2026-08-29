@@ -66,7 +66,9 @@ The custom `.sidebar-shadow` utility is defined in `index.css` (not a tailwind s
   in Marketplace AND (2) selects it in Settings > "Choose your AI" — step 1
   alone does nothing, `ai_provider` still has to be flipped in step 2),
   fetches a live CRM snapshot (contacts/leads/deals/invoices/tickets/
-  revenue counts) as grounding context, and calls the selected provider.
+  revenue counts) plus the org's 20 most recent Knowledge Base entries
+  (title/category/description — metadata only, no file content) as
+  grounding context, and calls the selected provider.
 - It returns `{ text, route? }` (fallback tier only) so answers can
   deep-link to the relevant module page.
 - Used in two places: `AskAtlasPage` (full chat UI with clickable
@@ -95,8 +97,18 @@ webhooks, notifications, audit_logs, profiles, organizations. SQL migrations are
   metadata-only trackers right now — recording a campaign's budget/subject/
   content or a document's title/file_path, with no button claiming to
   actually send an email or upload a file to storage. That's an honest,
-  accurate scope (no fake "Sent"/"Uploaded" state), just not yet a feature
-  — real send/upload would be new functionality, not a bug fix.
+  accurate scope (no fake "Sent"/"Uploaded" state) — but the Knowledge Base
+  empty-state copy used to say "Upload documents to train your AI
+  employees," which was a real false claim: no upload/parsing ever
+  happened, and `ai-assistant` never read `knowledge_documents` at all, so
+  nothing added there had any effect on Ask Atlas. Fixed both ends: the
+  copy now accurately says these are reference notes whose titles/
+  descriptions Ask Atlas can see (not full file contents, no parsing), and
+  `ai-assistant`'s context now genuinely includes the org's 20 most recent
+  Knowledge Base entries (title/category/description) so that claim is
+  true. Actual file upload/parsing into full-text/embeddings would still
+  be new functionality, not a bug fix — don't reintroduce upload-sounding
+  copy without building that first.
 
 ## Data-layer bug-hunting tool
 There's no CI check for form-field/column-name drift (the exact bug class

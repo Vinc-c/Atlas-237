@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
     const { data: org } = await supabaseClient.from("organizations").select("ai_provider").eq("id", profile?.org_id).single();
     const provider = org?.ai_provider || "platform_free";
 
-    const [contacts, leads, hotLeads, deals, openDeals, invoices, unpaidInvoices, tickets, openTickets, payments] = await Promise.all([
+    const [contacts, leads, hotLeads, deals, openDeals, invoices, unpaidInvoices, tickets, openTickets, payments, knowledgeDocs] = await Promise.all([
       supabaseClient.from("contacts").select("*", { count: "exact", head: true }),
       supabaseClient.from("leads").select("*", { count: "exact", head: true }),
       supabaseClient.from("leads").select("*", { count: "exact", head: true }).eq("temperature", "hot").neq("status", "converted"),
@@ -95,19 +95,30 @@ Deno.serve(async (req: Request) => {
       supabaseClient.from("tickets").select("*", { count: "exact", head: true }),
       supabaseClient.from("tickets").select("*", { count: "exact", head: true }).eq("status", "open"),
       supabaseClient.from("payments").select("amount").eq("status", "completed"),
+      // Knowledge Base entries are metadata only right now (title/category/
+      // description — no real file content is stored or extracted yet), but
+      // that metadata IS real and worth grounding the assistant with: it's
+      // what lets Ask Atlas answer "do we have anything on X" honestly
+      // instead of the Knowledge Base page being pure decoration the AI
+      // never actually looks at.
+      supabaseClient.from("knowledge_documents").select("title, category, description").order("created_at", { ascending: false }).limit(20),
     ]);
 
     const totalRevenue = (payments.data || []).reduce((sum: number, p: { amount: number }) => sum + (Number(p.amount) || 0), 0);
+    const docs = (knowledgeDocs.data || []) as { title: string; category: string | null; description: string | null }[];
+    const knowledgeSection = docs.length
+      ? `\n\nKnowledge Base entries on file (titles/descriptions only — no full file text is available, so don't claim to quote or fully summarize their contents):\n${docs.map(d => `- "${d.title}"${d.category ? ` [${d.category}]` : ''}${d.description ? `: ${d.description}` : ''}`).join('\n')}`
+      : '';
     const context = `Live CRM snapshot for this user's organization (use these real numbers, do not invent data):
 - Contacts: ${contacts.count ?? 0}
 - Leads: ${leads.count ?? 0} total, ${hotLeads.count ?? 0} hot/unconverted
 - Deals: ${deals.count ?? 0} total, ${openDeals.count ?? 0} open
 - Invoices: ${invoices.count ?? 0} total, ${unpaidInvoices.count ?? 0} unpaid
 - Tickets: ${tickets.count ?? 0} total, ${openTickets.count ?? 0} open
-- Collected revenue: ${totalRevenue}`;
+- Collected revenue: ${totalRevenue}${knowledgeSection}`;
 
     const langName = language === "fr" ? "French" : language === "es" ? "Spanish" : language === "pt" ? "Portuguese" : language === "ar" ? "Arabic" : "English";
-    const system = `You are Atlas, the AI assistant embedded in Atlas CRM. Answer the user's question about their business concisely (2-4 sentences), grounded strictly in the CRM snapshot provided — never invent numbers. Reply in ${langName}. If the question is unrelated to the CRM data available, answer helpfully and briefly as a general CRM assistant.\n\n${context}`;
+    const system = `You are Atlas, the AI assistant embedded in Atlas CRM. Answer the user's question about their business concisely (2-4 sentences), grounded strictly in the CRM snapshot and Knowledge Base entries provided — never invent numbers or claim to know document contents beyond what's given. Reply in ${langName}. If the question is unrelated to the CRM data available, answer helpfully and briefly as a general CRM assistant.\n\n${context}`;
 
     let result: CallResult;
 
