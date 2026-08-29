@@ -22,9 +22,19 @@ const KNOWN_PLANS = new Set(['starter', 'growth', 'pro', 'enterprise']);
  */
 export async function isPayunitConfigured(): Promise<boolean> {
   try {
+    // Supabase's own gateway rejects any Edge Function call with a 401
+    // before the function code even runs unless a valid JWT is present —
+    // the anon key qualifies and is safe to send from the browser (it's
+    // already public, baked into the client bundle). Without this header
+    // this ping always failed at the platform level, so PayUnit could
+    // never show as available even with every secret correctly set.
     const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payunit-initialize`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
       body: JSON.stringify({ check: true }),
     });
     const result = await res.json();
