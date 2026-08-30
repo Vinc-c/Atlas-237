@@ -22,9 +22,21 @@ const KNOWN_PLANS = new Set(['starter', 'growth', 'pro', 'enterprise']);
  */
 export async function isPayunitConfigured(): Promise<boolean> {
   try {
+    // This edge function requires a valid JWT at the Supabase gateway level
+    // (verify_jwt: true) — a request with no Authorization header at all is
+    // rejected by the platform before the function code ever runs, which
+    // looks identical from here to "PayUnit isn't configured" even when
+    // it genuinely is. The anon key is itself a valid signed JWT, so it's
+    // enough to pass this public availability check (no user session or
+    // sensitive data involved) without requiring the caller to be logged in.
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payunit-initialize`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
       body: JSON.stringify({ check: true }),
     });
     const result = await res.json();

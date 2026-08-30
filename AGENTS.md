@@ -25,6 +25,36 @@
     "the fix didn't work" report that touches an edge function, deploying
     it (again) is the first thing to rule out, before assuming the fix
     itself was wrong.
+- All 11 edge functions confirmed live and up to date as of this note
+  (deployed directly via the Supabase MCP connector, since this environment
+  has no network path to supabase.co for a CLI-based deploy — see
+  `search_mcp_registry`/`suggest_connectors` if you don't have it connected).
+  Two functions — `flutterwave-verify` and `paystack-verify` — had NEVER
+  been deployed at all before this: any real Flutterwave/Paystack checkout
+  would complete on the frontend, redirect back, and then 404 trying to
+  verify the payment and activate the subscription. Both are deployed now.
+- `supabase/config.toml` sets `verify_jwt = false` for `payunit-webhook`
+  specifically (every other function keeps the default `true`). PayUnit's
+  own servers call this endpoint directly to report a payment's outcome —
+  they can never send a Supabase user JWT, so with the platform default
+  (`verify_jwt = true`) every real webhook notification was rejected with
+  401 by the gateway before the function code ever ran, silently. The
+  function's own logic never trusts the webhook body regardless (it
+  re-queries PayUnit's status API using the org's own server secrets before
+  activating anything), so disabling the platform-level JWT check here
+  doesn't weaken that. If you ever regenerate `config.toml`, keep this
+  entry — a `supabase functions deploy` without it silently resets
+  `payunit-webhook` back to `verify_jwt = true` and reintroduces the bug.
+- `src/lib/payunit.ts`'s `isPayunitConfigured()` — the "is PayUnit even
+  available" ping — used to send NO Authorization header at all, which
+  also gets rejected 401 by the `verify_jwt = true` gateway check on
+  `payunit-initialize` (this one correctly keeps verify_jwt = true; it's a
+  normal user-facing endpoint) before the function's own `{check: true}`
+  branch ever runs. From the frontend this looked identical to "PayUnit
+  isn't configured" even when the server secrets were set correctly — the
+  exact bug reported. Fixed by sending the project's anon key as
+  `Authorization: Bearer <anon key>` (a legitimate signed JWT, sufficient
+  for this public availability check — no user session needed).
 
 ## Tailwind config gotcha (important)
 `tailwind.config.js` must define the full color palettes used across the app:

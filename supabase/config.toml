@@ -1,0 +1,17 @@
+# Per-function Edge Function settings. Supabase's default for every
+# function is verify_jwt = true (the platform gateway rejects any request
+# with no valid Supabase-issued JWT in the Authorization header before the
+# function code ever runs — see https://supabase.com/docs/guides/functions/auth-headers).
+# That default is correct for every function in this project EXCEPT the one
+# listed below, which is called directly by an external provider's own
+# servers and can never carry a Supabase user JWT.
+#
+# This file exists specifically so a future `supabase functions deploy`
+# (which defaults to verify_jwt = true unless a function is listed here)
+# doesn't silently re-introduce the exact bug this fixed: PayUnit's payment
+# notifications getting rejected with 401 by the platform gateway before
+# ever reaching the function, so a completed payment's webhook silently
+# never activates the subscription. All other functions are intentionally
+# NOT listed here and must keep verify_jwt = true.
+[functions.payunit-webhook]
+verify_jwt = false
