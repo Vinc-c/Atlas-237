@@ -211,6 +211,32 @@ component — the same pattern already used for `customDashboards`/
 (TeamPages.tsx). If you add a new plan-gated feature, use this same
 pattern rather than inventing a new one, and update the matrix and
 `PLAN_FEATURES` together — never one without the other.
+- That UI-level gate (`UpgradeGate`) only hides pages in React — it never
+  stopped a Starter-plan org (with a perfectly valid, active subscription)
+  from calling the Supabase API directly to create quotes/tickets/
+  knowledge-base entries/workflows anyway. Migration 029 closes that at the
+  RLS layer: `org_plan_has_feature(org_id, feature)` mirrors the same
+  `PLAN_FEATURES` booleans in SQL, applied as RESTRICTIVE INSERT/UPDATE
+  policies on every gated table. Keep both in sync by hand — nothing
+  enforces it automatically, and a real plan restriction needs both the
+  UI gate (so it's not confusing) and the RLS gate (so it's not fake).
+
+## Migration/DB drift — verified against production directly
+As of the latest session, all migrations through `033` and all 11 Edge
+Functions were confirmed to actually match this repo by querying the live
+project directly (Supabase MCP connector: `list_migrations`,
+`list_edge_functions`, `execute_sql` against `information_schema` and
+`supabase_migrations.schema_migrations`) — not assumed from the repo
+alone. Two migrations (`032_fix_subscriptions_upsert_conflict`,
+`033_ai_context_snapshot_function`) had been applied straight to
+production (by a session with direct DB/MCP access) before ever being
+committed as files — reconstructed from `schema_migrations` and added
+to the repo after the fact so the two don't drift apart again. If you
+have DB/MCP access and apply a migration directly, still commit the
+matching `.sql` file in the same session — the live database being
+ahead of the repo is exactly the kind of gap that made several bugs in
+this project hard to diagnose (fixes that were "real" in the database
+but invisible to anyone reading the code).
 
 ## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly
