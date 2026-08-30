@@ -349,10 +349,24 @@ function AccountTab({ language, organization, onSave }: { language: Language; or
 }
 
 /* ── Profile Tab ── */
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
+  { value: 'pt', label: 'Português' },
+  { value: 'ar', label: 'العربية' },
+];
+
 function ProfileTab({ language, profile }: { language: Language; profile: Profile | null }) {
+  const { setLanguage } = useAuth();
   const [firstName, setFirstName] = useState(profile?.first_name || '');
   const [lastName, setLastName] = useState(profile?.last_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
+  // Local draft so switching the dropdown doesn't change the whole app's
+  // language until Save is pressed — consistent with every other field
+  // on this tab, and avoids the interface language jumping out from under
+  // someone mid-edit on their own name/phone.
+  const [langDraft, setLangDraft] = useState<Language>(language);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -362,11 +376,25 @@ function ProfileTab({ language, profile }: { language: Language; profile: Profil
     setPhone(profile?.phone || '');
   }, [profile?.id, profile?.first_name, profile?.last_name, profile?.phone]);
 
+  useEffect(() => {
+    setLangDraft(language);
+  }, [language]);
+
   async function save() {
     if (!profile) return;
     setSaving(true); setSaved(false);
-    const { error } = await supabase.from('profiles').update({ first_name: firstName, last_name: lastName, phone }).eq('id', profile.id);
-    if (!error) setSaved(true);
+    // Previously only first_name/last_name/phone were saved here, and the
+    // interface/AI-assistant language had no in-app control at all — it
+    // could only be set once, before signing up, on the public Auth page,
+    // then never changed again (setLanguage() only ever wrote to
+    // localStorage, never to the profile). Persisting `language` here too
+    // means it follows the account across devices/browsers like every
+    // other profile field, not just this one.
+    const { error } = await supabase.from('profiles').update({ first_name: firstName, last_name: lastName, phone, language: langDraft }).eq('id', profile.id);
+    if (!error) {
+      setLanguage(langDraft);
+      setSaved(true);
+    }
     setSaving(false);
   }
 
@@ -389,6 +417,19 @@ function ProfileTab({ language, profile }: { language: Language; profile: Profil
         <div>
           <label className="label">{t('common.phone', language)}</label>
           <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
+        </div>
+        <div>
+          <label className="label">{language === 'fr' ? 'Langue' : 'Language'}</label>
+          <select className="input" value={langDraft} onChange={e => setLangDraft(e.target.value as Language)}>
+            {LANGUAGE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <p className="text-xs text-ink-400 mt-1">
+            {language === 'fr'
+              ? "Change la langue de l'interface et des réponses d'Atlas (l'assistant IA)."
+              : "Changes the interface language and Atlas's (the AI assistant) reply language."}
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3 mt-4">
