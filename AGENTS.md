@@ -25,6 +25,36 @@
     "the fix didn't work" report that touches an edge function, deploying
     it (again) is the first thing to rule out, before assuming the fix
     itself was wrong.
+- All 11 edge functions confirmed live and up to date as of this note
+  (deployed directly via the Supabase MCP connector, since this environment
+  has no network path to supabase.co for a CLI-based deploy — see
+  `search_mcp_registry`/`suggest_connectors` if you don't have it connected).
+  Two functions — `flutterwave-verify` and `paystack-verify` — had NEVER
+  been deployed at all before this: any real Flutterwave/Paystack checkout
+  would complete on the frontend, redirect back, and then 404 trying to
+  verify the payment and activate the subscription. Both are deployed now.
+- `supabase/config.toml` sets `verify_jwt = false` for `payunit-webhook`
+  specifically (every other function keeps the default `true`). PayUnit's
+  own servers call this endpoint directly to report a payment's outcome —
+  they can never send a Supabase user JWT, so with the platform default
+  (`verify_jwt = true`) every real webhook notification was rejected with
+  401 by the gateway before the function code ever ran, silently. The
+  function's own logic never trusts the webhook body regardless (it
+  re-queries PayUnit's status API using the org's own server secrets before
+  activating anything), so disabling the platform-level JWT check here
+  doesn't weaken that. If you ever regenerate `config.toml`, keep this
+  entry — a `supabase functions deploy` without it silently resets
+  `payunit-webhook` back to `verify_jwt = true` and reintroduces the bug.
+- `src/lib/payunit.ts`'s `isPayunitConfigured()` — the "is PayUnit even
+  available" ping — used to send NO Authorization header at all, which
+  also gets rejected 401 by the `verify_jwt = true` gateway check on
+  `payunit-initialize` (this one correctly keeps verify_jwt = true; it's a
+  normal user-facing endpoint) before the function's own `{check: true}`
+  branch ever runs. From the frontend this looked identical to "PayUnit
+  isn't configured" even when the server secrets were set correctly — the
+  exact bug reported. Fixed by sending the project's anon key as
+  `Authorization: Bearer <anon key>` (a legitimate signed JWT, sufficient
+  for this public availability check — no user session needed).
 
 ## Tailwind config gotcha (important)
 `tailwind.config.js` must define the full color palettes used across the app:
@@ -181,6 +211,32 @@ component — the same pattern already used for `customDashboards`/
 (TeamPages.tsx). If you add a new plan-gated feature, use this same
 pattern rather than inventing a new one, and update the matrix and
 `PLAN_FEATURES` together — never one without the other.
+- That UI-level gate (`UpgradeGate`) only hides pages in React — it never
+  stopped a Starter-plan org (with a perfectly valid, active subscription)
+  from calling the Supabase API directly to create quotes/tickets/
+  knowledge-base entries/workflows anyway. Migration 029 closes that at the
+  RLS layer: `org_plan_has_feature(org_id, feature)` mirrors the same
+  `PLAN_FEATURES` booleans in SQL, applied as RESTRICTIVE INSERT/UPDATE
+  policies on every gated table. Keep both in sync by hand — nothing
+  enforces it automatically, and a real plan restriction needs both the
+  UI gate (so it's not confusing) and the RLS gate (so it's not fake).
+
+## Migration/DB drift — verified against production directly
+As of the latest session, all migrations through `033` and all 11 Edge
+Functions were confirmed to actually match this repo by querying the live
+project directly (Supabase MCP connector: `list_migrations`,
+`list_edge_functions`, `execute_sql` against `information_schema` and
+`supabase_migrations.schema_migrations`) — not assumed from the repo
+alone. Two migrations (`032_fix_subscriptions_upsert_conflict`,
+`033_ai_context_snapshot_function`) had been applied straight to
+production (by a session with direct DB/MCP access) before ever being
+committed as files — reconstructed from `schema_migrations` and added
+to the repo after the fact so the two don't drift apart again. If you
+have DB/MCP access and apply a migration directly, still commit the
+matching `.sql` file in the same session — the live database being
+ahead of the repo is exactly the kind of gap that made several bugs in
+this project hard to diagnose (fixes that were "real" in the database
+but invisible to anyone reading the code).
 
 ## Billing / PSP registry / Trial enforcement
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly
