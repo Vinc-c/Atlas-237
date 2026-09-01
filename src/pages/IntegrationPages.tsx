@@ -13,6 +13,7 @@ import { UpgradeGate } from '@/components/UpgradeGate';
 import { usePlanAccess } from '@/lib/plans';
 import type { Integration, ApiKey, Webhook as WebhookType } from '@/types';
 import { validateKeyFormat, LIVE_VERIFIABLE_PROVIDERS } from '@/lib/integrationValidation';
+import { WEBHOOK_EVENTS } from '@/lib/webhooks';
 
 interface AppDef {
   provider: string;
@@ -119,14 +120,6 @@ const AVAILABLE_APPS: AppDef[] = [
   { provider: 'notion', name: 'Notion', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developers.notion.com' },
   { provider: 'asana', name: 'Asana', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developers.asana.com' },
   { provider: 'trello', name: 'Trello', category: 'Project Management', authType: 'oauth', docsUrl: 'https://developer.atlassian.com/cloud/trello' },
-];
-
-const WEBHOOK_EVENTS = [
-  'contact.created', 'contact.updated', 'contact.deleted',
-  'lead.created', 'lead.updated', 'lead.converted',
-  'deal.created', 'deal.updated', 'deal.won', 'deal.lost',
-  'invoice.created', 'invoice.paid', 'invoice.overdue',
-  'payment.received', 'activity.created',
 ];
 
 export function MarketplacePage() {
@@ -611,9 +604,35 @@ export function ConnectedAppsPage() {
   }
 
   async function syncApp(intg: Integration) {
+    if (!LIVE_VERIFIABLE_PROVIDERS.has(intg.provider)) {
+      // Being honest here matters: there is no real data-sync or live check
+      // implemented for this provider yet, so a "Sync" button that only
+      // stamped last_sync_at would be a fake success signal. Say so instead
+      // of pretending something happened.
+      alert(lang === 'fr'
+        ? "Il n'existe pas encore de vérification en direct pour cette app — la connexion est enregistrée mais rien ne peut être re-testé automatiquement pour le moment."
+        : 'There is no live check implemented for this app yet — the connection is stored, but nothing can be automatically re-tested right now.');
+      return;
+    }
     setBusy(intg.id);
-    const { error } = await supabase.from('integrations').update({ last_sync_at: new Date().toISOString() }).eq('id', intg.id);
-    if (error) alert(error.message);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-integration-key`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session?.access_token || ''}` },
+        body: JSON.stringify({ provider: intg.provider, config: intg.config }),
+      });
+      const result = await res.json();
+      const { error } = await supabase.from('integrations').update({
+        last_sync_at: new Date().toISOString(),
+        status: result.ok ? 'connected' : 'error',
+        error: result.ok ? null : (result.message || (lang === 'fr' ? 'La vérification a échoué.' : 'Verification failed.')),
+        config: { ...intg.config, verified: Boolean(result.verified) },
+      }).eq('id', intg.id);
+      if (error) alert(error.message);
+    } catch (e) {
+      alert(getErrorMessage(e));
+    }
     setBusy(null);
     load();
   }
@@ -654,8 +673,8 @@ export function ConnectedAppsPage() {
                       <SettingsIcon size={14} /> {lang === 'fr' ? 'Config' : 'Config'}
                     </button>
                   )}
-                  <button onClick={() => syncApp(intg)} disabled={busy === intg.id} className="btn-ghost btn-sm flex-1" title={lang === 'fr' ? 'Synchroniser' : 'Sync'}>
-                    {busy === intg.id ? <Loader2 size={14} className="animate-spin" /> : <Plug size={14} />} {lang === 'fr' ? 'Sync' : 'Sync'}
+                  <button onClick={() => syncApp(intg)} disabled={busy === intg.id} className="btn-ghost btn-sm flex-1" title={LIVE_VERIFIABLE_PROVIDERS.has(intg.provider) ? (lang === 'fr' ? 'Retester la connexion en direct' : 'Re-test the live connection') : (lang === 'fr' ? 'Aucune vérification en direct disponible' : 'No live check available')}>
+                    {busy === intg.id ? <Loader2 size={14} className="animate-spin" /> : <Plug size={14} />} {LIVE_VERIFIABLE_PROVIDERS.has(intg.provider) ? (lang === 'fr' ? 'Tester' : 'Test') : (lang === 'fr' ? 'Sync' : 'Sync')}
                   </button>
                   <button onClick={() => disconnect(intg.id)} disabled={busy === intg.id} className="btn-secondary btn-sm flex-1">
                     {lang === 'fr' ? 'Déconnecter' : 'Disconnect'}

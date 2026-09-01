@@ -428,6 +428,19 @@ export interface Workflow {
   updated_at: string;
 }
 
+export interface WorkflowRun {
+  id: string;
+  org_id: string;
+  workflow_id: string;
+  status: string;
+  trigger_data: Record<string, unknown>;
+  steps: unknown[];
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
 export interface AIMemory {
   id: string;
   org_id: string;

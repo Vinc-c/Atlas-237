@@ -11,6 +11,49 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import { Modal } from '@/components/Modal';
 import { COUNTRIES } from '@/lib/i18n-countries';
+import { WEBHOOK_EVENTS, triggerWebhooks, type WebhookEvent } from '@/lib/webhooks';
+
+/**
+ * Maps a table this generic list editor manages to the entity name used in
+ * webhook event strings (see src/lib/webhooks.ts WEBHOOK_EVENTS). Tables not
+ * listed here (products, tickets, teams, etc.) simply never fire a webhook —
+ * there's no subscribable event for them on the Webhooks page.
+ */
+const WEBHOOK_ENTITY: Record<string, string> = {
+  contacts: 'contact',
+  leads: 'lead',
+  deals: 'deal',
+  invoices: 'invoice',
+  activities: 'activity',
+};
+
+/**
+ * Real CRM-event → webhook-event mapping, used so that editing a record
+ * through this generic list/modal (Contacts, Leads, Deals, Invoices,
+ * Activities, Payments — every page built on ListPage) actually fires the
+ * webhooks an org configured on the API & Webhooks page. Previously nothing
+ * in the app ever triggered a real webhook outside the manual "Test" ping.
+ */
+function computeWebhookEvents(table: string, kind: 'created' | 'updated' | 'deleted', payload: Record<string, unknown>): WebhookEvent[] {
+  const known = WEBHOOK_EVENTS as readonly string[];
+  const events: WebhookEvent[] = [];
+  if (table === 'payments') {
+    // The matrix only defines 'payment.received', fired once when a payment row is created.
+    if (kind === 'created' && known.includes('payment.received')) events.push('payment.received');
+    return events;
+  }
+  const entity = WEBHOOK_ENTITY[table];
+  if (!entity) return events;
+  const generic = `${entity}.${kind}`;
+  if (known.includes(generic)) events.push(generic as WebhookEvent);
+  if (kind === 'updated') {
+    if (table === 'leads' && payload.status === 'converted' && known.includes('lead.converted')) events.push('lead.converted');
+    if (table === 'deals' && payload.status === 'won' && known.includes('deal.won')) events.push('deal.won');
+    if (table === 'deals' && payload.status === 'lost' && known.includes('deal.lost')) events.push('deal.lost');
+    if (table === 'invoices' && payload.payment_status === 'paid' && known.includes('invoice.paid')) events.push('invoice.paid');
+  }
+  return events;
+}
 
 interface Column<T> {
   key: string;
@@ -335,11 +378,17 @@ export function ListPage<T extends { id: string }>({
       if (editing) {
         const { error } = await supabase.from(table).update(payload).eq('id', editing.id);
         if (error) throw error;
+        for (const ev of computeWebhookEvents(table, 'updated', payload)) {
+          triggerWebhooks(ev, { id: editing.id, table, ...payload });
+        }
       } else {
         const { data: inserted, error } = await supabase.from(table).insert(payload).select().single();
         if (error) throw error;
         if (table === 'tickets' && inserted) {
           notifyNewTicket(inserted as Record<string, unknown>);
+        }
+        for (const ev of computeWebhookEvents(table, 'created', payload)) {
+          triggerWebhooks(ev, { id: (inserted as Record<string, unknown> | null)?.id, table, ...payload });
         }
       }
       setModalOpen(false);
@@ -378,6 +427,9 @@ export function ListPage<T extends { id: string }>({
     if (!confirm(t('list.deleteConfirm', language))) return;
     const { error } = await supabase.from(table).delete().eq('id', row.id);
     if (error) { alert(error.message); return; }
+    for (const ev of computeWebhookEvents(table, 'deleted', row as unknown as Record<string, unknown>)) {
+      triggerWebhooks(ev, { id: row.id, table });
+    }
     load();
   }
 

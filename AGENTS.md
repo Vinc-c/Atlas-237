@@ -409,4 +409,93 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
 - No "Coming Soon" elements or non-functional buttons remain (verified
   via grep for `coming soon`, `bientôt`, empty `onClick`, `href="#"`).
 
+## Pricing matrix ↔ real feature gates (kept in sync — verify both ways when editing either)
+- `src/lib/plans.ts` `PLAN_FEATURES` is the single source of truth for what a
+  plan actually unlocks; `src/pages/LandingPage.tsx`'s `matrixGroups` is the
+  public-facing description of the same thing. Every row on that matrix must
+  correspond to a real `hasFeature()` gate somewhere, and every real gate
+  that differentiates plans should have a row — checked both directions in
+  Aug 2026: Audit Log had zero plan gating despite being sold as Growth+
+  (fixed: `auditLog` feature added, `AuditLogPage` now gated); "Predictive
+  analytics" was sold as Pro+ but `advancedAnalytics` granted it at Growth
+  (fixed: now Pro+ in code, matching Pro's own "Analyses IA" marketing
+  copy); "Workflows personnalisés" was sold as a Pro+ exclusive with no
+  code behind it — Growth/Pro/Enterprise all share one Workflows page, so
+  the row was removed rather than gating something fictitious; two real
+  gates (`customBranding` Growth+, `customDashboards` Pro+) were invisible
+  on the pricing page and are now listed. If you change `PLAN_FEATURES`,
+  check whether `matrixGroups` needs the same change, and vice versa.
+
+## Webhooks now actually fire on real CRM events (Aug 2026)
+- Previously `webhooks` (API & Webhooks page) only supported a manual "Test"
+  ping — the event checkboxes on webhook creation (`contact.created`,
+  `deal.won`, `invoice.paid`, etc.) were pure UI with nothing behind them.
+- `src/lib/webhooks.ts` is now the single source of truth for `WEBHOOK_EVENTS`
+  and owns `triggerWebhooks(event, data)`, which looks up the org's active
+  webhooks subscribed to `event` and POSTs to each via the `test-webhook`
+  edge function (fire-and-forget — a slow/down customer endpoint must never
+  block the CRM action). `IntegrationPages.tsx` imports the list instead of
+  keeping its own copy.
+- Real trigger sites: `src/components/ListPage.tsx` — the generic
+  insert/update/delete used by Contacts, Leads, Deals, Invoices, Activities,
+  Payments — fires `${entity}.created/.updated/.deleted` plus the specific
+  ones detectable from the payload (`lead.converted` when status→converted,
+  `deal.won`/`deal.lost` on status change, `invoice.paid` on
+  payment_status→paid, `payment.received` on payment insert). `invoice.overdue`
+  is NOT wired — it's time-based and this app has no scheduler/cron, so
+  nothing can fire it without one; don't claim it works.
+- `test-webhook` edge function (needs redeploying — see Build/Deploy section
+  above) now accepts a real `data` payload instead of always sending
+  `{test:true}`, and returns a numeric `status` for the caller to persist.
+  Backward compatible: the "Test" button still calls it with no `data`.
+
+## Workflows now actually execute (Aug 2026)
+- `src/pages/AIPages.tsx` `AIWorkflowsPage` was pure CRUD before this — you
+  could create a "workflow" with a trigger type and it did nothing; `actions`
+  and `workflow_runs` existed as columns/tables with zero UI ever writing to
+  them, and `run_count` was permanently stuck at 0.
+- `src/lib/workflows.ts` defines the real (small, deliberately non-fake)
+  action vocabulary — `create_task`, `create_notification`, `trigger_webhook`
+  — and `runWorkflow`/`executeAndLogWorkflow` actually perform them against
+  `tasks`/`notifications`/the real webhook path above, then persist a real
+  `workflow_runs` row and increment `run_count`.
+- The rebuilt `AIWorkflowsPage` has an action editor (add/remove actions,
+  per-type fields) and a "Run now" button showing per-step real results.
+  Only the manual trigger actually runs a workflow today — `trigger_type`
+  values `schedule`/`event`/`webhook` are stored but nothing executes them
+  automatically (no scheduler in this app); the UI says so explicitly next
+  to the trigger picker. Don't silently drop that caveat if you touch this
+  page — a workflow claiming to be "on a schedule" that never runs is
+  exactly the kind of fake the Aug 2026 pass was fixing.
+
+## Marketplace apps — what's real vs. stored-only (Aug 2026 audit; still open)
+- `AVAILABLE_APPS` in `IntegrationPages.tsx` lists ~70 providers. Genuinely
+  consumed by the platform today: `openai`/`anthropic`/`gemini` (Ask Atlas),
+  `flutterwave`/`paystack`/`payunit` (real checkout — see PSP section above).
+  13 more (`LIVE_VERIFIABLE_PROVIDERS` in `integrationValidation.ts`) get a
+  real live credential check on connect via `verify-integration-key`, and
+  the Connected Apps page's "Test"/"Sync" button now re-runs that same real
+  check instead of just stamping `last_sync_at` (fixed Aug 2026 — it used to
+  fake a "sync" with no real check for every provider, verifiable or not).
+  Every other provider — Slack, Gmail, Twilio, Shopify, HubSpot, Notion,
+  Zendesk, Zapier, ~50 more — is stored-credentials-only: connecting one
+  saves the key/token and nothing else in the app ever calls out to it. The
+  "Custom App" connector (base_url + bearer/api_key_header/basic auth) has
+  the same gap — nothing reads `config.base_url`/`config.credential` after
+  saving them.
+- Actually wiring any of these up needs a server-side proxy edge function
+  (most of these APIs block browser CORS, and Twilio/Slack/etc. secrets
+  shouldn't be called directly from the client anyway) — which needs
+  deploying, which needs either the Supabase CLI (unreachable from this
+  sandbox — see Build/Deploy above) or the Supabase MCP connector. Don't
+  write a batch of new "integration-proxy"-style edge functions speculatively
+  without deploy access to actually verify them; that just adds more
+  undeployed/untested surface, which is the opposite of this section's goal.
+  If tackling this next, prioritize by what's cheap and CORS-friendly first
+  (Telegram bot API, generic custom-app REST calls) over OAuth-heavy ones
+  (Slack, Gmail, Notion, Asana...) which additionally need a registered
+  OAuth app per provider — those aren't Atlas's to register on the
+  customer's behalf, and can't be faked as "connected" without one.
+
+
 
