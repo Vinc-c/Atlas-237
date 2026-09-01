@@ -177,16 +177,22 @@ export function AIWorkflowsPage() {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState<string | null>(null);
   const [runResult, setRunResult] = useState<Record<string, WorkflowRunResult>>({});
+  const [customApps, setCustomApps] = useState<{ id: string; name: string }[]>([]);
+  const [connectedProviders, setConnectedProviders] = useState<Set<string>>(new Set());
 
   useEffect(() => { if (allowed) load(); else setLoading(false); }, [allowed]);
 
   async function load() {
-    const [wfRes, runsRes] = await Promise.all([
+    const [wfRes, runsRes, integRes] = await Promise.all([
       supabase.from('workflows').select('*').order('created_at', { ascending: false }),
       supabase.from('workflow_runs').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('integrations').select('id, provider, config').eq('status', 'connected'),
     ]);
     setWorkflows((wfRes.data || []) as WorkflowType[]);
     setRuns((runsRes.data || []) as WorkflowRun[]);
+    const integs = (integRes.data || []) as { id: string; provider: string; config: Record<string, unknown> }[];
+    setCustomApps(integs.filter(i => i.config?.is_custom).map(i => ({ id: i.id, name: String(i.config?.display_name || i.provider) })));
+    setConnectedProviders(new Set(integs.map(i => i.provider)));
     setLoading(false);
   }
 
@@ -374,6 +380,52 @@ export function AIWorkflowsPage() {
                       <option value="">{lang === 'fr' ? "Choisir un événement…" : 'Choose an event…'}</option>
                       {WEBHOOK_EVENTS.map(ev => <option key={ev} value={ev}>{ev}</option>)}
                     </select>
+                  )}
+                  {action.type === 'send_telegram' && (
+                    <>
+                      {!connectedProviders.has('telegram') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Telegram non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Telegram not connected — connect it in the Marketplace for this action to work.'}</p>}
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className="input" placeholder={lang === 'fr' ? 'ID de conversation' : 'Chat ID'} value={action.chat_id || ''} onChange={e => updateAction(i, { chat_id: e.target.value })} />
+                        <input className="input" placeholder={lang === 'fr' ? 'Message' : 'Message'} value={action.message || ''} onChange={e => updateAction(i, { message: e.target.value })} />
+                      </div>
+                    </>
+                  )}
+                  {action.type === 'send_sms' && (
+                    <>
+                      {!connectedProviders.has('twilio') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Twilio non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Twilio not connected — connect it in the Marketplace for this action to work.'}</p>}
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className="input" placeholder={lang === 'fr' ? 'Numéro destinataire' : 'To (phone number)'} value={action.to || ''} onChange={e => updateAction(i, { to: e.target.value })} />
+                        <input className="input" placeholder={lang === 'fr' ? 'Message' : 'Message'} value={action.message || ''} onChange={e => updateAction(i, { message: e.target.value })} />
+                      </div>
+                    </>
+                  )}
+                  {action.type === 'mailchimp_subscribe' && (
+                    <>
+                      {!connectedProviders.has('mailchimp') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Mailchimp non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Mailchimp not connected — connect it in the Marketplace for this action to work.'}</p>}
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className="input" placeholder={lang === 'fr' ? 'ID de liste (audience)' : 'List (audience) ID'} value={action.list_id || ''} onChange={e => updateAction(i, { list_id: e.target.value })} />
+                        <input className="input" placeholder="Email" value={action.email || ''} onChange={e => updateAction(i, { email: e.target.value })} />
+                      </div>
+                    </>
+                  )}
+                  {action.type === 'call_custom_app' && (
+                    customApps.length === 0 ? (
+                      <p className="text-xs text-warning-600">{lang === 'fr' ? "Aucune app personnalisée connectée — ajoutez-en une dans Marketplace." : 'No Custom App connected yet — add one from the Marketplace.'}</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        <select className="input" value={action.integration_id || ''} onChange={e => updateAction(i, { integration_id: e.target.value })}>
+                          <option value="">{lang === 'fr' ? 'Choisir une app…' : 'Choose an app…'}</option>
+                          {customApps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                        <input className="input" placeholder={lang === 'fr' ? 'Chemin (ex: /webhook)' : 'Path (e.g. /webhook)'} value={action.path || ''} onChange={e => updateAction(i, { path: e.target.value })} />
+                        <select className="input" value={action.method || 'POST'} onChange={e => updateAction(i, { method: e.target.value })}>
+                          <option value="POST">POST</option>
+                          <option value="GET">GET</option>
+                          <option value="PUT">PUT</option>
+                          <option value="DELETE">DELETE</option>
+                        </select>
+                      </div>
+                    )
                   )}
                 </div>
               ))}

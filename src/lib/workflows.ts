@@ -9,7 +9,9 @@ import type { Workflow } from '@/types';
  * future workflow capabilities should be added (not a parallel "fake"
  * mechanism), so `runWorkflow` below stays the single real executor.
  */
-export type WorkflowActionType = 'create_task' | 'create_notification' | 'trigger_webhook';
+export type WorkflowActionType =
+  | 'create_task' | 'create_notification' | 'trigger_webhook'
+  | 'send_telegram' | 'send_sms' | 'mailchimp_subscribe' | 'call_custom_app';
 
 export interface WorkflowAction {
   type: WorkflowActionType;
@@ -22,15 +24,54 @@ export interface WorkflowAction {
   message?: string;
   /** trigger_webhook */
   event?: WebhookEvent;
+  /** send_telegram */
+  chat_id?: string;
+  /** send_sms */
+  to?: string;
+  /** mailchimp_subscribe */
+  list_id?: string;
+  email?: string;
+  /** call_custom_app */
+  integration_id?: string;
+  path?: string;
+  method?: string;
 }
 
 export const WORKFLOW_ACTION_TYPES: { value: WorkflowActionType; label: { fr: string; en: string } }[] = [
   { value: 'create_task', label: { fr: 'Créer une tâche', en: 'Create a task' } },
   { value: 'create_notification', label: { fr: 'Créer une notification', en: 'Create a notification' } },
   { value: 'trigger_webhook', label: { fr: 'Déclencher un webhook', en: 'Trigger a webhook' } },
+  { value: 'send_telegram', label: { fr: 'Envoyer un message Telegram', en: 'Send a Telegram message' } },
+  { value: 'send_sms', label: { fr: 'Envoyer un SMS (Twilio)', en: 'Send an SMS (Twilio)' } },
+  { value: 'mailchimp_subscribe', label: { fr: 'Ajouter à une liste Mailchimp', en: 'Add to a Mailchimp list' } },
+  { value: 'call_custom_app', label: { fr: 'Appeler une app personnalisée', en: 'Call a Custom App' } },
 ];
 
 export { WEBHOOK_EVENTS };
+
+/**
+ * Calls the `integration-action` edge function, which performs a real
+ * outbound call to a connected marketplace app (Telegram, Twilio, Mailchimp,
+ * or any org-registered Custom App) using that org's stored credentials —
+ * see supabase/functions/integration-action/index.ts. This is what makes
+ * send_telegram/send_sms/mailchimp_subscribe/call_custom_app real actions
+ * instead of another layer of stored-but-unused configuration.
+ */
+async function callIntegrationAction(action: string, params: Record<string, unknown>, integrationId?: string): Promise<{ ok: boolean; msg: string }> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token || '';
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/integration-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action, params, integration_id: integrationId }),
+    });
+    const result = await res.json().catch(() => null);
+    return { ok: Boolean(result?.ok), msg: result?.msg || `HTTP ${res.status}` };
+  } catch (e) {
+    return { ok: false, msg: e instanceof Error ? e.message : 'Request failed' };
+  }
+}
 
 export interface WorkflowRunStep {
   action: WorkflowActionType;
@@ -103,6 +144,27 @@ export async function runWorkflow(workflow: Workflow, userId: string | null): Pr
             triggered_manually: true,
           });
           steps.push({ action: action.type, ok: true, detail: `Fired "${action.event}" to subscribed webhooks` });
+          break;
+        }
+        case 'send_telegram': {
+          const result = await callIntegrationAction('send_telegram', { chat_id: action.chat_id, message: action.message });
+          steps.push({ action: action.type, ok: result.ok, detail: result.msg });
+          break;
+        }
+        case 'send_sms': {
+          const result = await callIntegrationAction('send_sms', { to: action.to, message: action.message });
+          steps.push({ action: action.type, ok: result.ok, detail: result.msg });
+          break;
+        }
+        case 'mailchimp_subscribe': {
+          const result = await callIntegrationAction('mailchimp_subscribe', { list_id: action.list_id, email: action.email });
+          steps.push({ action: action.type, ok: result.ok, detail: result.msg });
+          break;
+        }
+        case 'call_custom_app': {
+          if (!action.integration_id) throw new Error('No Custom App selected for this action');
+          const result = await callIntegrationAction('call_custom_app', { path: action.path, method: action.method }, action.integration_id);
+          steps.push({ action: action.type, ok: result.ok, detail: result.msg });
           break;
         }
         default:

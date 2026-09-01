@@ -468,34 +468,39 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   page — a workflow claiming to be "on a schedule" that never runs is
   exactly the kind of fake the Aug 2026 pass was fixing.
 
-## Marketplace apps — what's real vs. stored-only (Aug 2026 audit; still open)
+## Marketplace apps — what's real vs. stored-only (Aug 2026 audit; updated after wiring 4 more)
 - `AVAILABLE_APPS` in `IntegrationPages.tsx` lists ~70 providers. Genuinely
-  consumed by the platform today: `openai`/`anthropic`/`gemini` (Ask Atlas),
-  `flutterwave`/`paystack`/`payunit` (real checkout — see PSP section above).
+  consumed by the platform: `openai`/`anthropic`/`gemini` (Ask Atlas),
+  `flutterwave`/`paystack`/`payunit` (real checkout), and — as of the
+  `integration-action` edge function (deployed via Supabase MCP) — `telegram`
+  (send message), `twilio` (send SMS), `mailchimp` (add subscriber to a
+  list), and the generic "Custom App" connector (arbitrary authenticated
+  REST call to whatever `base_url` the org registered). These four are
+  wired as real Workflow actions (`send_telegram`, `send_sms`,
+  `mailchimp_subscribe`, `call_custom_app` in `src/lib/workflows.ts`) —
+  pick one when building a workflow and "Run now" actually calls the
+  provider's API with the org's stored credentials. They were chosen
+  specifically because they're plain REST/HTTP with no OAuth app
+  registration needed.
   13 more (`LIVE_VERIFIABLE_PROVIDERS` in `integrationValidation.ts`) get a
-  real live credential check on connect via `verify-integration-key`, and
-  the Connected Apps page's "Test"/"Sync" button now re-runs that same real
-  check instead of just stamping `last_sync_at` (fixed Aug 2026 — it used to
-  fake a "sync" with no real check for every provider, verifiable or not).
-  Every other provider — Slack, Gmail, Twilio, Shopify, HubSpot, Notion,
-  Zendesk, Zapier, ~50 more — is stored-credentials-only: connecting one
-  saves the key/token and nothing else in the app ever calls out to it. The
-  "Custom App" connector (base_url + bearer/api_key_header/basic auth) has
-  the same gap — nothing reads `config.base_url`/`config.credential` after
-  saving them.
-- Actually wiring any of these up needs a server-side proxy edge function
-  (most of these APIs block browser CORS, and Twilio/Slack/etc. secrets
-  shouldn't be called directly from the client anyway) — which needs
-  deploying, which needs either the Supabase CLI (unreachable from this
-  sandbox — see Build/Deploy above) or the Supabase MCP connector. Don't
-  write a batch of new "integration-proxy"-style edge functions speculatively
-  without deploy access to actually verify them; that just adds more
-  undeployed/untested surface, which is the opposite of this section's goal.
-  If tackling this next, prioritize by what's cheap and CORS-friendly first
-  (Telegram bot API, generic custom-app REST calls) over OAuth-heavy ones
-  (Slack, Gmail, Notion, Asana...) which additionally need a registered
-  OAuth app per provider — those aren't Atlas's to register on the
-  customer's behalf, and can't be faked as "connected" without one.
+  real live credential check on connect and via the Connected Apps page's
+  "Test" button (`verify-integration-key`), but nothing else in the app
+  calls out to them yet.
+  Every other provider — Slack, Gmail, Shopify, HubSpot, Notion, Zendesk,
+  Zapier, ~50 more — is still stored-credentials-only: connecting one saves
+  the key/token and nothing in the app calls out to it.
+- Extending this further (Slack, Gmail, etc.) mostly means OAuth: those
+  need a registered OAuth app per provider, which is the customer's own
+  developer-console setup, not something Atlas can create on their behalf —
+  don't fake a "connected" state for one without it. Non-OAuth REST APIs
+  (e.g. adding a new simple provider) can follow the `integration-action`
+  pattern directly: add a `run()` function + entry in its `ACTIONS` map,
+  redeploy, add the matching `WorkflowActionType` + UI fields in
+  `src/lib/workflows.ts`/`AIWorkflowsPage`.
+- New edge functions need the same deploy step as changes to existing ones
+  (see Build/Deploy above) — this session deployed via the Supabase MCP
+  connector once it was connected; do the same rather than shipping
+  undeployed function code that can't be verified.
 
 
 
