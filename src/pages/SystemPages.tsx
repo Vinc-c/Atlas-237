@@ -12,6 +12,7 @@ import { getAvailablePsps, payWithPsp, type PspOption } from '@/lib/psp';
 import { PspCheckoutModal } from '@/components/PspCheckoutModal';
 import { PageHeader, Badge, StatCard } from '@/components/ui';
 import { EmptyState } from '@/components/EmptyState';
+import { UpgradeGate } from '@/components/UpgradeGate';
 import { BrandLogo } from '@/components/BrandLogos';
 import { Loading } from '@/components/Loading';
 import { COUNTRIES, CURRENCIES, TIMEZONES } from '@/lib/i18n-countries';
@@ -99,14 +100,18 @@ export function NotificationsPage() {
 
 export function AuditLogPage() {
   const { language } = useAuth();
+  const { hasFeature: hasPlanFeature } = usePlanAccess();
+  const allowed = hasPlanFeature('auditLog');
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!allowed) { setLoading(false); return; }
     supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100)
       .then(({ data }) => { setLogs((data || []) as AuditLog[]); setLoading(false); });
-  }, []);
+  }, [allowed]);
 
+  if (!allowed) return <UpgradeGate language={language} feature={t('nav.auditLog', language)} minPlan="growth" />;
   if (loading) return <Loading text={t('common.loading', language)} />;
 
   return (

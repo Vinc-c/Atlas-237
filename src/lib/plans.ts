@@ -48,6 +48,7 @@ const UNLIMITED_FEATURES: PlanFeatures = {
   tickets: true,
   knowledgeBase: true,
   workflowAutomation: true,
+  auditLog: true,
 };
 
 
@@ -77,6 +78,8 @@ export interface PlanFeatures {
   knowledgeBase: boolean;
   /** "Automations / workflows" on the pricing matrix — gates the Workflows page. */
   workflowAutomation: boolean;
+  /** "Journal d'audit" / "Audit log" on the pricing matrix — gates AuditLogPage. */
+  auditLog: boolean;
 }
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
@@ -101,12 +104,19 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     tickets: false,
     knowledgeBase: false,
     workflowAutomation: false,
+    auditLog: false,
   },
   growth: {
     maxContacts: 'unlimited',
     maxAIEmployees: 15,
     maxUsers: 10,
-    advancedAnalytics: true,
+    // Matches the "Analyses prédictives" row on the pricing matrix, which
+    // advertises predictive analytics/AI Insights starting at Pro — not
+    // Growth. Growth's own marketing copy ("Automatisation, campagnes et
+    // croissance commerciale") never mentions analytics either; that's
+    // Pro's headline ("Analyses IA, support prioritaire..."). Keep this
+    // false unless the pricing table is updated to promise it at Growth.
+    advancedAnalytics: false,
     apiAccess: true,
     webhooks: true,
     customDashboards: false,
@@ -123,6 +133,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     tickets: true,
     knowledgeBase: false,
     workflowAutomation: true,
+    auditLog: true,
   },
   pro: {
     maxContacts: 'unlimited',
@@ -145,6 +156,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     tickets: true,
     knowledgeBase: true,
     workflowAutomation: true,
+    auditLog: true,
   },
   enterprise: {
     maxContacts: 'unlimited',
@@ -167,6 +179,7 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     tickets: true,
     knowledgeBase: true,
     workflowAutomation: true,
+    auditLog: true,
   },
 };
 
