@@ -279,6 +279,19 @@ export function AuthPage() {
               </p>
             </div>
 
+            {error && (
+              <div className="mt-5 flex items-start gap-2 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+                <AlertCircle size={16} className="mt-0.5 flex-none" />
+                <span>{error}</span>
+              </div>
+            )}
+            {message && (
+              <div className="mt-5 flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">
+                <CheckCircle2 size={16} className="mt-0.5 flex-none" />
+                <span>{message}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="mt-7 space-y-4">
               {mode === 'signup' && (
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -395,19 +408,6 @@ export function AuthPage() {
                   <button type="button" onClick={() => { setMode('forgot'); setError(''); setMessage(''); }} className="text-sm font-semibold text-primary-700 hover:text-primary-800 transition-colors">
                     {t('auth.forgotPassword', lang)}
                   </button>
-                </div>
-              )}
-
-              {error && (
-                <div className="flex items-start gap-2 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
-                  <AlertCircle size={16} className="mt-0.5 flex-none" />
-                  <span>{error}</span>
-                </div>
-              )}
-              {message && (
-                <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">
-                  <CheckCircle2 size={16} className="mt-0.5 flex-none" />
-                  <span>{message}</span>
                 </div>
               )}
 
