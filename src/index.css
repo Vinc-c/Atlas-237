@@ -60,7 +60,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
-    .animate-fade-in-up, .animate-float, .animate-pulse-slow { animation: none !important; }
+    .animate-fade-in-up, .animate-float, .animate-pulse-slow, .animate-dance { animation: none !important; }
   }
   .btn-primary {
     @apply btn bg-primary-700 text-white hover:bg-primary-800 active:bg-primary-900 shadow-sm;

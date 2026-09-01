@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
+import { BrandLogo } from '@/components/BrandLogos';
 import { VideoBackground } from '@/components/VideoBackground';
 import { AUTH_VIDEO_SOURCES, AUTH_VIDEO_POSTER } from '@/lib/media';
 import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency } from '@/lib/i18n-countries';
@@ -195,6 +196,18 @@ export function AuthPage() {
               <div className="mt-3 flex h-16 items-end gap-1.5">
                 {[45, 70, 55, 85, 60, 95, 75].map((h, i) => (
                   <div key={i} className="flex-1 rounded-t bg-white/40" style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Real connected apps, tying into the marketplace — not decorative placeholders */}
+            <div className="mt-6">
+              <p className="text-xs font-medium uppercase tracking-wide text-primary-200">{lang === 'fr' ? 'Se connecte à vos outils' : 'Connects with your tools'}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {['slack', 'whatsapp', 'shopify', 'hubspot', 'mailchimp', 'zapier'].map((provider) => (
+                  <div key={provider} className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/95 p-1.5 shadow-sm">
+                    <BrandLogo provider={provider} size={22} />
+                  </div>
                 ))}
               </div>
             </div>

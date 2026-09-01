@@ -6,10 +6,26 @@ import {
   MessageSquare, Database, Workflow, PlayCircle, Building2, Globe,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { BrandLogo } from '@/components/BrandLogos';
 import { VideoBackground } from '@/components/VideoBackground';
 import { HERO_VIDEO_SOURCES, HERO_VIDEO_POSTER, FINAL_CTA_VIDEO_SOURCES, FINAL_CTA_VIDEO_POSTER } from '@/lib/media';
 import { useAuth } from '@/context/AuthContext';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+
+/**
+ * Every id here must exist in AVAILABLE_APPS (src/pages/IntegrationPages.tsx)
+ * and resolve to a real logo in src/components/BrandLogos.tsx — this section
+ * shows actual marketplace apps, not placeholder art. Picked for visual
+ * variety across categories (CRM, messaging, automation, payments, AI,
+ * commerce) rather than showing all ~70.
+ */
+const INTEGRATION_LOGOS = [
+  'slack', 'google_drive', 'whatsapp', 'notion', 'hubspot', 'shopify',
+  'zapier', 'make', 'n8n', 'mailchimp', 'calendly', 'zoom',
+  'microsoft_teams', 'twilio', 'asana', 'trello', 'docusign', 'dropbox',
+  'telegram', 'xero', 'quickbooks', 'zendesk', 'intercom', 'freshdesk',
+  'stripe', 'paypal', 'openai',
+];
 
 const cloudProducts = [
   { icon: MessageSquare, name: { fr: 'Slack', en: 'Slack' }, desc: { fr: 'Connectez workflows et données conversationnelles là où le travail se fait.', en: 'Connect workflows and conversational data where work happens.' } },
@@ -297,6 +313,37 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ───────── Integrations showcase ───────── */}
+        <section id="integrations" className="mx-auto max-w-7xl px-6 py-20 text-center md:px-10 lg:py-24">
+          <div className="reveal mx-auto max-w-2xl">
+            <h2 className="text-3xl font-bold tracking-tight text-ink-950 sm:text-4xl">
+              {lang === 'fr' ? 'Connectez-vous à des centaines d’apps.' : 'Sync with hundreds of apps.'}
+              <br />
+              {lang === 'fr' ? 'Débloquez des possibilités illimitées.' : 'Unleash limitless possibilities.'}
+            </h2>
+            <p className="mt-5 text-lg text-ink-600">
+              {lang === 'fr'
+                ? 'Connectez Atlas à vos applications favorites pour ne plus perdre de temps à jongler entre elles. Choisissez dans notre marketplace ou construisez vos propres intégrations avec notre API ouverte.'
+                : 'Connect Atlas to your favorite applications to save time switching between them. Select from our marketplace or build your own integrations with our open API.'}
+            </p>
+            <Link to="/auth" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary-600 hover:text-primary-700">
+              {lang === 'fr' ? 'Voir toutes les intégrations' : 'See all integrations'} <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className="reveal mx-auto mt-14 grid max-w-5xl grid-cols-4 gap-4 sm:grid-cols-6 sm:gap-5 md:grid-cols-9">
+            {INTEGRATION_LOGOS.map((provider, i) => (
+              <div
+                key={provider}
+                className="flex aspect-square items-center justify-center rounded-2xl border border-ink-100 bg-white p-3 shadow-card animate-dance sm:p-4"
+                style={{ animationDelay: `${(i % 9) * 0.18}s`, animationDuration: `${3.6 + (i % 5) * 0.35}s` }}
+              >
+                <BrandLogo provider={provider} size={32} />
+              </div>
+            ))}
           </div>
         </section>
 

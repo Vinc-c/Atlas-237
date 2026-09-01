@@ -74,6 +74,12 @@ export default {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-12px)' },
         },
+        'dance': {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '25%': { transform: 'translateY(-7px) rotate(-4deg)' },
+          '50%': { transform: 'translateY(1px) rotate(3deg)' },
+          '75%': { transform: 'translateY(-4px) rotate(-2deg)' },
+        },
         'shimmer': {
           '0%': { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition: '200% center' },
@@ -85,6 +91,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.6s ease-out both',
         'pulse-slow': 'pulse-slow 6s ease-in-out infinite',
         'float': 'float 4s ease-in-out infinite',
+        'dance': 'dance 4.5s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
       },
     },

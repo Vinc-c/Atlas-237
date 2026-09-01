@@ -118,11 +118,37 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
           {h2(fr ? 'Documentation' : 'Documentation', '')}
           <p>{fr ? 'Atlas CRM est construit sur une architecture Postgres (Supabase) avec sécurité au niveau des lignes (RLS) : chaque organisation n\'a accès qu\'à ses propres données, isolées de celles des autres tenants.' : 'Atlas CRM runs on a Postgres (Supabase) architecture with row-level security (RLS): every organization can only ever access its own data, isolated from other tenants.'}</p>
 
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Démarrage rapide' : 'Getting started'}</h3>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>{fr ? 'Créez votre compte (essai gratuit de 14 jours, aucune carte requise).' : 'Create your account (14-day free trial, no card required).'}</li>
+            <li>{fr ? 'Depuis Paramètres → Intégrations, connectez les applications de votre marketplace (voir ci-dessous).' : 'From Settings → Integrations, connect the apps from your marketplace (see below).'}</li>
+            <li>{fr ? 'Créez un flux dans IA → Workflows pour automatiser une action réelle (tâche, notification, webhook, message).' : 'Create a workflow under AI → Workflows to automate a real action (task, notification, webhook, message).'}</li>
+            <li>{fr ? "Suivez la consommation de votre organisation dans Paramètres → Utilisation." : "Track your organization's usage under Settings → Usage."}</li>
+          </ol>
+
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Connecter une intégration' : 'Connecting an integration'}</h3>
           <p>{fr ? 'Depuis Paramètres → Intégrations, choisissez une application et connectez-la avec votre propre clé API (stockée chiffrée, par organisation) ou via OAuth pour les apps qui le proposent (Google, Microsoft, Meta, Slack, PayPal, Xero, Notion, etc.). Chaque carte affiche un lien "Docs" vers la documentation officielle du fournisseur.' : 'From Settings → Integrations, pick an app and connect it with your own API key (stored encrypted, per organization) or via OAuth for apps that support it (Google, Microsoft, Meta, Slack, PayPal, Xero, Notion, and more). Each card links out to the provider\'s official "Docs" for that integration.'}</p>
+          <p>{fr ? 'Certaines intégrations sont directement actionnables par vos flux automatisés : Telegram (message), Twilio (SMS), Mailchimp (ajout à une liste) et toute app personnalisée que vous enregistrez (appel REST authentifié vers votre propre URL). Les autres apps (Slack, Gmail, Shopify, HubSpot...) stockent vos identifiants pour un usage à venir mais ne sont pas encore actionnables depuis un flux.' : 'A few integrations can be triggered directly from your workflows: Telegram (send a message), Twilio (send an SMS), Mailchimp (add to a list), and any Custom App you register (an authenticated REST call to your own URL). Other apps (Slack, Gmail, Shopify, HubSpot...) store your credentials for future use but aren\'t yet callable from a workflow.'}</p>
+
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Workflows & actions' : 'Workflows & actions'}</h3>
+          <p>{fr ? 'Un flux (IA → Workflows) exécute, dans l\'ordre, une ou plusieurs actions réelles quand vous cliquez sur "Exécuter" :' : 'A workflow (AI → Workflows) runs, in order, one or more real actions when you click "Run now":'}</p>
+          <ul>
+            <li><code>create_task</code> — {fr ? 'crée une tâche réelle dans votre CRM' : 'creates a real task in your CRM'}</li>
+            <li><code>create_notification</code> — {fr ? 'crée une notification in-app' : 'creates an in-app notification'}</li>
+            <li><code>trigger_webhook</code> — {fr ? 'déclenche vos webhooks abonnés à un événement donné' : "fires your webhooks subscribed to a given event"}</li>
+            <li><code>send_telegram</code>, <code>send_sms</code>, <code>mailchimp_subscribe</code>, <code>call_custom_app</code> — {fr ? 'appellent réellement l\'application connectée correspondante' : 'call the matching connected app for real'}</li>
+          </ul>
+          <p className="text-sm text-ink-500">{fr ? 'Seul le déclenchement manuel exécute un flux aujourd\'hui ; les déclencheurs planifiés ou par événement sont enregistrés mais pas encore automatisés.' : "Only the manual trigger runs a workflow today; scheduled or event-based triggers are stored but not yet automated."}</p>
 
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Webhooks sortants' : 'Outgoing webhooks'}</h3>
-          <p>{fr ? 'Pour les intégrations de type webhook, un test d\'envoi (ping signé, en-tête X-Atlas-Signature) est disponible directement depuis la carte d\'intégration pour vérifier que votre endpoint répond correctement avant de l\'activer.' : 'For webhook-style integrations, a signed test ping (X-Atlas-Signature header) is available right from the integration card, so you can verify your endpoint responds correctly before turning it on.'}</p>
+          <p>{fr ? 'Configurez vos webhooks dans Paramètres → API & Webhooks, en choisissant les événements à recevoir : ' : 'Configure your webhooks under Settings → API & Webhooks, choosing which events to receive: '}<code>contact.created</code>, <code>contact.updated</code>, <code>contact.deleted</code>, <code>lead.created</code>, <code>lead.updated</code>, <code>lead.converted</code>, <code>deal.created</code>, <code>deal.updated</code>, <code>deal.won</code>, <code>deal.lost</code>, <code>invoice.created</code>, <code>invoice.paid</code>, <code>payment.received</code>, <code>activity.created</code>.</p>
+          <p>{fr ? 'Chaque livraison POST un payload JSON signé (en-tête ' : 'Each delivery POSTs a signed JSON payload (header '}<code>X-Atlas-Signature</code>{fr ? ') de cette forme :' : ') shaped like this:'}</p>
+          <pre className="overflow-x-auto rounded-lg bg-ink-950 p-4 text-xs text-white"><code>{`{
+  "event": "deal.won",
+  "timestamp": "2026-09-02T10:15:00.000Z",
+  "data": { "id": "...", "table": "deals", "status": "won", ... }
+}`}</code></pre>
+          <p>{fr ? 'Un test d\'envoi (ping signé) est disponible directement depuis la carte de webhook pour vérifier que votre endpoint répond correctement avant de l\'activer.' : "A signed test ping is available right from the webhook card, so you can verify your endpoint responds correctly before turning it on."}</p>
 
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Accès aux données' : 'Data access'}</h3>
           <p>{fr ? 'L\'accès API est une fonctionnalité de plan (Growth et supérieur) qui autorise l\'usage programmatique de vos données CRM (contacts, deals, factures) via l\'infrastructure Supabase de votre organisation ; la consommation est visible dans Paramètres → Utilisation.' : 'API access is a plan feature (Growth and above) that enables programmatic use of your CRM data (contacts, deals, invoices) through your organization\'s Supabase infrastructure; consumption is visible under Settings → Usage.'}</p>
