@@ -11,7 +11,7 @@ import { Modal } from '@/components/Modal';
 import type { AIAgent, AITask, Approval, AIMemory, KnowledgeDocument, Workflow as WorkflowType, WorkflowRun } from '@/types';
 import { usePlanAccess } from '@/lib/plans';
 import { UpgradeGate } from '@/components/UpgradeGate';
-import { WORKFLOW_ACTION_TYPES, WEBHOOK_EVENTS, executeAndLogWorkflow, type WorkflowAction, type WorkflowRunResult } from '@/lib/workflows';
+import { WORKFLOW_ACTION_TYPES, WORKFLOW_ACTION_PROVIDER, WORKFLOW_PARAM_FIELDS, WEBHOOK_EVENTS, executeAndLogWorkflow, type WorkflowAction, type WorkflowRunResult } from '@/lib/workflows';
 
 export function AIEmployeesPage() {
   const { language } = useAuth();
@@ -381,51 +381,35 @@ export function AIWorkflowsPage() {
                       {WEBHOOK_EVENTS.map(ev => <option key={ev} value={ev}>{ev}</option>)}
                     </select>
                   )}
-                  {action.type === 'send_telegram' && (
-                    <>
-                      {!connectedProviders.has('telegram') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Telegram non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Telegram not connected — connect it in the Marketplace for this action to work.'}</p>}
-                      <div className="grid grid-cols-2 gap-2">
-                        <input className="input" placeholder={lang === 'fr' ? 'ID de conversation' : 'Chat ID'} value={action.chat_id || ''} onChange={e => updateAction(i, { chat_id: e.target.value })} />
-                        <input className="input" placeholder={lang === 'fr' ? 'Message' : 'Message'} value={action.message || ''} onChange={e => updateAction(i, { message: e.target.value })} />
-                      </div>
-                    </>
-                  )}
-                  {action.type === 'send_sms' && (
-                    <>
-                      {!connectedProviders.has('twilio') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Twilio non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Twilio not connected — connect it in the Marketplace for this action to work.'}</p>}
-                      <div className="grid grid-cols-2 gap-2">
-                        <input className="input" placeholder={lang === 'fr' ? 'Numéro destinataire' : 'To (phone number)'} value={action.to || ''} onChange={e => updateAction(i, { to: e.target.value })} />
-                        <input className="input" placeholder={lang === 'fr' ? 'Message' : 'Message'} value={action.message || ''} onChange={e => updateAction(i, { message: e.target.value })} />
-                      </div>
-                    </>
-                  )}
-                  {action.type === 'mailchimp_subscribe' && (
-                    <>
-                      {!connectedProviders.has('mailchimp') && <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? 'Mailchimp non connecté — connectez-le dans Marketplace pour que cette action fonctionne.' : 'Mailchimp not connected — connect it in the Marketplace for this action to work.'}</p>}
-                      <div className="grid grid-cols-2 gap-2">
-                        <input className="input" placeholder={lang === 'fr' ? 'ID de liste (audience)' : 'List (audience) ID'} value={action.list_id || ''} onChange={e => updateAction(i, { list_id: e.target.value })} />
-                        <input className="input" placeholder="Email" value={action.email || ''} onChange={e => updateAction(i, { email: e.target.value })} />
-                      </div>
-                    </>
-                  )}
                   {action.type === 'call_custom_app' && (
                     customApps.length === 0 ? (
-                      <p className="text-xs text-warning-600">{lang === 'fr' ? "Aucune app personnalisée connectée — ajoutez-en une dans Marketplace." : 'No Custom App connected yet — add one from the Marketplace.'}</p>
+                      <p className="text-xs text-warning-600 mb-2">{lang === 'fr' ? "Aucune app personnalisée connectée — ajoutez-en une dans Marketplace." : 'No Custom App connected yet — add one from the Marketplace.'}</p>
                     ) : (
-                      <div className="grid grid-cols-3 gap-2">
-                        <select className="input" value={action.integration_id || ''} onChange={e => updateAction(i, { integration_id: e.target.value })}>
-                          <option value="">{lang === 'fr' ? 'Choisir une app…' : 'Choose an app…'}</option>
-                          {customApps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                        </select>
-                        <input className="input" placeholder={lang === 'fr' ? 'Chemin (ex: /webhook)' : 'Path (e.g. /webhook)'} value={action.path || ''} onChange={e => updateAction(i, { path: e.target.value })} />
-                        <select className="input" value={action.method || 'POST'} onChange={e => updateAction(i, { method: e.target.value })}>
-                          <option value="POST">POST</option>
-                          <option value="GET">GET</option>
-                          <option value="PUT">PUT</option>
-                          <option value="DELETE">DELETE</option>
-                        </select>
-                      </div>
+                      <select className="input mb-2" value={action.integration_id || ''} onChange={e => updateAction(i, { integration_id: e.target.value })}>
+                        <option value="">{lang === 'fr' ? 'Choisir une app…' : 'Choose an app…'}</option>
+                        {customApps.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select>
                     )
+                  )}
+                  {WORKFLOW_ACTION_PROVIDER[action.type] && !connectedProviders.has(WORKFLOW_ACTION_PROVIDER[action.type]!) && (
+                    <p className="text-xs text-warning-600 mb-2">
+                      {lang === 'fr'
+                        ? `${WORKFLOW_ACTION_PROVIDER[action.type]} non connecté — connectez-le dans Marketplace pour que cette action fonctionne.`
+                        : `${WORKFLOW_ACTION_PROVIDER[action.type]} not connected — connect it in the Marketplace for this action to work.`}
+                    </p>
+                  )}
+                  {WORKFLOW_PARAM_FIELDS[action.type] && (
+                    <div className={`grid gap-2 ${WORKFLOW_PARAM_FIELDS[action.type]!.length > 2 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                      {WORKFLOW_PARAM_FIELDS[action.type]!.map(field => (
+                        <input
+                          key={field.key}
+                          className="input"
+                          placeholder={`${field.label[lang === 'fr' ? 'fr' : 'en']}${field.placeholder ? ` (${field.placeholder})` : ''}`}
+                          value={action.params?.[field.key] || ''}
+                          onChange={e => updateAction(i, { params: { ...action.params, [field.key]: e.target.value } })}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               ))}

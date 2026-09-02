@@ -468,36 +468,64 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   page — a workflow claiming to be "on a schedule" that never runs is
   exactly the kind of fake the Aug 2026 pass was fixing.
 
-## Marketplace apps — what's real vs. stored-only (Aug 2026 audit; updated after wiring 4 more)
+## Marketplace apps — what's real vs. stored-only (updated Sep 2026 — 13 providers now real)
 - `AVAILABLE_APPS` in `IntegrationPages.tsx` lists ~70 providers. Genuinely
-  consumed by the platform: `openai`/`anthropic`/`gemini` (Ask Atlas),
-  `flutterwave`/`paystack`/`payunit` (real checkout), and — as of the
-  `integration-action` edge function (deployed via Supabase MCP) — `telegram`
-  (send message), `twilio` (send SMS), `mailchimp` (add subscriber to a
-  list), and the generic "Custom App" connector (arbitrary authenticated
-  REST call to whatever `base_url` the org registered). These four are
-  wired as real Workflow actions (`send_telegram`, `send_sms`,
-  `mailchimp_subscribe`, `call_custom_app` in `src/lib/workflows.ts`) —
-  pick one when building a workflow and "Run now" actually calls the
-  provider's API with the org's stored credentials. They were chosen
-  specifically because they're plain REST/HTTP with no OAuth app
-  registration needed.
-  13 more (`LIVE_VERIFIABLE_PROVIDERS` in `integrationValidation.ts`) get a
-  real live credential check on connect and via the Connected Apps page's
-  "Test" button (`verify-integration-key`), but nothing else in the app
-  calls out to them yet.
-  Every other provider — Slack, Gmail, Shopify, HubSpot, Notion, Zendesk,
-  Zapier, ~50 more — is still stored-credentials-only: connecting one saves
-  the key/token and nothing in the app calls out to it.
-- Extending this further (Slack, Gmail, etc.) mostly means OAuth: those
-  need a registered OAuth app per provider, which is the customer's own
-  developer-console setup, not something Atlas can create on their behalf —
-  don't fake a "connected" state for one without it. Non-OAuth REST APIs
-  (e.g. adding a new simple provider) can follow the `integration-action`
-  pattern directly: add a `run()` function + entry in its `ACTIONS` map,
-  redeploy, add the matching `WorkflowActionType` + UI fields in
-  `src/lib/workflows.ts`/`AIWorkflowsPage`.
-- New edge functions need the same deploy step as changes to existing ones
+  consumed by the platform:
+  - `openai`/`anthropic`/`gemini` (Ask Atlas), `flutterwave`/`paystack`/
+    `payunit` (real checkout — separate code path from the marketplace,
+    see PSP section above).
+  - 13 more, all callable as real Workflow actions via the
+    `integration-action` edge function (deployed through the Supabase
+    MCP connector — no CLI access from this sandbox, see Build/Deploy):
+    `telegram` (send message), `twilio` (send SMS), `whatsapp` (send
+    message via Cloud API), `mailchimp` (add subscriber), `hubspot`
+    (upsert contact), `freshdesk` (create ticket), `shopify` /
+    `woocommerce` (create customer), `mollie` / `cinetpay` / `wave` /
+    `chapa` / `campay` (create a real payment/checkout, returns a real
+    checkout URL in the run result) — plus the generic `call_custom_app`
+    for any org-registered "Custom App" (arbitrary authenticated REST
+    call to whatever `base_url` they saved).
+  - All 13's action types, provider mapping, and per-action input fields
+    are defined once in `src/lib/workflows.ts`
+    (`WORKFLOW_ACTION_PROVIDER`, `WORKFLOW_PARAM_FIELDS`) — the
+    `AIWorkflowsPage` action editor renders fields generically from that
+    schema instead of one hardcoded block per provider. Adding a 14th
+    non-OAuth provider means: add a `run()` fn + `ACTIONS` entry in the
+    edge function, redeploy, add one line each to `WORKFLOW_ACTION_TYPES`
+    / `WORKFLOW_ACTION_PROVIDER` / `WORKFLOW_PARAM_FIELDS` — no new UI
+    code needed.
+  - 13 others (`LIVE_VERIFIABLE_PROVIDERS` in `integrationValidation.ts`)
+    get a real live credential check on connect and via the Connected
+    Apps page's "Test" button, but aren't callable from a workflow yet.
+  - Every remaining provider — ~45, all `authType: 'oauth'`: Slack, Gmail,
+    Google Drive/Calendar/Ads, Notion, Asana, Trello, Zendesk, Intercom,
+    Xero, QuickBooks, PayPal, Zoom, Dropbox, DocuSign, Meta/LinkedIn Ads,
+    Microsoft Teams/Outlook, and the rest — is stored-credentials-only.
+- **The OAuth boundary is hard, not a matter of effort**: those ~45
+  providers each need a registered OAuth app (Client ID + Secret) on the
+  provider's own developer console — that's the org's own setup, tied to
+  their brand/domain/consent screen, and cannot be created or faked by
+  Atlas on their behalf. Do not mark one "connected" or build a workflow
+  action for it without those real credentials existing. If the person
+  wants more of these live, the actual unblocking step is registering the
+  OAuth app themselves (see the Google walkthrough already given for
+  Sign-in with Google as the template) and supplying the Client ID/Secret
+  — then `oauth-exchange` (already built) handles the token exchange.
+- A few non-OAuth providers were deliberately left out of this batch
+  because their stored config is incomplete for a correct real call —
+  don't silently "fake" these by guessing at missing fields:
+  - `mpesa`: Safaricom STK push needs a `passkey` in addition to the
+    stored `consumer_key`/`consumer_secret`/`shortcode` — add that
+    config field first.
+  - `orange_money`: needs a merchant key beyond `client_id`/`client_secret`.
+  - `mtn_momo`: MTN's flow needs a subscription-generated API key
+    alongside the stored `subscription_key`/`api_user`.
+  - `zapier`/`make`/`n8n`/`pipedream`: these platforms are meant to be
+    triggered via a webhook URL (already real — see the Webhooks section
+    above) or need a specific scenario/workflow ID that isn't in the
+    stored config; their "connect with API key" flow here doesn't map to
+    a single well-defined action.
+
   (see Build/Deploy above) — this session deployed via the Supabase MCP
   connector once it was connected; do the same rather than shipping
   undeployed function code that can't be verified.
