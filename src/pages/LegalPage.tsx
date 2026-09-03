@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
-import { ShieldCheck, FileText, Cookie, Mail, Users, Lock, BookOpen, Activity, Database, Heart } from 'lucide-react';
+import { ShieldCheck, FileText, Cookie, Mail, Users, Lock, BookOpen, Activity, Database, Heart, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Logo } from '@/components/Logo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
-export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
+export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'refund' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
 
 const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: string; fr: string }; updated: string }> = {
   privacy: { icon: ShieldCheck, title: { en: 'Privacy Policy', fr: 'Politique de Confidentialité' }, updated: '2026-08-08' },
@@ -21,6 +21,7 @@ const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: stri
   community: { icon: Users, title: { en: 'Community', fr: 'Communauté' }, updated: '2026-08-08' },
   blog: { icon: BookOpen, title: { en: 'Blog', fr: 'Blog' }, updated: '2026-08-08' },
   gdpr: { icon: Database, title: { en: 'GDPR / RGPD Compliance', fr: 'Conformité RGPD' }, updated: '2026-08-08' },
+  refund: { icon: RotateCcw, title: { en: 'Refund Policy', fr: 'Politique de Remboursement' }, updated: '2026-09-02' },
   pledge: { icon: Heart, title: { en: 'Pledge 1%', fr: 'Pledge 1%' }, updated: '2026-08-08' },
   'sales-cloud': { icon: Activity, title: { en: 'Atlas Sales', fr: 'Atlas Sales' }, updated: '2026-08-08' },
   'service-cloud': { icon: Activity, title: { en: 'Atlas Service', fr: 'Atlas Service' }, updated: '2026-08-08' },
@@ -108,7 +109,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
         <>
           {h2(fr ? 'Nos tarifs' : 'Our Pricing', '')}
           <ul><li>Starter — $19/{fr ? 'mois' : 'mo'}</li><li>Growth — $49/{fr ? 'mois' : 'mo'}</li><li>Pro — $119/{fr ? 'mois' : 'mo'}</li><li>Enterprise — $219/{fr ? 'mois' : 'mo'}</li></ul>
-          <p>{fr ? 'Essai gratuit de 14 jours. Sans carte bancaire. Paiement via Flutterwave.' : '14-day free trial. No credit card. Payment via Flutterwave.'}</p>
+          <p>{fr ? 'Essai gratuit de 14 jours. Sans carte bancaire. Paiement via Flutterwave, Paystack, PayUnit (Mobile Money) ou Paddle selon votre région.' : '14-day free trial. No credit card. Payment via Flutterwave, Paystack, PayUnit (Mobile Money), or Paddle, depending on your region.'}</p>
           <Link to="/auth" className="btn-primary btn-sm mt-4 inline-flex">{fr ? 'Commencer' : 'Get started'}</Link>
         </>
       );
@@ -185,6 +186,19 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
           {h2(fr ? 'Conformité RGPD' : 'GDPR Compliance', '')}
           <p>{fr ? 'Atlas CRM est pleinement conforme au Règlement Général sur la Protection des Données (RGPD/GDPR).' : 'Atlas CRM is fully compliant with the General Data Protection Regulation (GDPR).'}</p>
           <ul><li>{fr ? 'Base légale du traitement' : 'Legal basis for processing'}</li><li>{fr ? 'Droits des personnes concernées' : 'Rights of data subjects'}</li><li>{fr ? 'Notification de violation (72h)' : 'Breach notification (72h)'}</li><li>{fr ? 'Transferts internationaux de données' : 'International data transfers'}</li><li>{fr ? 'DPO : dpo@liafrik.com' : 'DPO: dpo@liafrik.com'}</li></ul>
+        </>
+      );
+    case 'refund':
+      return (
+        <>
+          {h2(fr ? 'Politique de Remboursement' : 'Refund Policy', '')}
+          <p>{fr ? "Atlas CRM propose un essai gratuit de 14 jours sur tous les plans, sans carte bancaire requise : vous pouvez tester la plateforme en conditions réelles avant tout engagement." : 'Atlas CRM offers a 14-day free trial on every plan, no card required — you can test the platform under real conditions before committing to anything.'}</p>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Abonnements mensuels et annuels' : 'Monthly and annual subscriptions'}</h3>
+          <p>{fr ? "Les abonnements sont facturés à l'avance (mensuellement ou annuellement selon votre choix). Vous pouvez annuler à tout moment depuis Paramètres → Facturation ; l'annulation prend effet à la fin de la période déjà payée, et aucun remboursement au prorata n'est effectué pour la période en cours." : 'Subscriptions are billed in advance (monthly or annually, depending on your choice). You can cancel anytime from Settings → Billing; cancellation takes effect at the end of the period already paid for, and no prorated refund is issued for the current period.'}</p>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Erreurs de facturation et remboursements exceptionnels' : 'Billing errors and exceptional refunds'}</h3>
+          <p>{fr ? "En cas de double prélèvement, d'erreur de facturation, ou si vous estimez avoir été facturé à tort, contactez-nous à support@liafrik.com dans les 14 jours suivant la transaction. Nous examinons chaque demande individuellement et, si elle est justifiée, procédons au remboursement sur le moyen de paiement d'origine, via le prestataire de paiement utilisé pour la transaction (Flutterwave, Paystack, PayUnit ou Paddle selon votre région)." : 'If you\'re double-charged, billed in error, or believe a charge was made incorrectly, contact us at support@liafrik.com within 14 days of the transaction. We review each request individually and, where justified, issue a refund to the original payment method through the payment provider used for that transaction (Flutterwave, Paystack, PayUnit, or Paddle, depending on your region).'}</p>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Délai de traitement' : 'Processing time'}</h3>
+          <p>{fr ? "Une fois approuvé, un remboursement apparaît généralement sur votre relevé sous 5 à 10 jours ouvrés, selon votre banque ou opérateur de paiement mobile." : 'Once approved, a refund typically appears on your statement within 5 to 10 business days, depending on your bank or mobile money operator.'}</p>
         </>
       );
     case 'pledge':

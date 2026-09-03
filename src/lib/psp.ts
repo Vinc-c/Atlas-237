@@ -1,6 +1,7 @@
 import { isFlutterwaveConfigured, initiateFlutterwaveCheckout, recordSubscription } from '@/lib/flutterwave';
 import { isPayunitConfigured, initiatePayunitCheckout } from '@/lib/payunit';
 import { isPaystackConfigured, initiatePaystackCheckout, confirmPaystackPayment } from '@/lib/paystack';
+import { isPaddleConfigured, initiatePaddleCheckout, confirmPaddlePayment } from '@/lib/paddle';
 
 /**
  * Payment Service Provider registry.
@@ -46,6 +47,12 @@ export const PSP_REGISTRY: PspOption[] = [
     label: 'Paystack',
     method: 'Card / bank / mobile money',
     checkAvailable: async () => isPaystackConfigured(),
+  },
+  {
+    key: 'paddle',
+    label: 'Paddle',
+    method: 'Card / PayPal / Apple Pay (global, Merchant of Record)',
+    checkAvailable: async () => isPaddleConfigured(),
   },
   // Future PSPs are added here — the Billing page automatically picks
   // them up, checks availability, and includes them in the manual-
@@ -93,6 +100,20 @@ export async function payWithPsp(
         orgId: params.orgId,
         onSuccess: async (reference) => {
           const res = await confirmPaystackPayment({ orgId: params.orgId, plan: params.plan, reference });
+          resolve(res.success ? { ok: true } : { ok: false, msg: res.error });
+        },
+        onClose: () => resolve({ ok: false, msg: 'cancelled' }),
+      });
+    });
+  }
+  if (pspKey === 'paddle') {
+    return new Promise((resolve) => {
+      initiatePaddleCheckout({
+        plan: params.plan,
+        email: params.email,
+        orgId: params.orgId,
+        onSuccess: async (transactionId) => {
+          const res = await confirmPaddlePayment({ orgId: params.orgId, plan: params.plan, transactionId });
           resolve(res.success ? { ok: true } : { ok: false, msg: res.error });
         },
         onClose: () => resolve({ ok: false, msg: 'cancelled' }),

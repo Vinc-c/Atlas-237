@@ -4,8 +4,17 @@ import {
   ShieldCheck, TrendingUp, Bot, BarChart3,
   CheckCircle2, X, ArrowRight, Cloud, Globe2, Zap, Star,
   MessageSquare, Database, Workflow, PlayCircle, Building2, Globe,
+  Facebook, Instagram, Linkedin, Youtube,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+
+function TikTokIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-label="TikTok">
+      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
 import { BrandLogo } from '@/components/BrandLogos';
 import { VideoBackground } from '@/components/VideoBackground';
 import { HERO_VIDEO_SOURCES, HERO_VIDEO_POSTER, FINAL_CTA_VIDEO_SOURCES, FINAL_CTA_VIDEO_POSTER } from '@/lib/media';
@@ -607,11 +616,19 @@ export function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-ink-800 pt-6 sm:flex-row">
+          <div className="mt-12 flex flex-col items-center justify-between gap-6 border-t border-ink-800 pt-6 sm:flex-row">
             <p className="text-xs text-ink-500">© {new Date().getFullYear()} Atlas CRM · LiAfrik Dubai & {lang === 'fr' ? 'Afrique' : 'Africa'}. {lang === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}</p>
-            <div className="flex gap-5 text-xs text-ink-500">
+            <div className="flex items-center gap-4">
+              <a href="https://www.tiktok.com/@liyahgroup" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="text-ink-500 transition hover:text-white"><TikTokIcon size={18} /></a>
+              <a href="https://www.facebook.com/share/1LMAGqsy3n/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-ink-500 transition hover:text-white"><Facebook size={18} /></a>
+              <a href="https://www.instagram.com/liafrik_tech" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-ink-500 transition hover:text-white"><Instagram size={18} /></a>
+              <a href="https://www.linkedin.com/company/liafrik/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-ink-500 transition hover:text-white"><Linkedin size={18} /></a>
+              <a href="https://youtube.com/@liyah-n" target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="text-ink-500 transition hover:text-white"><Youtube size={18} /></a>
+            </div>
+            <div className="flex flex-wrap justify-center gap-5 text-xs text-ink-500">
               <Link to="/legal/privacy" className="hover:text-white transition">{lang === 'fr' ? 'Confidentialité' : 'Privacy'}</Link>
               <Link to="/legal/terms" className="hover:text-white transition">{lang === 'fr' ? 'Conditions' : 'Terms'}</Link>
+              <Link to="/legal/refund" className="hover:text-white transition">{lang === 'fr' ? 'Remboursement' : 'Refund Policy'}</Link>
               <Link to="/legal/cookies" className="hover:text-white transition">Cookies</Link>
               <Link to="/legal/gdpr" className="hover:text-white transition">RGPD / GDPR</Link>
             </div>

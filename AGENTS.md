@@ -242,28 +242,45 @@ but invisible to anyone reading the code).
 - Plans: Starter $19, Growth $49, Pro $119, Enterprise $219 — flat monthly
   price per organization (not per seat; `maxUsers` in `src/lib/plans.ts`
   caps seats per plan, it doesn't multiply the price). All amounts are
-  defined in USD in exactly 4 places that must stay in sync: `src/lib/
+  defined in USD in exactly 5 places that must stay in sync: `src/lib/
   plans.ts` (PLAN_PRICES, feature gating), `src/lib/flutterwave.ts`,
-  `src/lib/paystack.ts`, and `supabase/functions/payunit-initialize`
-  (PLAN_PRICES_USD in each). The platform's own currency is always USD;
-  each PSP converts from there — Flutterwave and Paystack charge the USD
-  amount directly (their own checkout UI shows it in the customer's local
-  currency), PayUnit converts USD → XAF itself server-side using a live
-  exchange rate fetched from open.er-api.com (never a hardcoded/guessed
-  peg). The frontend never performs its own currency conversion.
-- `src/lib/psp.ts` is the single PSP registry — currently Flutterwave (card/bank),
+  `src/lib/paystack.ts`, `supabase/functions/payunit-initialize`, and
+  `supabase/functions/paddle-verify` (PLAN_PRICES_USD in each). The
+  platform's own currency is always USD; each PSP converts from there —
+  Flutterwave and Paystack charge the USD amount directly (their own
+  checkout UI shows it in the customer's local currency), PayUnit converts
+  USD → XAF itself server-side using a live exchange rate fetched from
+  open.er-api.com (never a hardcoded/guessed peg), Paddle charges against
+  pre-created USD Price objects (see below) and handles its own
+  local-currency display and Merchant-of-Record tax/VAT. The frontend
+  never performs its own currency conversion.
+- `src/lib/psp.ts` is the single PSP registry — Flutterwave (card/bank),
   PayUnit (mobile money: MTN, Orange, Express Union, YUP), Paystack (card/bank/
-  mobile money). `getAvailablePsps()` only returns a PSP once its
+  mobile money), and Paddle (card/PayPal/Apple Pay, global, Merchant of
+  Record). `getAvailablePsps()` only returns a PSP once its
   `checkAvailable()` proves real configuration; `BillingPage`/`PspCheckoutModal`
   render exactly that filtered list, never a hardcoded one.
 - **"No payment method is currently available" is expected, not a bug, until
   real PSP credentials are set** — see `.env.example` for the exact variable
   names and where each one goes (Cloudflare Pages `VITE_*` client vars vs.
   Supabase Edge Function secrets for everything else, secret keys included).
-  Client-side `checkAvailable()`: Flutterwave/Paystack check their `VITE_*`
-  public key is present in the built bundle. PayUnit has no public key at all,
-  so it pings `payunit-initialize` with `{ check: true }` and trusts only a
-  live server confirmation.
+  Client-side `checkAvailable()`: Flutterwave/Paystack/Paddle check their
+  `VITE_*` public/client token is present in the built bundle (Paddle
+  additionally requires all 4 `VITE_PADDLE_PRICE_*` Price IDs to be set —
+  it won't show as "available" with only some of them, since a checkout for
+  a plan with no Price ID would silently do nothing). PayUnit has no public
+  key at all, so it pings `payunit-initialize` with `{ check: true }` and
+  trusts only a live server confirmation.
+- `src/lib/paddle.ts` — Paddle Billing overlay checkout (`Paddle.Checkout.open`),
+  `confirmPaddlePayment()` calls `supabase/functions/paddle-verify`
+  (deployed live via Supabase MCP) which re-verifies the transaction against
+  Paddle's own API before activating anything — same trust model as the
+  other three PSPs (never trust the client-side "checkout.completed" event
+  alone). Unlike the others, Paddle checkouts reference pre-created Price
+  objects (one per plan) rather than a raw amount — those must be created
+  once in the Paddle dashboard (Catalog → Prices) before Paddle can appear
+  as a payment option; `paddle_transaction_id` column added to
+  `subscriptions` via migration `034`.
 - `src/lib/flutterwave.ts` — inline Flutterwave Checkout, `checkSubscriptionAccess(orgId)`
   via Supabase RPC `org_subscription_status`, `recordSubscription()` to upsert
   `subscriptions` table + update `organizations.plan`.
@@ -312,10 +329,16 @@ but invisible to anyone reading the code).
   the old Sparkles icon everywhere (AppLayout sidebar, AuthPage, LandingPage header/footer).
 
 ## Legal pages
-- `src/pages/LegalPage.tsx` serves `/legal/:page` for 19 real pages (privacy, terms,
+- `src/pages/LegalPage.tsx` serves `/legal/:page` for 20 real pages (privacy, terms,
   cookies, about, security, contact, careers, pricing, docs, status, community, blog,
-  gdpr, pledge, sales-cloud, service-cloud, agentforce, data-360, tableau).
+  gdpr, refund, pledge, sales-cloud, service-cloud, agentforce, data-360, tableau).
+  `refund` (Refund Policy) added Sep 2026 — was missing entirely; content is grounded
+  in the real 14-day trial and real PSP list (Flutterwave/Paystack/PayUnit/Paddle),
+  not generic boilerplate.
 - Bilingual EN/FR, scroll-reveal animations.
+- Footer (`LandingPage.tsx`) has real social links (TikTok, Facebook, Instagram,
+  LinkedIn, YouTube — actual liafrik/liyah accounts, not placeholder `#` hrefs) plus
+  the Refund Policy link alongside Privacy/Terms/Cookies/GDPR.
 
 ## Landing page (bilingual + animations)
 - `src/pages/LandingPage.tsx` is fully bilingual EN/FR via `useAuth().language`.
