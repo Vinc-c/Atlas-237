@@ -525,10 +525,37 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
     above) or need a specific scenario/workflow ID that isn't in the
     stored config; their "connect with API key" flow here doesn't map to
     a single well-defined action.
-
+- New edge functions and edits to existing ones need the same deploy step
   (see Build/Deploy above) — this session deployed via the Supabase MCP
   connector once it was connected; do the same rather than shipping
   undeployed function code that can't be verified.
 
-
-
+## Discoverability: quick actions, not just Workflows (Sep 2026)
+- Building the 13 real integration actions above only fixed half the gap:
+  a person had no natural way to *use* them without first learning to
+  build a Workflow with hardcoded, non-record-specific values. Workflows
+  aren't bound to a specific contact/invoice — an action's params are
+  whatever the person typed when building it, so "send this contact a
+  WhatsApp" wasn't really possible there.
+- Added `src/lib/integrations.ts`: `useConnectedProviders()` (shared hook,
+  used by both AIWorkflowsPage and the quick actions below) and
+  `callIntegrationAction()` (the actual fetch to the edge function,
+  previously duplicated inside workflows.ts — now the one place both
+  Workflows and quick actions call from).
+- Added `rowActions?: (row: T) => ReactNode` to `ListPage` — a per-row
+  extension point rendered before Edit/Delete. Two real consumers:
+  - `QuickMessageButton` (`src/components/QuickMessageButton.tsx`) on
+    Contacts and Leads rows — opens a small modal to send that specific
+    contact a real WhatsApp or SMS message. Only renders if the contact
+    has a phone number AND at least one of whatsapp/twilio is connected.
+  - `QuickPaymentLinkButton` (`src/components/QuickPaymentLinkButton.tsx`)
+    on Invoices rows — generates a real payment link/checkout session
+    (Mollie/CinetPay/Wave/Chapa/CamPay) for that invoice's amount. Only
+    renders if at least one of those gateways is connected.
+- This is the pattern to follow for future integration-backed features:
+  a real action needs a real, discoverable place to trigger it bound to
+  the actual record it acts on — not just an entry in a generic Workflow
+  builder. When adding a new integration-action provider, ask whether it
+  also needs a `rowActions` quick-action on the relevant list page (a
+  messaging provider → Contacts/Leads; a payment gateway → Invoices/
+  Deals; a support-desk provider → Tickets), not just a Workflow action.

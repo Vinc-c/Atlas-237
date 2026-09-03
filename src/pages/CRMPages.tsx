@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Loading } from '@/components/Loading';
 import type { Contact, Company, Lead, Deal } from '@/types';
 import { CURRENCIES, formatMoney } from '@/lib/i18n-countries';
+import { QuickMessageButton } from '@/components/QuickMessageButton';
 
 function currencyField(language: string, orgCurrency: string): FormField {
   return {
@@ -59,6 +60,7 @@ export function ContactsPage() {
       emptyDescription={t('empty.noContactsDesc', language)}
       orderBy="created_at"
       importable
+      rowActions={(row) => <QuickMessageButton phone={row.phone} name={`${row.first_name} ${row.last_name}`} />}
     />
   );
 }
@@ -144,6 +146,7 @@ export function LeadsPage() {
       emptyDescription={t('empty.noLeadsDesc', language)}
       orderBy="created_at"
       importable
+      rowActions={(row) => <QuickMessageButton phone={row.phone} name={`${row.first_name} ${row.last_name}`} />}
     />
   );
 }

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui';
 import { CURRENCIES, formatMoney } from '@/lib/i18n-countries';
 import { usePlanAccess } from '@/lib/plans';
 import { UpgradeGate } from '@/components/UpgradeGate';
+import { QuickPaymentLinkButton } from '@/components/QuickPaymentLinkButton';
 import type { Product, Invoice, Ticket, Campaign } from '@/types';
 
 /**
@@ -173,6 +174,7 @@ export function InvoicesPage() {
       emptyDescription={t('empty.noInvoicesDesc', language)}
       relations="*, contact:contacts(*), company:companies(*)"
       orderBy="created_at"
+      rowActions={(row) => <QuickPaymentLinkButton amount={row.total} currency={row.currency || orgCurrency} label={row.invoice_number} />}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { triggerWebhooks, WEBHOOK_EVENTS, type WebhookEvent } from '@/lib/webhooks';
+import { callIntegrationAction } from '@/lib/integrations';
 import type { Workflow } from '@/types';
 
 /**
@@ -143,29 +144,6 @@ export const WORKFLOW_PARAM_FIELDS: Partial<Record<WorkflowActionType, { key: st
 };
 
 export { WEBHOOK_EVENTS };
-
-/**
- * Calls the `integration-action` edge function, which performs a real
- * outbound call to a connected marketplace app using that org's stored
- * credentials — see supabase/functions/integration-action/index.ts. This is
- * what makes every action in WORKFLOW_ACTION_PROVIDER real instead of
- * another layer of stored-but-unused configuration.
- */
-async function callIntegrationAction(action: string, params: Record<string, unknown>, integrationId?: string): Promise<{ ok: boolean; msg: string }> {
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token || '';
-    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/integration-action`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action, params, integration_id: integrationId }),
-    });
-    const result = await res.json().catch(() => null);
-    return { ok: Boolean(result?.ok), msg: result?.msg || `HTTP ${res.status}` };
-  } catch (e) {
-    return { ok: false, msg: e instanceof Error ? e.message : 'Request failed' };
-  }
-}
 
 export interface WorkflowRunStep {
   action: WorkflowActionType;

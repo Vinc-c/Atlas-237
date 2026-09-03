@@ -78,6 +78,8 @@ interface ListPageProps<T extends { id: string }> {
   /** Optional plan-based cap on total rows. When reached, "New" is disabled with an upgrade hint. */
   maxRows?: number | null;
   maxRowsMessage?: string;
+  /** Extra per-row action buttons rendered before Edit/Delete (e.g. "Send WhatsApp", "Create payment link"). */
+  rowActions?: (row: T) => React.ReactNode;
 }
 
 export interface FormField {
@@ -305,7 +307,7 @@ function ImportModal({ table, fields, onClose, onDone, language }: {
 }
 
 export function ListPage<T extends { id: string }>({
-  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable, maxRows, maxRowsMessage,
+  table, title, subtitle, columns, formFields, emptyIcon, emptyTitle, emptyDescription, select, relations, orderBy, importable, maxRows, maxRowsMessage, rowActions,
 }: ListPageProps<T>) {
   const { language } = useAuth();
   const [rows, setRows] = useState<T[]>([]);
@@ -513,6 +515,7 @@ export function ListPage<T extends { id: string }>({
                     ))}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        {rowActions?.(row)}
                         <button onClick={() => openEdit(row)} className="p-1.5 rounded text-ink-400 hover:bg-ink-100 hover:text-ink-700 transition-colors">
                           <Edit2 size={14} />
                         </button>
