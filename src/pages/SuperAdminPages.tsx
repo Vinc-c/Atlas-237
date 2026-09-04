@@ -5,7 +5,7 @@ import {
   Receipt, ScrollText, Plus, Trash2, Ban, CheckCircle2, Loader2,
   AlertTriangle, TrendingUp, DollarSign, Activity, Search, CalendarPlus,
   Briefcase, Wallet, PiggyBank, ArrowUpRight, ArrowDownRight,
-  UserPlus, Pencil, X,
+  UserPlus, Pencil, X, Calendar,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +14,7 @@ import { formatMoney } from '@/lib/i18n-countries';
 import { MODULES, ACTIONS, fetchRoles, fetchPermissions, setRolePermissions, type RbacRole, type PermissionModule, type PermissionAction } from '@/lib/rbac';
 import { Loading } from '@/components/Loading';
 import { EmptyState } from '@/components/EmptyState';
+import { Modal } from '@/components/Modal';
 import type { Organization, Profile } from '@/types';
 
 /* ═══════════════════════════════════════════════════════════
@@ -363,6 +364,12 @@ export function SuperAdminUsersPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [extendingOrg, setExtendingOrg] = useState<Organization | null>(null);
+  const [extendMode, setExtendMode] = useState<'days' | 'months' | 'years' | 'date'>('days');
+  const [extendAmount, setExtendAmount] = useState(30);
+  const [extendDate, setExtendDate] = useState('');
+  const [extending, setExtending] = useState(false);
+  const [extendSuccess, setExtendSuccess] = useState<string | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -393,12 +400,44 @@ export function SuperAdminUsersPage() {
     await load();
   }
 
-  async function extendAccess(org: Organization, days: number) {
-    if (!user) return;
-    const { error } = await supabase.rpc('admin_extend_org_access', { target_org_id: org.id, extend_days: days });
-    if (error) { alert(error.message); return; }
-    await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: org.id, p_details: { days } });
-    await load();
+  function openExtendModal(org: Organization) {
+    setExtendingOrg(org);
+    setExtendMode('days');
+    setExtendAmount(30);
+    const current = org.trial_ends_at ? new Date(org.trial_ends_at) : new Date();
+    setExtendDate(current.toISOString().slice(0, 10));
+  }
+
+  async function submitExtend() {
+    if (!user || !extendingOrg) return;
+    setExtending(true);
+    try {
+      if (extendMode === 'date') {
+        if (!extendDate) return;
+        const untilTs = new Date(`${extendDate}T23:59:59`).toISOString();
+        const { error } = await supabase.rpc('admin_set_org_access_until', { target_org_id: extendingOrg.id, until_ts: untilTs });
+        if (error) { alert(error.message); return; }
+        await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.set_until', p_target_type: 'organization', p_target_id: extendingOrg.id, p_details: { until: untilTs } });
+      } else {
+        // Real calendar arithmetic (not a flat *30/*365 approximation) so
+        // "+1 month" or "+1 year" lands on the actual matching calendar date.
+        const now = new Date();
+        const future = new Date(now);
+        if (extendMode === 'days') future.setDate(future.getDate() + extendAmount);
+        else if (extendMode === 'months') future.setMonth(future.getMonth() + extendAmount);
+        else future.setFullYear(future.getFullYear() + extendAmount);
+        const days = Math.max(1, Math.round((future.getTime() - now.getTime()) / 86400000));
+        const { error } = await supabase.rpc('admin_extend_org_access', { target_org_id: extendingOrg.id, extend_days: days });
+        if (error) { alert(error.message); return; }
+        await supabase.rpc('log_platform_action', { p_actor_id: user.id, p_action: 'subscription.extend', p_target_type: 'organization', p_target_id: extendingOrg.id, p_details: { unit: extendMode, amount: extendAmount, days } });
+      }
+      setExtendingOrg(null);
+      await load();
+      setExtendSuccess(language === 'fr' ? `Accès prolongé avec succès.` : `Access extended successfully.`);
+      setTimeout(() => setExtendSuccess(null), 4000);
+    } finally {
+      setExtending(false);
+    }
   }
 
   async function deleteTenant(org: Organization) {
@@ -419,6 +458,12 @@ export function SuperAdminUsersPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      {extendSuccess && (
+        <div className="flex items-center gap-2 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700">
+          <CheckCircle2 size={16} className="flex-none" />
+          <span>{extendSuccess}</span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-ink-900">{t('superAdmin.tenants', language)} ({orgs.length})</h2>
         <div className="relative w-64">
@@ -469,7 +514,7 @@ export function SuperAdminUsersPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => extendAccess(o, 30)} className="btn-ghost btn-sm" title={t('superAdmin.extend30', language)}><CalendarPlus size={14} /></button>
+                    <button onClick={() => openExtendModal(o)} className="btn-ghost btn-sm" title={language === 'fr' ? "Prolonger l'accès" : 'Extend access'}><CalendarPlus size={14} /></button>
                     <button onClick={() => toggleSuspend(o.id, o.status || 'active')} className="btn-ghost btn-sm" title={o.status === 'suspended' ? t('superAdmin.reactivate', language) : t('superAdmin.suspend', language)}><Ban size={14} /></button>
                     <button onClick={() => deleteTenant(o)} className="btn-ghost btn-sm text-error-600 hover:bg-error-50" title={t('superAdmin.deleteTenant', language)}><Trash2 size={14} /></button>
                   </div>
@@ -504,6 +549,50 @@ export function SuperAdminUsersPage() {
         </table>
         {profiles.length > 50 && <p className="px-4 py-2 text-xs text-ink-400">{language === 'fr' ? `Affichage des 50 premiers sur ${profiles.length}` : `Showing first 50 of ${profiles.length}`}</p>}
       </div>
+
+      <Modal open={!!extendingOrg} onClose={() => setExtendingOrg(null)} title={language === 'fr' ? `Prolonger l'accès — ${extendingOrg?.name}` : `Extend access — ${extendingOrg?.name}`}>
+        {extendingOrg && (
+          <div className="space-y-4">
+            <p className="text-sm text-ink-500">
+              {language === 'fr' ? 'Expiration actuelle : ' : 'Current expiration: '}
+              <span className="font-medium text-ink-800">{extendingOrg.trial_ends_at ? new Date(extendingOrg.trial_ends_at).toLocaleString() : (language === 'fr' ? 'Aucune' : 'None')}</span>
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {(['days', 'months', 'years', 'date'] as const).map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setExtendMode(mode)}
+                  className={`btn-sm ${extendMode === mode ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  {mode === 'days' && (language === 'fr' ? 'Jours' : 'Days')}
+                  {mode === 'months' && (language === 'fr' ? 'Mois' : 'Months')}
+                  {mode === 'years' && (language === 'fr' ? 'Années' : 'Years')}
+                  {mode === 'date' && (language === 'fr' ? 'Date' : 'Date')}
+                </button>
+              ))}
+            </div>
+            {extendMode === 'date' ? (
+              <div>
+                <label className="label">{language === 'fr' ? "Nouvelle date d'expiration" : 'New expiration date'}</label>
+                <input type="date" className="input" value={extendDate} onChange={e => setExtendDate(e.target.value)} min={new Date().toISOString().slice(0, 10)} />
+              </div>
+            ) : (
+              <div>
+                <label className="label">
+                  {language === 'fr' ? `Ajouter combien de ${extendMode === 'days' ? 'jours' : extendMode === 'months' ? 'mois' : 'années'} ?` : `Add how many ${extendMode}?`}
+                </label>
+                <input type="number" min={1} className="input" value={extendAmount} onChange={e => setExtendAmount(Math.max(1, Number(e.target.value) || 1))} />
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setExtendingOrg(null)} className="btn-secondary btn-sm">{t('common.cancel', language)}</button>
+              <button onClick={submitExtend} disabled={extending} className="btn-primary btn-sm">
+                {extending ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} />} {language === 'fr' ? 'Appliquer' : 'Apply'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

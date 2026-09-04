@@ -7,6 +7,7 @@ import {
   Facebook, Instagram, Linkedin, Youtube,
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { InstagramFeed } from '@/components/InstagramFeed';
 
 function TikTokIcon({ size = 18 }: { size?: number }) {
   return (
@@ -616,8 +617,15 @@ export function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="mt-12 flex flex-col items-center justify-between gap-6 border-t border-ink-800 pt-6 sm:flex-row">
-            <p className="text-xs text-ink-500">© {new Date().getFullYear()} Atlas CRM · LiAfrik Dubai & {lang === 'fr' ? 'Afrique' : 'Africa'}. {lang === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}</p>
+
+          <div className="mt-12 border-t border-ink-800 pt-8">
+            <div className="mx-auto max-w-3xl">
+              <InstagramFeed lang={lang} />
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col items-center justify-between gap-6 pt-0 sm:flex-row">
+            <p className="text-xs text-ink-500">© {new Date().getFullYear()} Atlas CRM · <a href="https://liafrik.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">LiAfrik</a> Dubai & {lang === 'fr' ? 'Afrique' : 'Africa'}. {lang === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}</p>
             <div className="flex items-center gap-4">
               <a href="https://www.tiktok.com/@liyahgroup" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="text-ink-500 transition hover:text-white"><TikTokIcon size={18} /></a>
               <a href="https://www.facebook.com/share/1LMAGqsy3n/" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-ink-500 transition hover:text-white"><Facebook size={18} /></a>
@@ -629,6 +637,7 @@ export function LandingPage() {
               <Link to="/legal/privacy" className="hover:text-white transition">{lang === 'fr' ? 'Confidentialité' : 'Privacy'}</Link>
               <Link to="/legal/terms" className="hover:text-white transition">{lang === 'fr' ? 'Conditions' : 'Terms'}</Link>
               <Link to="/legal/refund" className="hover:text-white transition">{lang === 'fr' ? 'Remboursement' : 'Refund Policy'}</Link>
+              <Link to="/legal/legal-notice" className="hover:text-white transition">{lang === 'fr' ? 'Mentions légales' : 'Legal Notice'}</Link>
               <Link to="/legal/cookies" className="hover:text-white transition">Cookies</Link>
               <Link to="/legal/gdpr" className="hover:text-white transition">RGPD / GDPR</Link>
             </div>

@@ -582,3 +582,53 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   also needs a `rowActions` quick-action on the relevant list page (a
   messaging provider → Contacts/Leads; a payment gateway → Invoices/
   Deals; a support-desk provider → Tickets), not just a Workflow action.
+
+## Security review (Sep 2026) — via Supabase security advisors
+- Ran `get_advisors(type: security)` and fixed the two real, safe issues:
+  `get_ai_context_snapshot` had a mutable search_path (now pinned to
+  `public`), and `auto_provision_liafrik_admin` (a trigger-only function,
+  `AFTER INSERT ON auth.users`) had unnecessary EXECUTE grants to
+  authenticated/anon/PUBLIC — revoked with zero functional impact, since
+  triggers fire regardless of role grants. See migration `037`.
+- The remaining ~15 "SECURITY DEFINER callable by authenticated" warnings
+  (admin_extend_org_access, admin_set_org_plan, admin_set_org_access_until,
+  rbac_check, org_subscription_status, user_org_id, etc.) are the advisor's
+  generic caution against a pattern this app uses deliberately and by
+  design — see the existing note further up this file: these ARE meant to
+  be called directly via `supabase.rpc()` by signed-in users, and every
+  sensitive one already gates itself internally (`is_super_admin()`,
+  `is_platform_exempt()`, ownership checks) rather than relying on the
+  grant alone. Don't mass-revoke these — it would break real, working
+  features (billing status checks, RBAC, super admin tools). Re-run the
+  advisor after any new admin_*/rbac_*-style function to confirm it has
+  its own internal check, not to "fix" the warning by revoking access it
+  actually needs.
+- `auth_leaked_password_protection` is disabled — this is an Auth setting
+  toggled in the Supabase dashboard (Authentication → Policies), same
+  category as the Google OAuth provider toggle: no MCP/API tool exposes it,
+  so it needs a manual one-click enable by the project owner. Recommended,
+  not yet done.
+- Webhook delivery signing was fixed (see Webhooks section above): the
+  `X-Atlas-Signature` header used to carry the raw stored secret in
+  plaintext on every delivery; it's now an HMAC-SHA256 signature of the
+  payload, computed with the secret but never transmitting it — same model
+  Stripe/GitHub use. Deployed live; `docs` legal page text updated to match.
+- `public/_headers` (Cloudflare Pages security headers + CSP) already had a
+  solid baseline (HSTS, X-Frame-Options, nosniff, a real CSP) from an
+  earlier session, but its CSP only allow-listed Flutterwave's domains —
+  adding Paystack (`js.paystack.co`) and Paddle (`cdn.paddle.com`) as real
+  PSPs without updating script-src/connect-src/frame-src would have
+  silently broken both checkouts in the browser (CSP violations aren't
+  visible unless you check the console). Fixed alongside adding those PSPs.
+  PayUnit needed no CSP change — it's a full-page redirect, not an inline
+  script, so CSP doesn't govern it.
+- No `dangerouslySetInnerHTML` anywhere in `src/` — checked directly, the
+  most common React XSS vector isn't present. CSRF risk is structurally
+  low for this app's architecture: the Supabase JS client stores its
+  session in localStorage and sends the JWT as an explicit `Authorization`
+  header per request, not an auto-attached cookie, so a malicious
+  cross-origin page can't ride a logged-in user's session the way classic
+  cookie-based CSRF works. `script-src` still includes `'unsafe-inline'`
+  (needed by the current build/PSP scripts) which does weaken CSP's XSS
+  mitigation somewhat — a known, deliberate trade-off, not something to
+  strip without testing every page first.

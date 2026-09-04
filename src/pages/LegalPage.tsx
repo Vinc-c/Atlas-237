@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Logo } from '@/components/Logo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 
-export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'refund' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
+export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'refund' | 'legal-notice' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
 
 const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: string; fr: string }; updated: string }> = {
   privacy: { icon: ShieldCheck, title: { en: 'Privacy Policy', fr: 'Politique de Confidentialité' }, updated: '2026-08-08' },
@@ -22,6 +22,7 @@ const PAGE_META: Record<LegalPage, { icon: typeof ShieldCheck; title: { en: stri
   blog: { icon: BookOpen, title: { en: 'Blog', fr: 'Blog' }, updated: '2026-08-08' },
   gdpr: { icon: Database, title: { en: 'GDPR / RGPD Compliance', fr: 'Conformité RGPD' }, updated: '2026-08-08' },
   refund: { icon: RotateCcw, title: { en: 'Refund Policy', fr: 'Politique de Remboursement' }, updated: '2026-09-02' },
+  'legal-notice': { icon: FileText, title: { en: 'Legal Notice', fr: 'Mentions Légales' }, updated: '2026-09-03' },
   pledge: { icon: Heart, title: { en: 'Pledge 1%', fr: 'Pledge 1%' }, updated: '2026-08-08' },
   'sales-cloud': { icon: Activity, title: { en: 'Atlas Sales', fr: 'Atlas Sales' }, updated: '2026-08-08' },
   'service-cloud': { icon: Activity, title: { en: 'Atlas Service', fr: 'Atlas Service' }, updated: '2026-08-08' },
@@ -144,7 +145,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
 
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Webhooks sortants' : 'Outgoing webhooks'}</h3>
           <p>{fr ? 'Configurez vos webhooks dans Paramètres → API & Webhooks, en choisissant les événements à recevoir : ' : 'Configure your webhooks under Settings → API & Webhooks, choosing which events to receive: '}<code>contact.created</code>, <code>contact.updated</code>, <code>contact.deleted</code>, <code>lead.created</code>, <code>lead.updated</code>, <code>lead.converted</code>, <code>deal.created</code>, <code>deal.updated</code>, <code>deal.won</code>, <code>deal.lost</code>, <code>invoice.created</code>, <code>invoice.paid</code>, <code>payment.received</code>, <code>activity.created</code>.</p>
-          <p>{fr ? 'Chaque livraison POST un payload JSON signé (en-tête ' : 'Each delivery POSTs a signed JSON payload (header '}<code>X-Atlas-Signature</code>{fr ? ') de cette forme :' : ') shaped like this:'}</p>
+          <p>{fr ? 'Chaque livraison POST un payload JSON de cette forme, avec une signature HMAC-SHA256 du corps de la requête dans l\'en-tête ' : 'Each delivery POSTs a JSON payload shaped like this, with an HMAC-SHA256 signature of the request body in the '}<code>X-Atlas-Signature</code>{fr ? ' (calculée avec votre secret de webhook — recalculez-la de votre côté pour vérifier l\'authenticité ; le secret lui-même ne transite jamais sur le réseau) :' : ' header (computed with your webhook secret — recompute it on your end to verify authenticity; the secret itself is never sent over the wire):'}</p>
           <pre className="overflow-x-auto rounded-lg bg-ink-950 p-4 text-xs text-white"><code>{`{
   "event": "deal.won",
   "timestamp": "2026-09-02T10:15:00.000Z",
@@ -199,6 +200,20 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
           <p>{fr ? "En cas de double prélèvement, d'erreur de facturation, ou si vous estimez avoir été facturé à tort, contactez-nous à support@liafrik.com dans les 14 jours suivant la transaction. Nous examinons chaque demande individuellement et, si elle est justifiée, procédons au remboursement sur le moyen de paiement d'origine, via le prestataire de paiement utilisé pour la transaction (Flutterwave, Paystack, PayUnit ou Paddle selon votre région)." : 'If you\'re double-charged, billed in error, or believe a charge was made incorrectly, contact us at support@liafrik.com within 14 days of the transaction. We review each request individually and, where justified, issue a refund to the original payment method through the payment provider used for that transaction (Flutterwave, Paystack, PayUnit, or Paddle, depending on your region).'}</p>
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Délai de traitement' : 'Processing time'}</h3>
           <p>{fr ? "Une fois approuvé, un remboursement apparaît généralement sur votre relevé sous 5 à 10 jours ouvrés, selon votre banque ou opérateur de paiement mobile." : 'Once approved, a refund typically appears on your statement within 5 to 10 business days, depending on your bank or mobile money operator.'}</p>
+        </>
+      );
+    case 'legal-notice':
+      return (
+        <>
+          {h2(fr ? 'Mentions Légales' : 'Legal Notice', '')}
+          <p>{fr ? "Le site et la plateforme Atlas CRM sont édités par LiAfrik, basée à Dubaï, Émirats Arabes Unis, avec des activités en Afrique et à l'international." : 'The Atlas CRM site and platform are published by LiAfrik, based in Dubai, United Arab Emirates, with operations across Africa and internationally.'}</p>
+          <p className="text-sm text-ink-500 italic">{fr ? "Numéro d'enregistrement commercial, forme juridique et adresse de siège social complets : à compléter par l'éditeur." : 'Full commercial registration number, legal form, and registered office address: to be completed by the publisher.'}</p>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Contact' : 'Contact'}</h3>
+          <ul><li>Email: hello@liafrik.com</li><li>{fr ? 'Site : ' : 'Site: '}<a href="https://liafrik.com" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">liafrik.com</a></li></ul>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Hébergement' : 'Hosting'}</h3>
+          <p>{fr ? "Le site est hébergé par Cloudflare, Inc. La base de données et les fonctions serveur sont hébergées par Supabase." : 'The site is hosted by Cloudflare, Inc. The database and server functions are hosted by Supabase.'}</p>
+          <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Propriété intellectuelle' : 'Intellectual property'}</h3>
+          <p>{fr ? "L'ensemble du contenu de ce site (textes, logos, marques, code) est la propriété de LiAfrik, sauf mention contraire, et ne peut être reproduit sans autorisation écrite préalable." : 'All content on this site (text, logos, trademarks, code) is the property of LiAfrik, unless otherwise stated, and may not be reproduced without prior written authorization.'}</p>
         </>
       );
     case 'pledge':

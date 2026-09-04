@@ -179,33 +179,37 @@ export function AIWorkflowsPage() {
   const [runResult, setRunResult] = useState<Record<string, WorkflowRunResult>>({});
   const [customApps, setCustomApps] = useState<{ id: string; name: string }[]>([]);
   const [connectedProviders, setConnectedProviders] = useState<Set<string>>(new Set());
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
+  const [agentId, setAgentId] = useState('');
 
   useEffect(() => { if (allowed) load(); else setLoading(false); }, [allowed]);
 
   async function load() {
-    const [wfRes, runsRes, integRes] = await Promise.all([
+    const [wfRes, runsRes, integRes, agentsRes] = await Promise.all([
       supabase.from('workflows').select('*').order('created_at', { ascending: false }),
       supabase.from('workflow_runs').select('*').order('created_at', { ascending: false }).limit(50),
       supabase.from('integrations').select('id, provider, config').eq('status', 'connected'),
+      supabase.from('ai_agents').select('id, name').order('name'),
     ]);
     setWorkflows((wfRes.data || []) as WorkflowType[]);
     setRuns((runsRes.data || []) as WorkflowRun[]);
     const integs = (integRes.data || []) as { id: string; provider: string; config: Record<string, unknown> }[];
     setCustomApps(integs.filter(i => i.config?.is_custom).map(i => ({ id: i.id, name: String(i.config?.display_name || i.provider) })));
     setConnectedProviders(new Set(integs.map(i => i.provider)));
+    setAgents((agentsRes.data || []) as { id: string; name: string }[]);
     setLoading(false);
   }
 
   function openCreate() {
     setEditing(null);
-    setName(''); setDescription(''); setTriggerType('manual'); setEnabled(true);
+    setName(''); setDescription(''); setTriggerType('manual'); setEnabled(true); setAgentId('');
     setActions([{ type: 'create_task', title: '' }]);
     setModalOpen(true);
   }
 
   function openEdit(wf: WorkflowType) {
     setEditing(wf);
-    setName(wf.name); setDescription(wf.description || ''); setTriggerType(wf.trigger_type || 'manual'); setEnabled(wf.enabled);
+    setName(wf.name); setDescription(wf.description || ''); setTriggerType(wf.trigger_type || 'manual'); setEnabled(wf.enabled); setAgentId(wf.agent_id || '');
     setActions((Array.isArray(wf.actions) && wf.actions.length > 0 ? wf.actions : [{ type: 'create_task', title: '' }]) as WorkflowAction[]);
     setModalOpen(true);
   }
@@ -223,6 +227,7 @@ export function AIWorkflowsPage() {
       trigger_type: triggerType,
       enabled,
       actions,
+      agent_id: agentId || null,
     };
     const { error } = editing
       ? await supabase.from('workflows').update(payload).eq('id', editing.id)
@@ -287,6 +292,7 @@ export function AIWorkflowsPage() {
                     {wf.description && <p className="text-sm text-ink-500 mt-1">{wf.description}</p>}
                     <p className="text-xs text-ink-400 mt-1.5">
                       {(Array.isArray(wf.actions) ? wf.actions.length : 0)} {lang === 'fr' ? 'action(s)' : 'action(s)'} · {wf.run_count || 0} {t('list.runs', lang).toLowerCase()}
+                      {wf.agent_id && agents.find(a => a.id === wf.agent_id) && <> · {agents.find(a => a.id === wf.agent_id)?.name}</>}
                       {lastRun && <> · {lang === 'fr' ? 'dernière exécution' : 'last run'}: <Badge variant={lastRun.status === 'completed' ? 'success' : 'error'}>{lastRun.status}</Badge></>}
                     </p>
                   </div>
@@ -347,6 +353,15 @@ export function AIWorkflowsPage() {
                 <option value="false">{t('status.no', lang)}</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="label">{lang === 'fr' ? 'Assigner à un employé IA (optionnel)' : 'Assign to an AI Employee (optional)'}</label>
+            <select className="input" value={agentId} onChange={e => setAgentId(e.target.value)}>
+              <option value="">{lang === 'fr' ? 'Aucun' : 'None'}</option>
+              {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <p className="text-xs text-ink-400 mt-1">{lang === 'fr' ? "Chaque exécution réussie de ce flux compte comme une tâche réalisée par cet employé IA." : "Each successful run of this workflow counts as a real task completed by that AI Employee."}</p>
           </div>
 
           <div>

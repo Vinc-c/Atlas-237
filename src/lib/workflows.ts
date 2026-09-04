@@ -259,5 +259,13 @@ export async function executeAndLogWorkflow(workflow: Workflow, userId: string |
 
   await supabase.from('workflows').update({ run_count: (workflow.run_count || 0) + 1 }).eq('id', workflow.id);
 
+  if (workflow.agent_id && result.status !== 'error') {
+    const { data: agent } = await supabase.from('ai_agents').select('usage_count').eq('id', workflow.agent_id).maybeSingle();
+    await supabase.from('ai_agents').update({
+      usage_count: (agent?.usage_count || 0) + 1,
+      last_active_at: new Date().toISOString(),
+    }).eq('id', workflow.agent_id);
+  }
+
   return result;
 }

@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
  * Paddle simply doesn't appear as a payment option, same as any other PSP
  * in this registry when it isn't configured.
  */
-export const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
+export const PADDLE_CLIENT_TOKEN = (import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined) || 'live_9743c25ef8324a998b966c0bc8d';
 export const PADDLE_ENVIRONMENT = (import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined) || 'production';
 
 const PADDLE_PRICE_IDS: Record<string, string | undefined> = {

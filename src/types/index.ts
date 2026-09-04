@@ -423,6 +423,7 @@ export interface Workflow {
   actions: unknown[];
   enabled: boolean;
   run_count: number;
+  agent_id: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
