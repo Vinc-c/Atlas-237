@@ -697,3 +697,17 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   report comes up elsewhere, check whether that flow calls `refreshOrg()`
   after a server-side mutation to `organizations` — this bug class can
   recur anywhere a plan/org field changes outside the currently-open page.
+
+## Current-plan renewal (Sep 2026) — the disabled button had no path to renew
+- Follow-up to the "stale plan" fix above: once that was fixed, the
+  current plan's card correctly showed as current — but its button was
+  fully `disabled`, so a customer wanting to renew/extend their existing
+  plan (pay for another period) had no way to do it from this page at all.
+- Fixed: `pay()` no longer blocks `plan.key === currentPlan` — paying for
+  your own current plan again is a legitimate renewal, not a mistake to
+  prevent. The button stays active for the current plan too, labeled
+  "Continue with this plan" (others say "Pay"); a separate small "Current
+  plan" badge next to the plan name (not tied to the button's disabled
+  state) is what actually communicates which plan they're on. The button
+  is now only disabled for real blockers: no PSP configured, or the
+  signed-in profile lacks billing permission (`canManageBilling`).

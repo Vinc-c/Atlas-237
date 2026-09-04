@@ -982,7 +982,7 @@ export function BillingPage() {
   useEffect(() => { refreshOrg(); }, []);
 
   async function pay(plan: { key: string }) {
-    if (!organization || plan.key === currentPlan || !selectedPsp) return;
+    if (!organization || !selectedPsp) return;
     setPayError('');
     setBusy(plan.key);
     const result = await payWithPsp(selectedPsp, {
@@ -1047,7 +1047,14 @@ export function BillingPage() {
           const isCurrent = plan.key === currentPlan;
           return (
             <div key={plan.name} className={`card p-6 ${isCurrent ? 'border-primary-300 ring-2 ring-primary-100' : ''}`}>
-              <h3 className="font-bold text-ink-800">{plan.name}</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-ink-800">{plan.name}</h3>
+                {isCurrent && (
+                  <span className="rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-700">
+                    {lang === 'fr' ? 'Plan actuel' : 'Current plan'}
+                  </span>
+                )}
+              </div>
               <p className="text-2xl font-bold text-ink-900 mt-2">
                 {`$${plan.price}/${lang === 'fr' ? 'mois' : 'mo'}`}
               </p>
@@ -1060,10 +1067,10 @@ export function BillingPage() {
               </ul>
               <button
                 onClick={() => { setCheckoutPlan(plan); setPayError(''); }}
-                disabled={isCurrent || availablePsps === null || !canManageBilling}
-                className={`btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 ${isCurrent ? 'bg-ink-100 text-ink-500' : 'bg-primary-600 text-white hover:bg-primary-700'}`}
+                disabled={availablePsps === null || !canManageBilling}
+                className="btn-sm w-full mt-4 rounded-lg font-medium inline-flex items-center justify-center gap-1.5 bg-primary-600 text-white hover:bg-primary-700"
               >
-                {isCurrent ? (lang === 'fr' ? 'Actuel' : 'Current') : (lang === 'fr' ? 'Payer' : 'Pay')}
+                {isCurrent ? (lang === 'fr' ? 'Continuer avec ce plan' : 'Continue with this plan') : (lang === 'fr' ? 'Payer' : 'Pay')}
               </button>
             </div>
           );
