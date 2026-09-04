@@ -645,3 +645,55 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   further setup needed.
 - Legal Notice page now has the real company registration: LiAfrik (SPC
   FZC), Dubai, UAE, license number 4425201.01 — no more placeholder text.
+
+## Performance advisor findings (Sep 2026) — reviewed, deferred, not launch-blocking
+- Ran `get_advisors(type: performance)`. Findings are all standard
+  at-scale Postgres hygiene, not correctness bugs — nothing here returns
+  wrong data or breaks a feature:
+  - ~40 unindexed foreign keys (INFO) — fine at current data volumes;
+    worth adding indexes once tables like `deals`/`invoices`/`tickets`
+    grow into the tens of thousands of rows per org.
+  - ~25 RLS policies re-evaluate `auth.<fn>()` per row instead of once
+    per query (WARN — `auth_rls_initplan`) — the fix is wrapping calls as
+    `(select auth.uid())` instead of `auth.uid()` inside each policy.
+    Real perf win at scale, zero behavior change, but touches ~15 tables'
+    worth of existing RLS policies — do this as its own careful,
+    tested pass, not blindly mid-launch-prep. Same for the handful of
+    "multiple permissive policies" (WARN) on tables like `rbac_permissions`,
+    `super_admins`, `teams` — consolidating is a real optimization but
+    each one needs its own read of the two policies being merged.
+  - A dozen "unused index" (INFO) entries — likely just haven't been
+    exercised yet in production traffic, not necessarily dead weight;
+    don't drop these based on a brand-new project's index-usage stats.
+- Recommendation: revisit this list after the first real cohort of paying
+  orgs is on the platform and query volume is real — that's when these
+  numbers (and which policies/indexes actually matter) become meaningful,
+  rather than optimizing against near-empty tables now.
+
+## Real bug fixed: stale plan after payment (Sep 2026)
+- `organization` in AuthContext is fetched once (login) and only refreshed
+  via the `refreshOrg()` context function — which was wired to the Settings
+  tabs' own save callbacks (Account/Branding/Security/AI Provider) but
+  NEVER called after a payment, and never on BillingPage mount.
+- Real-world effect: a customer completes a real, successful payment
+  (any PSP) — `organizations.plan` updates correctly server-side — but
+  their own browser session keeps the pre-payment `organization` object.
+  BillingPage's `currentPlan` re-derives from `organization?.plan` on every
+  mount, so revisiting/reloading Billing after paying showed the OLD plan
+  as "current" again, with EVERY plan (including the one just paid for)
+  rendered as payable — a customer could click "Pay" and get charged again
+  for the plan they already have. Worse: `usePlanAccess()` (used for every
+  feature gate across the app) reads the same stale `organization`, so
+  newly-unlocked features wouldn't appear until a full logout/login either.
+- Fixed in `BillingPage` (SystemPages.tsx): calls `refreshOrg()` (a) once
+  on mount, so an out-of-band plan change (a Super Admin extension, a
+  payment completed in another tab) is picked up instead of trusting a
+  possibly-stale cached `organization`, and (b) right after a successful
+  `payWithPsp()` result and right after a successful PayUnit
+  redirect-return confirmation — replacing the old `setCurrentPlan(plan.key)`
+  local-only patch, which fixed this page's display but left the shared
+  `organization` (and therefore every plan-gated feature) stale.
+- If a similar "just did X, but the UI/gates still show the old state"
+  report comes up elsewhere, check whether that flow calls `refreshOrg()`
+  after a server-side mutation to `organizations` — this bug class can
+  recur anywhere a plan/org field changes outside the currently-open page.

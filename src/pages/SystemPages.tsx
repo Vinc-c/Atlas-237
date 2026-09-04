@@ -922,7 +922,7 @@ function SsoSection({ language, organization, allowed, onSave }: { language: Lan
 }
 
 export function BillingPage() {
-  const { language, organization, session, profile } = useAuth();
+  const { language, organization, session, profile, refreshOrg } = useAuth();
   const canManageBilling = profile ? ['owner', 'admin'].includes(profile.role) : false;
   const lang = language;
   const [currentPlan, setCurrentPlan] = useState<string>(organization?.plan || 'starter');
@@ -957,11 +957,12 @@ export function BillingPage() {
     const pendingTxId = sessionStorage.getItem('payunit_pending_tx');
     if (!pendingTxId) return;
     setVerifying(true);
-    confirmPayunitPayment(pendingTxId).then((res) => {
+    confirmPayunitPayment(pendingTxId).then(async (res) => {
       setVerifying(false);
       sessionStorage.removeItem('payunit_pending_tx');
       window.history.replaceState({}, '', window.location.pathname);
       if (res.ok && res.status === 'SUCCESS') {
+        await refreshOrg();
         alert(lang === 'fr' ? 'Paiement confirmé !' : 'Payment confirmed!');
       } else if (res.ok) {
         alert(lang === 'fr' ? `Paiement non finalisé (statut: ${res.status}).` : `Payment not completed (status: ${res.status}).`);
@@ -978,6 +979,8 @@ export function BillingPage() {
     { name: 'Enterprise', key: 'enterprise', price: 219, features: [lang === 'fr' ? 'Tout Pro inclus' : 'Everything in Pro', lang === 'fr' ? 'IA personnalisée' : 'Custom AI training', lang === 'fr' ? 'Utilisateurs illimités' : 'Unlimited users', lang === 'fr' ? 'Gestionnaire dédié' : 'Dedicated manager', lang === 'fr' ? 'Garantie SLA' : 'SLA guarantee'] },
   ] as const;
 
+  useEffect(() => { refreshOrg(); }, []);
+
   async function pay(plan: { key: string }) {
     if (!organization || plan.key === currentPlan || !selectedPsp) return;
     setPayError('');
@@ -990,7 +993,13 @@ export function BillingPage() {
     });
     if (result.redirected) return; // browser is navigating away to the PSP's hosted page
     if (result.ok) {
-      setCurrentPlan(plan.key);
+      // Refresh the real, shared organization record (not just local state) —
+      // otherwise the plan-gated features across the rest of the app
+      // (sidebar, usePlanAccess()) would keep reading the pre-payment plan
+      // until the next full login, and revisiting this page would silently
+      // show the OLD plan as "current" again since the effect above re-syncs
+      // currentPlan from organization.plan on every mount.
+      await refreshOrg();
       setBusy(null);
       setCheckoutPlan(null);
     } else {
