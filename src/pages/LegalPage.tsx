@@ -206,8 +206,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
       return (
         <>
           {h2(fr ? 'Mentions Légales' : 'Legal Notice', '')}
-          <p>{fr ? "Le site et la plateforme Atlas CRM sont édités par LiAfrik, basée à Dubaï, Émirats Arabes Unis, avec des activités en Afrique et à l'international." : 'The Atlas CRM site and platform are published by LiAfrik, based in Dubai, United Arab Emirates, with operations across Africa and internationally.'}</p>
-          <p className="text-sm text-ink-500 italic">{fr ? "Numéro d'enregistrement commercial, forme juridique et adresse de siège social complets : à compléter par l'éditeur." : 'Full commercial registration number, legal form, and registered office address: to be completed by the publisher.'}</p>
+          <p>{fr ? "Le site et la plateforme Atlas CRM sont édités par LiAfrik (SPC FZC), société immatriculée à Dubaï, Émirats Arabes Unis, sous le numéro de licence 4425201.01, avec des activités en Afrique et à l'international. Tous droits réservés." : 'The Atlas CRM site and platform are published by LiAfrik (SPC FZC), a company registered in Dubai, United Arab Emirates, under license number 4425201.01, with operations across Africa and internationally. All rights reserved.'}</p>
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Contact' : 'Contact'}</h3>
           <ul><li>Email: hello@liafrik.com</li><li>{fr ? 'Site : ' : 'Site: '}<a href="https://liafrik.com" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">liafrik.com</a></li></ul>
           <h3 className="mt-6 text-lg font-bold text-ink-900">{fr ? 'Hébergement' : 'Hosting'}</h3>

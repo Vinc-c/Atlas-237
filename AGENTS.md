@@ -632,3 +632,16 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   (needed by the current build/PSP scripts) which does weaken CSP's XSS
   mitigation somewhat — a known, deliberate trade-off, not something to
   strip without testing every page first.
+
+## Real production domain (Sep 2026)
+- Confirmed: `https://atlas.liafrik.com` (custom domain), also reachable at
+  the Cloudflare default `https://atlas-237.pages.dev`. `index.html`'s
+  canonical link + `og:url`, and `public/robots.txt`/`sitemap.xml`, now
+  point at the real custom domain — search engines and social shares
+  should treat that one as canonical, not the `.pages.dev` fallback.
+- Paddle's 4 real Price IDs (from the org's actual Paddle dashboard) are
+  now set as defaults in `src/lib/paddle.ts` alongside the client token —
+  Paddle is fully configured and will appear as a payment option with no
+  further setup needed.
+- Legal Notice page now has the real company registration: LiAfrik (SPC
+  FZC), Dubai, UAE, license number 4425201.01 — no more placeholder text.

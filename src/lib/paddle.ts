@@ -17,10 +17,10 @@ export const PADDLE_CLIENT_TOKEN = (import.meta.env.VITE_PADDLE_CLIENT_TOKEN as 
 export const PADDLE_ENVIRONMENT = (import.meta.env.VITE_PADDLE_ENVIRONMENT as string | undefined) || 'production';
 
 const PADDLE_PRICE_IDS: Record<string, string | undefined> = {
-  starter: import.meta.env.VITE_PADDLE_PRICE_STARTER as string | undefined,
-  growth: import.meta.env.VITE_PADDLE_PRICE_GROWTH as string | undefined,
-  pro: import.meta.env.VITE_PADDLE_PRICE_PRO as string | undefined,
-  enterprise: import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE as string | undefined,
+  starter: (import.meta.env.VITE_PADDLE_PRICE_STARTER as string | undefined) || 'pri_01m1m7t4b0ssysw2tq8tw8fc0j',
+  growth: (import.meta.env.VITE_PADDLE_PRICE_GROWTH as string | undefined) || 'pri_01m1m7xjf76rjm1zws3xz9jcv3',
+  pro: (import.meta.env.VITE_PADDLE_PRICE_PRO as string | undefined) || 'pri_01m1m7z8mg4v3kvnctkjvr71yw',
+  enterprise: (import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE as string | undefined) || 'pri_01m1m810d2pv6njj4dat4enr5d',
 };
 
 export function isPaddleConfigured() {

@@ -4,4 +4,4 @@ Disallow: /app/
 Disallow: /super-admin/
 Disallow: /auth/callback
 
-Sitemap: https://REPLACE-WITH-YOUR-DOMAIN.com/sitemap.xml
+Sitemap: https://atlas.liafrik.com/sitemap.xml
