@@ -37,7 +37,7 @@ declare global {
     Paddle?: {
       Environment: { set: (env: string) => void };
       Initialize: (opts: { token: string; eventCallback?: (event: PaddleCheckoutEvent) => void }) => void;
-      Checkout: { open: (opts: { items: { priceId: string; quantity: number }[]; customData?: Record<string, unknown>; customer?: { email: string } }) => void };
+      Checkout: { open: (opts: { items: { priceId: string; quantity: number }[]; customData?: Record<string, unknown>; customer?: { email: string }; settings?: { successUrl?: string; displayMode?: string } }) => void };
     };
   }
 }
@@ -90,6 +90,18 @@ export function initiatePaddleCheckout(params: {
       items: [{ priceId, quantity: 1 }],
       customData: { org_id: orgId, plan },
       customer: { email },
+      // Paddle's account-wide "Default payment link" setting can't work
+      // when one Paddle account serves multiple products (this account
+      // runs several SaaS products) — each needs its own return URL, so
+      // it must be set per-checkout-call, not relied on as a dashboard
+      // default. This is what actually fixes
+      // "transaction_default_checkout_url_not_set": that error means
+      // Paddle had no URL to use at all for this specific transaction,
+      // not that the dashboard default itself was wrong or missing.
+      settings: {
+        successUrl: `${window.location.origin}/app/billing?paddle_status=success`,
+        displayMode: 'overlay',
+      },
     });
   });
 }

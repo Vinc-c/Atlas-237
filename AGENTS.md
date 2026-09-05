@@ -749,3 +749,22 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   dashboard by the account owner. If Paddle checkout still fails after
   this is set, get the response body the same way (Network tab → click
   the red transaction-checkout row → Response tab) rather than guessing.
+
+## Paddle checkout — actual fix (correcting the previous entry)
+- The previous AGENTS.md note suggested setting Paddle's account-wide
+  "Default payment link" — the person tried that and it did NOT fix
+  `transaction_default_checkout_url_not_set`, for a good structural
+  reason: **one Paddle account here serves multiple SaaS products**
+  (this org runs several), so a single account-level default checkout
+  URL can never be correct for all of them — each product's checkout
+  needs to return the customer to ITS OWN app.
+- Real fix, in code: `src/lib/paddle.ts` `initiatePaddleCheckout()` now
+  passes `settings: { successUrl, displayMode: 'overlay' }` explicitly on
+  every `Paddle.Checkout.open()` call — `successUrl` is
+  `${window.location.origin}/app/billing?paddle_status=success`, i.e.
+  Atlas's own billing page. Paddle's error meant "I have no URL for THIS
+  transaction," not "the dashboard default is wrong" — supplying it
+  per-call removes the dependency on any shared account setting entirely.
+- If this account adds more Paddle-billed products later, each one's own
+  checkout code should set its own `successUrl` the same way — never rely
+  on the Paddle dashboard's account-wide default for a multi-product setup.
