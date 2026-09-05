@@ -733,3 +733,19 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   report — CSP silently blocks sub-resources a script loads internally
   (its own CSS, its own analytics/tracking scripts), which developer docs
   for the embedded service rarely enumerate exhaustively.
+
+## Paddle checkout 400 — root cause found (Sep 2026)
+- After fixing the CSP block (previous entry), the checkout still failed
+  with a 400 whose real response body (confirmed by the person via
+  DevTools Network tab) was:
+  `{"errors":[{"status":400,"code":"validation","details":"transaction_default_checkout_url_not_set"}]}`
+- Root cause: a Paddle **account setting**, not a code bug — Paddle
+  requires a "Default payment link" / default checkout URL configured
+  under Checkout → Checkout Settings in the Paddle dashboard before it
+  will process any transaction via the overlay checkout. This is
+  independent of domain approval (already done) and independent of the
+  CSP fix (also needed, but not sufficient on its own).
+- No code change possible here — this can only be set in Paddle's own
+  dashboard by the account owner. If Paddle checkout still fails after
+  this is set, get the response body the same way (Network tab → click
+  the red transaction-checkout row → Response tab) rather than guessing.
