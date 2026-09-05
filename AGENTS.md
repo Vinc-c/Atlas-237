@@ -711,3 +711,25 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   state) is what actually communicates which plan they're on. The button
   is now only disabled for real blockers: no PSP configured, or the
   signed-in profile lacks billing permission (`canManageBilling`).
+
+## Real bug fixed: CSP blocked Paddle's own checkout assets (Sep 2026)
+- Confirmed via the person's browser console/network tab: Paddle's own
+  stylesheet (`cdn.paddle.com/paddle/v2/assets/css/paddle.css`) was
+  blocked by `style-src` (only had `'self' 'unsafe-inline'`, no Paddle
+  domain), and Paddle's bundled ProfitWell analytics script
+  (`public.profitwell.com`) was blocked by `script-src`. Fixed in
+  `public/_headers`: added `cdn.paddle.com` to `style-src`+`font-src`,
+  and `public.profitwell.com` to `script-src`+`connect-src`.
+- A separate real issue was also visible: a 400 from
+  `checkout-service.paddle.com/.../transaction-checkout` — an actual
+  server-side rejection of the checkout request, not a CSP block. Domain
+  approval in Paddle was already confirmed done at the time this was
+  seen; still under investigation — check the Price IDs' environment
+  matches the client token's (live vs sandbox) and the exact response
+  body next time this surfaces, since the browser console only showed the
+  status code, not the response content.
+- Lesson for next time a third-party checkout/embed is added: check the
+  browser console immediately after wiring it up, not just after a bug
+  report — CSP silently blocks sub-resources a script loads internally
+  (its own CSS, its own analytics/tracking scripts), which developer docs
+  for the embedded service rarely enumerate exhaustively.
