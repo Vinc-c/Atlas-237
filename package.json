@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },
   "dependencies": {
+    "@sentry/react": "^10.73.0",
     "@supabase/supabase-js": "^2.45.4",
     "lucide-react": "^0.435.0",
     "papaparse": "^5.5.4",

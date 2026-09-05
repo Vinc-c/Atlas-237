@@ -807,3 +807,52 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
   key pages, company registration). Keep it in sync if pricing or key
   pages change; false claims here are exactly as harmful as anywhere else
   in the app.
+
+## Sentry error monitoring (Sep 2026) — real production error tracking
+- `@sentry/react` initialized in `src/main.tsx`, DSN provided directly by
+  the account owner. Only active when `import.meta.env.PROD` — local dev
+  errors while someone is actively coding are not production incidents
+  and would just add noise.
+- Whole app wrapped in `Sentry.ErrorBoundary` with a plain, dependency-free
+  fallback UI (a crashed React tree can't safely rely on the rest of the
+  app's components/styles still working) — shows "Something went wrong" +
+  a reload button, not a blank white screen.
+- `tracesSampleRate: 0` deliberately — session replay and performance
+  tracing are NOT enabled by default; they add real Sentry quota cost and
+  capture more of what a user was doing than plain error capture needs.
+  Turning them on should be a deliberate later choice, not a silent default.
+- CSP (`public/_headers`) explicitly allows `*.ingest.de.sentry.io` and
+  `*.ingest.sentry.io` in connect-src (already covered by the trailing
+  generic `https:` fallback there, but explicit is better documentation
+  and future-proofs this if that fallback is ever tightened).
+- Adds ~30KB gzipped to the main bundle — an accepted, deliberate
+  trade-off for real production error visibility, not an oversight.
+
+## Known, accepted npm audit findings (Sep 2026) — reviewed, not blindly patched
+- `npm audit` (independent of the Sentry addition — pre-existing) shows 3
+  issues, deliberately NOT fixed via `npm audit fix --force` right before
+  a launch push, since the fixes are major-version upgrades (vite 8,
+  react-router 7) that need their own dedicated, tested pass:
+  - **esbuild/vite** (moderate): dev-server-only request/response
+    exposure — doesn't affect the built production site, only a locally
+    running dev server, which isn't exposed to the internet in normal use.
+  - **react-router** (moderate): open-redirect edge case via backslash in
+    `<Link>`/`useNavigate`. Low real exploitability here specifically —
+    this app never passes user-controlled/untrusted paths into `navigate()`
+    or `<Link to>`, only fixed literal routes written in the code.
+  - **xlsx** (high, no fix available upstream): ReDoS + prototype
+    pollution when parsing a malicious `.xlsx` file. Attack surface is
+    self-inflicted per-org (an org's own CSV/Excel import in `ListPage.tsx`,
+    parsed client-side in that user's own browser) — not a cross-tenant
+    risk, since nothing server-side parses uploaded spreadsheets.
+  - Recommendation: schedule a dedicated pass to upgrade vite/react-router
+    (test every route + every PSP checkout flow afterward) and evaluate an
+    xlsx alternative or a stricter pre-parse size/shape check — not
+    something to rush through right before or during a launch.
+- Also noted, non-urgent: `connect-src` in the CSP still ends with a
+  generic `https:` fallback (from an earlier session), which makes the
+  explicit domain allow-list before it somewhat redundant for connect-src
+  specifically. Tightening this (removing the fallback, enumerating every
+  real client-side external endpoint) is a good hardening candidate once
+  all current + planned PSPs/integrations are stable — not urgent, and
+  risky to change without thorough testing of every payment flow.
