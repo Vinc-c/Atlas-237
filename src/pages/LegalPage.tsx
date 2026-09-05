@@ -4,6 +4,7 @@ import { ShieldCheck, FileText, Cookie, Mail, Users, Lock, BookOpen, Activity, D
 import { useAuth } from '@/context/AuthContext';
 import { Logo } from '@/components/Logo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { useHreflangLinks } from '@/lib/useHreflang';
 
 export type LegalPage = 'privacy' | 'terms' | 'cookies' | 'about' | 'security' | 'contact' | 'careers' | 'pricing' | 'docs' | 'status' | 'community' | 'blog' | 'gdpr' | 'refund' | 'legal-notice' | 'pledge' | 'sales-cloud' | 'service-cloud' | 'agentforce' | 'data-360' | 'tableau';
 
@@ -235,6 +236,7 @@ function Content({ page, lang }: { page: LegalPage; lang: 'en' | 'fr' | 'es' | '
 
 export function LegalPage({ page }: { page: LegalPage }) {
   const { language } = useAuth();
+  useHreflangLinks(`/legal/${page}`);
   const lang = language === 'fr' ? 'fr' : 'en';
   useScrollReveal();
   useEffect(() => { window.scrollTo(0, 0); }, [page]);

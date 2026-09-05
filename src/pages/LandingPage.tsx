@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck, TrendingUp, Bot, BarChart3,
   CheckCircle2, X, ArrowRight, Cloud, Globe2, Zap, Star,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { InstagramFeed } from '@/components/InstagramFeed';
+import { useHreflangLinks } from '@/lib/useHreflang';
 
 function TikTokIcon({ size = 18 }: { size?: number }) {
   return (
@@ -86,6 +87,8 @@ function Check({ value }: { value: boolean | string }) {
 
 export function LandingPage() {
   const { language, setLanguage } = useAuth();
+  const navigate = useNavigate();
+  useHreflangLinks('');
   const lang = language;
   // La page d'accueil n'a de copy qu'en fr/en ; on retombe sur 'en' pour les autres langues
   // pour éviter un contenu vide si le profil utilisateur est en es/pt/ar.
@@ -158,7 +161,7 @@ export function LandingPage() {
           </nav>
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setLanguage(lang === 'fr' ? 'en' : 'fr')}
+              onClick={() => { const next = lang === 'fr' ? 'en' : 'fr'; setLanguage(next); navigate(next === 'en' ? '/en' : '/'); }}
               className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-50"
               title={lang === 'fr' ? 'Switch to English' : 'Passer au français'}
             >

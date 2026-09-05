@@ -768,3 +768,42 @@ or inline `lang === 'fr' ? '...' : '...'` ternaries. Key files verified:
 - If this account adds more Paddle-billed products later, each one's own
   checkout code should set its own `successUrl` the same way — never rely
   on the Paddle dashboard's account-wide default for a multi-product setup.
+
+## Multilingual SEO — finished for fr/en (real content), honestly scoped for es/pt/ar
+- Bug fixed along the way: `/legal/refund` and `/legal/legal-notice` were
+  unreachable — added to `PAGE_META` (LegalPage.tsx) but never added to
+  the separate `LEGAL_PAGES` whitelist array in `App.tsx`, which silently
+  redirected both to `/`.
+- Real, distinct, crawlable URLs added for the one language pair that has
+  genuinely different content: `/en`, `/en/auth`, `/en/legal/:page`
+  alongside the existing French-default `/`, `/auth`, `/legal/:page`.
+  `src/lib/useHreflang.ts` (`useHreflangLinks`) injects real
+  `<link rel="alternate" hreflang="...">` tags per page, wired into
+  LandingPage/AuthPage/LegalPage. `public/sitemap.xml` regenerated with
+  matching `xhtml:link` hreflang cross-references for every fr/en pair (46
+  URL entries). Language switchers on Landing/Auth now `navigate()` to the
+  real `/en` URL instead of only flipping in-memory state — so choosing a
+  language actually changes the address bar and is shareable/bookmarkable.
+- Deliberately NOT done: `/es`, `/pt`, `/ar` public marketing/legal routes
+  and hreflang entries. The app itself has full real es/pt/ar translations
+  for signed-in users (`src/lib/i18n.ts`), but the PUBLIC pages
+  (LandingPage.tsx's hero/FAQ/features copy, LegalPage.tsx's body text)
+  only have real fr/en content — everything else falls back to English.
+  Adding `hreflang="es"` pointing at a page that renders in English would
+  be exactly the kind of language-mismatch signal that actively hurts SEO
+  rather than helping it (Google penalizes/ignores mismatched hreflang).
+  Real next step: translate LandingPage.tsx and LegalPage.tsx's actual
+  copy to es/pt (LTR, more tractable) and separately to ar (needs RTL
+  layout work too — `dir="rtl"`, mirrored spacing/icons — not just text),
+  THEN add the matching routes + LANG_PREFIXES entries in useHreflang.ts.
+  Don't add the URL/hreflang plumbing ahead of the real content existing.
+- Added `index.html` JSON-LD (`SoftwareApplication` + `Organization`)
+  with only verified real facts (the 4 real plan prices, the real LiAfrik
+  legal entity/Dubai address, the real social links) — helps both rich
+  search snippets and AI systems that parse schema.org data to describe
+  the product accurately instead of guessing.
+- Added `public/llms.txt` — an emerging (unofficial) convention some AI
+  crawlers/agents use to understand a site, with only real facts (pricing,
+  key pages, company registration). Keep it in sync if pricing or key
+  pages change; false claims here are exactly as harmful as anywhere else
+  in the app.

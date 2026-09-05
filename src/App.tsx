@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AuthPage } from '@/pages/AuthPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
@@ -9,6 +9,7 @@ import { LegalPage, type LegalPage as LegalPageKey } from '@/pages/LegalPage';
 import { AppLayout } from '@/components/AppLayout';
 import { Paywall } from '@/components/Paywall';
 import { Loading } from '@/components/Loading';
+import type { Language } from '@/lib/i18n';
 
 // Lazy-load protected pages for faster initial load (smaller main bundle)
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -122,15 +123,17 @@ function ProtectedRoutes() {
   );
 }
 
-function LandingRoutes() {
-  const { session, loading } = useAuth();
+function LandingRoutes({ lang }: { lang?: Language }) {
+  const { session, loading, language, setLanguage } = useAuth();
+  useEffect(() => { if (lang && lang !== language) setLanguage(lang); }, [lang, language, setLanguage]);
   if (loading) return <Loading fullPage />;
   if (session) return <Navigate to="/app" replace />;
   return <LandingPage />;
 }
 
-function AuthRoutes() {
-  const { session, loading } = useAuth();
+function AuthRoutes({ lang }: { lang?: Language }) {
+  const { session, loading, language, setLanguage } = useAuth();
+  useEffect(() => { if (lang && lang !== language) setLanguage(lang); }, [lang, language, setLanguage]);
   if (loading) return <Loading fullPage />;
   if (session) return <Navigate to="/app" replace />;
   return <AuthPage />;
@@ -142,7 +145,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<LandingRoutes />} />
+          <Route path="/en" element={<LandingRoutes lang="en" />} />
           <Route path="/auth" element={<AuthRoutes />} />
+          <Route path="/en/auth" element={<AuthRoutes lang="en" />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/set-password" element={<SetPasswordPage />} />
           <Route path="/app/*" element={<ProtectedRoutes />} />
@@ -159,6 +164,7 @@ export default function App() {
             <Route path="accounting" element={<Suspense fallback={<PageFallback />}><SuperAdminAccountingPage /></Suspense>} />
           </Route>
           <Route path="/legal/:page" element={<LegalRoute />} />
+          <Route path="/en/legal/:page" element={<LegalRoute lang="en" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
@@ -166,10 +172,12 @@ export default function App() {
   );
 }
 
-const LEGAL_PAGES = ['privacy','terms','cookies','about','security','contact','careers','pricing','docs','status','community','blog','gdpr','pledge','sales-cloud','service-cloud','agentforce','data-360','tableau'];
+const LEGAL_PAGES = ['privacy','terms','cookies','about','security','contact','careers','pricing','docs','status','community','blog','gdpr','refund','legal-notice','pledge','sales-cloud','service-cloud','agentforce','data-360','tableau'];
 
-function LegalRoute() {
+function LegalRoute({ lang }: { lang?: Language }) {
   const { page } = useParams();
+  const { language, setLanguage } = useAuth();
+  useEffect(() => { if (lang && lang !== language) setLanguage(lang); }, [lang, language, setLanguage]);
   if (!page || !LEGAL_PAGES.includes(page)) return <Navigate to="/" replace />;
   return <LegalPage page={page as LegalPageKey} />;
 }

@@ -1,0 +1,19 @@
+# Atlas CRM
+
+> Atlas CRM is an AI-powered cloud CRM platform by LiAfrik (SPC FZC, Dubai, UAE), unifying sales, customer service, marketing, and AI-driven automation for businesses in Africa, the Middle East, and worldwide.
+
+Atlas CRM combines core CRM functionality (contacts, leads, deals, invoices, tickets, knowledge base) with an integrated AI assistant (Ask Atlas), real workflow automation, and a marketplace of real, working integrations (payments, messaging, e-commerce, support platforms).
+
+## Pricing
+Four flat monthly plans per organization, in USD: Starter ($19), Growth ($49), Pro ($119), Enterprise ($219). All plans include a 14-day free trial, no credit card required. Full details: https://atlas.liafrik.com/legal/pricing
+
+## Key pages
+- Homepage: https://atlas.liafrik.com/
+- Documentation: https://atlas.liafrik.com/legal/docs
+- Pricing: https://atlas.liafrik.com/legal/pricing
+- Security: https://atlas.liafrik.com/legal/security
+- Privacy Policy: https://atlas.liafrik.com/legal/privacy
+- Terms of Service: https://atlas.liafrik.com/legal/terms
+
+## Company
+Published by LiAfrik (SPC FZC), registered in Dubai, UAE, license number 4425201.01. Contact: hello@liafrik.com

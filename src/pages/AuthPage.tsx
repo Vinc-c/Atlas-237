@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { t, type Language } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
 import { BrandLogo } from '@/components/BrandLogos';
+import { useHreflangLinks } from '@/lib/useHreflang';
 import { VideoBackground } from '@/components/VideoBackground';
 import { AUTH_VIDEO_SOURCES, AUTH_VIDEO_POSTER } from '@/lib/media';
 import { COUNTRIES, CURRENCIES, TIMEZONES, suggestCurrency } from '@/lib/i18n-countries';
@@ -22,6 +23,7 @@ function GoogleIcon({ size = 18 }: { size?: number }) {
 }
 
 export function AuthPage() {
+  useHreflangLinks('/auth');
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,6 +43,13 @@ export function AuthPage() {
   const [oauthLoading, setOauthLoading] = useState(false);
   const { language, setLanguage } = useAuth();
   const navigate = useNavigate();
+
+  function handleLangChange(next: Language) {
+    setLanguage(next);
+    if (next === 'en') navigate('/en/auth');
+    else if (next === 'fr') navigate('/auth');
+    // es/pt/ar: no dedicated real-content URL yet (see useHreflang.ts) — switch in place.
+  }
   const lang = language;
 
   useEffect(() => {
@@ -236,7 +245,7 @@ export function AuthPage() {
                 <Globe size={14} />
                 <select
                   value={language}
-                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  onChange={(e) => handleLangChange(e.target.value as Language)}
                   className="bg-transparent text-white focus:outline-none [&>option]:text-ink-900"
                   aria-label="Language"
                 >
@@ -256,7 +265,7 @@ export function AuthPage() {
               <Globe size={15} />
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
+                onChange={(e) => handleLangChange(e.target.value as Language)}
                 className="bg-transparent text-ink-700 focus:outline-none"
                 aria-label="Language"
               >
